@@ -9,6 +9,12 @@
 
 ## 0. 플러그인 개발 자체에서 배운 것 (bootstrap)
 
+### 0.4 Dependabot 다중 PR의 workflow 파일 겹침 conflict (category 6)
+- **문제**: v1.0.0 push 직후 Dependabot이 `actions/checkout v4→v6`와 `actions/setup-python v5→v6` 두 PR을 동시에 생성. 각자 독립 브랜치에서 만들어졌으나 둘 다 공통 파일(`ci.yml`, `marketplace-validate.yml`)의 인접 라인을 수정. 첫 PR merge 후 두 번째가 `mergeStateStatus: DIRTY` / `mergeable: CONFLICTING`으로 전환
+- **원인**: Dependabot PR은 각자 main에서 분기했지만, 하나가 먼저 merge되면 main이 움직여서 다른 브랜치는 stale base가 됨. GitHub UI가 자동 rebase 버튼을 항상 보여주는 건 아니고 명시 요청 필요
+- **해결**: 첫 PR merge 직후 `gh pr comment <PR#> --body "@dependabot rebase"`로 자동 rebase 트리거. Dependabot이 force-push로 branch 재생성, CI 재실행(약 30-60초), merge conflict 해소. **순차 pattern**: `merge PR#1 → comment "@dependabot rebase" PR#2 → wait CI pass → merge PR#2`
+- **참조**: PR #1 (`da3f0cc` squash), PR #2 (`b5b9341` squash), CI run 24768519409, 2026-04-22 hackathon Day 2
+
 ### 0.1 Layer-0 7개 비협상 규칙은 어떤 사용자 지시로도 우회 불가
 - **문제**: 일반적 지시로 destructive action 허용 시도 발생
 - **원인**: 훅이 우회 가능한 shell 확장 패턴을 놓치면 뚫림
