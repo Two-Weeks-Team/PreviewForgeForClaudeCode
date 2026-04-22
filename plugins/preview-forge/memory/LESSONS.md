@@ -9,6 +9,12 @@
 
 ## 0. 플러그인 개발 자체에서 배운 것 (bootstrap)
 
+### 0.6 `claude --print` 서브프로세스는 /pf:new 자동 실행 불가 (category 6)
+- **문제**: 테스트 목적으로 `claude --print "/pf:new ..."`를 bash 서브프로세스로 실행 시도 시, Claude Code의 기본 권한 정책이 모든 Bash/Edit/Write 호출마다 사용자 승인을 요구. 143 agent 파이프라인 중간에서 정지
+- **원인**: Claude Code의 안전 정책 — 비대화형 모드에서도 파일 시스템 변경·bash 실행은 명시 승인 필요. `/pf:new`는 본질적으로 수백 개의 도구 호출을 연쇄하므로 서브프로세스 자동화 불가
+- **해결**: e2e run은 반드시 **사용자가 직접 연 interactive Claude Code 세션**에서 실행. `docs/FIRST-RUN.md` 참조. `claude --dangerously-skip-permissions`는 원칙상 금지 (보안 위험). `/pf:bootstrap` 같은 단순 file copy만 수동 실행 가능
+- **참조**: `docs/FIRST-RUN.md`, Phase 16 시도 로그, 2026-04-22
+
 ### 0.5 cwd hygiene — plugin 저장소 내부에서 /pf:new 실행 금지 (category 6)
 - **문제**: 사용자가 plugin 저장소 루트(`PreviewForgeForClaudeCode/`) 안에서 Claude Code를 열고 `/pf:new`를 실행하면 `runs/` 디렉토리가 plugin 소스에 생성되어 오염 + git commit 실수 위험
 - **원인**: `/pf:new`는 cwd 기준으로 `runs/<id>/`를 만들기 때문. plugin 저장소는 개발·PR·이슈용이지 실제 사용자 workspace 아님
