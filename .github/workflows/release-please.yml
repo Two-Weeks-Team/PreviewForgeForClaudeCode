@@ -28,7 +28,17 @@ jobs:
 
       - name: Show release-please output
         if: always()
+        env:
+          RP_RELEASE_CREATED: ${{ steps.release.outputs.release_created }}
+          RP_TAG_NAME: ${{ steps.release.outputs.tag_name }}
+          RP_PR_NUMBER: ${{ steps.release.outputs.pr }}
         run: |
-          echo "release_created: ${{ steps.release.outputs.release_created }}"
-          echo "tag_name:        ${{ steps.release.outputs.tag_name }}"
-          echo "pr:              ${{ steps.release.outputs.pr }}"
+          echo "release_created: $RP_RELEASE_CREATED"
+          echo "tag_name:        $RP_TAG_NAME"
+          # pr output is a JSON blob; don't interpolate into shell.
+          # Just show whether it exists.
+          if [[ -n "$RP_PR_NUMBER" ]]; then
+            echo "release PR: opened (see 'Pull requests' tab)"
+          else
+            echo "release PR: none"
+          fi
