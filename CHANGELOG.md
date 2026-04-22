@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.2.1...v1.3.0) (2026-04-22)
+
+
+### Features
+
+* **agents:** Phase D — Proposals [#1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/1) [#4](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/4) [#10](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/10) (profile-aware previews + budgets + context editing) ([fc2c2d6](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/fc2c2d62d01980bb95c34745a0c1d8ed97bc6ffa))
+* **agents:** Phase F — Proposals [#3](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/3) [#5](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/5) [#6](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/6) [#7](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/7) [#8](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/8) [#9](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/9) (eng teams, SCC auto-extend, QA tools/agents split) ([cec62b5](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/cec62b5d0355ad533759817ef20f6b264dc9cf7e))
+* **commands:** Phase I — /pf:status + /pf:budget profile-aware ([39b62de](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/39b62def5c59ea9e8a6883b64d7248954187e197))
+* **hooks:** Phase B — Layer-0 Rule 9 idea-drift detector (P0-A) ([abc9695](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/abc96956f01e8ccb46dc7c827fb4fe5096ff9c2f))
+* **monitors:** Phase C — P0-B cost-regression sentinel ([926309d](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/926309d3e00366e35abe7fd453d4cb500dd4abac))
+* **profiles:** Phase A — standard/pro/max profile schema foundation ([91e24d9](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/91e24d98d5929cb6a5068dfb1006a3ac00933c01))
+* **scripts:** Phase E — surface-type detection (Proposal [#2](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/2)) ([0f4a1d3](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/0f4a1d3b6675e7f921e002cbfb7ace2fce1356fb))
+* **scripts:** Phase H — PreviewDD-level cache (Proposal [#11](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/11)) ([1e041fa](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/1e041fa88e1b635820844006af11a46937973ff4))
+* **v1.3.0:** profiles (standard/pro/max) + Rule 9 drift + cost regression + 11 panel-validated changes ([e44670c](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/e44670c2b311afc46bd81ff88b9ee73893c178cd))
+
+
+### Bug Fixes
+
+* **cache:** use python for mtime instead of stat (portable across macOS/Linux) ([9031fc3](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/9031fc308d143603f1ff2aafe2ab4adced99f11e))
+* **review:** Phase M — Gemini + Codex review feedback (7 issues) ([0851b68](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/0851b68757bc3602522af73f010cfb202b03fa91))
+
 ## [1.2.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.2.0...v1.2.1) (2026-04-22)
 
 
