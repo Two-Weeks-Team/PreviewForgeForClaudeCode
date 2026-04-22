@@ -14,17 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
+      # Use manifest mode so .release-please-config.json's extra-files
+      # (with jsonpath) actually rewrites plugin.json and marketplace.json
+      # in lockstep with the tag.
       - uses: googleapis/release-please-action@v4
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          release-type: simple
-          package-name: preview-forge
-          # The manifests we keep in version-parity with the tag.
-          # release-please rewrites these when opening the Release PR.
-          extra-files: |
-            plugins/preview-forge/.claude-plugin/plugin.json
-            .claude-plugin/marketplace.json
+          manifest-file: .release-please-manifest.json
+          config-file: .release-please-config.json
 
       - name: Show release-please output
         if: always()
