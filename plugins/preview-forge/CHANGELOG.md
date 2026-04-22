@@ -2,7 +2,79 @@
 
 All notable changes to this plugin will be documented in this file.
 
-## [1.3.0] — 2026-04-23 (in progress)
+## [1.4.0] — 2026-04-23 (in progress)
+
+### Changed — default profile flipped (breaking for implicit default)
+
+**`settings.json.pf.defaultProfile: "pro" → "standard"`**
+
+Ratified by 10-expert panel (3 APPROVE / 6 MODIFY / 1 REJECT-subset).
+Christensen/Kim-Mauborgne/Taleb unanimous on hackathon JTBD +
+local-first Blue Ocean + Docker-removal Antifragility. Collins gate
+passed (standard cost ceiling measured).
+
+One-time stderr notice for users upgrading from v1.3.x on first run
+with no explicit `--profile`: "pf: default profile changed
+standard←pro (v1.4.0)." Suppressed via `~/.preview-forge/default-notice-shown`.
+
+### Added — local-first MVP stack (standard only)
+
+- **`assets/prisma.schema.standard.template`**: Prisma `provider = "sqlite"`,
+  DB URL points to `~/.preview-forge/<project>/dev.db` (security-engineer
+  CP-2: outside repo tree). String columns, no enum, no `@db.JsonB`
+  (backend-architect CP-1: guaranteed Postgres-portable).
+- **`assets/gitignore.standard.template`**: `*.db`, `*.db-wal`, `*.db-shm`,
+  `*.sqlite*`. Defense-in-depth in case DB ever lands inside repo.
+- **`assets/README.standard.template`**: loud "⚠ DEV-ONLY SCAFFOLD" banner
+  (frontend-architect: better-sqlite3 sync blocks SSR on Vercel/Netlify).
+  Documents `bash scripts/graduate.sh pro` upgrade path.
+- **`assets/graduate.sh.template`**: additive profile elevation. Writes
+  Dockerfile + compose.yml + .dockerignore + Postgres datasource WITHOUT
+  regenerating app code (devops-architect CP-1). Runs schema-lint first,
+  aborts if non-portable features.
+- **`scripts/standard-schema-lint.py`**: rejects enum blocks, `@db.JsonB`,
+  and Postgres-specific raw SQL. Exit 2 with line:number + fix suggestion.
+
+### Added — profile escalation (pre-flight)
+
+- **`scripts/recommend-profile.sh`**: bilingual EN+KO categorical signal
+  scorer. 4 HARD_REQUIRE categories (payments, PHI, PII, auth-provider)
+  force upgrade with no dismiss. 4 SOFT_SUGGEST categories (compliance,
+  multi-tenant, B2B, scale) ask via AskUserQuestion. Score threshold +
+  min_distinct_categories gate prevents false positives on incidental
+  keyword mentions. Injection-safe (pipe JSON via python stdin).
+- **`hooks/escalation-ledger.py`**: decision persistence in
+  `~/.preview-forge/escalation-history.json`. 24h suppression window on
+  same signal_hash decline (anti-nagging, quality-engineer replay-safety).
+  Atomic write via tmpfile+rename. 200-entry cap.
+- **M1 Run Supervisor pre-flight** gains steps 9-10: run recommender,
+  dispatch by action (hard-require/ask/hint/none), record to ledger.
+
+### Schema
+
+- `pf-profile.schema.json` additively gains optional `stack` block
+  (db, db_file_location, containerize, migration_cmd) and optional
+  `profile_escalation` block (upgrade_to, confidence_threshold,
+  hard_require_signals[], soft_suggest_categories[],
+  min_distinct_categories). All existing profile files validate.
+
+### CI
+
+- `defaultProfile == "standard"` assertion
+- `recommend-profile`: 9/9 matrix (8 classifications + injection canary)
+- `escalation-ledger`: 8/8 matrix (hash determinism, replay safety,
+  suppress-after-decline, accept-not-suppressed, signal isolation)
+- `standard-schema-lint`: portable vs unportable fixtures
+- `verify-plugin.sh`: 46/46 checks (was 45 in v1.3.0)
+
+### Methodology
+
+- **LESSON 0.10**: default-flip rationale + categorical-vs-keyword scoring +
+  hard_require tier for false-assurance mitigation.
+- `methodology/global.md` unchanged — no new Layer-0 rule (escalation is
+  advisory, not enforcement).
+
+## [1.3.0] — 2026-04-23
 
 ### Added — `--profile` system (standard · pro · max)
 

@@ -83,10 +83,10 @@ for cmd in bootstrap budget design export freeze gallery help lessons new panel 
 done
 echo
 
-echo "[4/5] Hooks (v1.3+: 5 hooks)"
+echo "[4/5] Hooks (v1.4+: 6 hooks)"
 python3 -c "import json; d=json.load(open('$PLUGIN_DIR/hooks/hooks.json')); assert 'PreToolUse' in d['hooks'] and 'PostToolUse' in d['hooks']" && \
   ok "hooks.json schema" || bad "hooks.json invalid"
-for h in factory-policy askuser-enforcement auto-retro-trigger idea-drift-detector cost-regression; do
+for h in factory-policy askuser-enforcement auto-retro-trigger idea-drift-detector cost-regression escalation-ledger; do
   python3 -m py_compile "$PLUGIN_DIR/hooks/$h.py" && ok "hooks/$h.py compiles" || bad "hooks/$h.py syntax"
 done
 echo
@@ -123,7 +123,8 @@ seed_count=$(find "$PLUGIN_DIR/seed-ideas" -name "*.md" | wc -l | tr -d ' ')
 schema_count=$(find "$PLUGIN_DIR/schemas" -name "*.json" | wc -l | tr -d ' ')
 [[ "$schema_count" -eq 4 ]] && ok "4 JSON schemas (preview-card, panel-vote, score-report, pf-profile)" || bad "schemas: $schema_count (expected 4)"
 asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f | wc -l | tr -d ' ')
-[[ "$asset_count" -eq 4 ]] && ok "4 asset templates" || bad "assets: $asset_count (expected 4)"
+# v1.4+ adds 4 standard-profile templates: prisma, gitignore, README, graduate.sh
+[[ "$asset_count" -eq 8 ]] && ok "8 asset templates (4 base + 4 standard-profile v1.4)" || bad "assets: $asset_count (expected 8)"
 [[ -f "$PLUGIN_DIR/monitors/monitors.json" ]] && ok "monitors/monitors.json" || bad "monitors missing"
 [[ -f "$PLUGIN_DIR/settings.json" ]] && ok "settings.json" || bad "settings.json missing"
 [[ -x "$PLUGIN_DIR/bin/pf" ]] && ok "bin/pf executable" || bad "bin/pf not executable"

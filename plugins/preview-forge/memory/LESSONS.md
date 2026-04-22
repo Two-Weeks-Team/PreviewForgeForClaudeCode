@@ -9,6 +9,25 @@
 
 ## 0. 플러그인 개발 자체에서 배운 것 (bootstrap)
 
+### 0.10 기본값은 "첫-실행 성공"을 좌우한다 — standard-first + categorical 에스컬레이션 (category 1 PreviewDD, UX/안전성)
+
+- **문제**: v1.3.0 직후 해커톤 4일 전 시점. 기본값이 `pro`(18 previews · 3×5 eng · Postgres + Docker · ~70분 · ~250k 토큰)여서 처음 `/pf:new "<idea>"` 입력한 심사자가 Docker 데몬 기동·Postgres 포트 충돌·ARM/x86 이미지 풀 등 데모-데이 black swan에 노출. 실제로 사용자(해커톤 참가자)가 "2시간 넘게 걸리고 토큰 수백만"이라는 피드백 → 기본값 변경 요구.
+
+- **원인**: v1.3.0 당시 devops-architect 패널이 "pro balanced, standard for demo"로 결정했지만, 이는 **사용자가 명시적으로 profile을 고를 것을 가정**. 실제 첫-실행은 거의 flag 없이 바로 실행되며, 심사자가 README를 먼저 읽는다는 가정은 낙관적. 또한 "enterprise 신호"(Stripe/PII/HIPAA/SSO-provider)가 포함된 아이디어를 standard로 돌리면 QA agent 2명(vs max 5명)으로 검증되어 **거짓 안전감**을 조성할 수 있음 — marketing 메시지는 "143 agents가 검증"인데 실제로는 30명만 가동.
+
+- **해결** (v1.4.0):
+  1. **기본 profile을 `standard`로 변경** + v1.3 사용자 첫 run 시 stderr 1회 고지
+  2. **Next.js + SQLite + no-Docker**를 standard의 baseline으로. DB 파일은 `~/.preview-forge/<project>/dev.db` (repo 밖) — SQLite WAL 사이드카 파일 commit 위험 원천 차단
+  3. **Categorical signal scorer** (`scripts/recommend-profile.sh`): 키워드 수가 아닌 **distinct category 수** 기반. "audit logging" 1회 등장으로 false-positive 없도록 min_distinct_categories=2 기본
+  4. **Two-tier signal system**:
+     - HARD_REQUIRE (payments/PHI/PII/auth-provider): 업그레이드 강제, dismiss 불가
+     - SOFT_SUGGEST (compliance/multi-tenant/B2B/scale): AskUserQuestion, user 판단
+  5. **Decision ledger** (`hooks/escalation-ledger.py`): 24h 내 동일 signal_hash 거부 → re-prompt 억제 (anti-nagging)
+  6. **Graduation path**: standard → pro 변환은 `bash scripts/graduate.sh pro`로 additive (Docker/compose/Postgres datasource만 추가, 기존 코드·schema 유지)
+  7. **Schema-lint**: standard profile은 Prisma enum·`@db.JsonB`·Postgres-specific 원시 SQL을 거부하여 graduation 시 silent type divergence 방지
+
+- **참조**: v1.4.0 PR body의 10-expert 패널 토론 요약, `profiles/standard.json` `.profile_escalation` 블록, `scripts/recommend-profile.sh` EN+KO 신호 뱅크, security-engineer CP-1 (hard-require tier) + devops-architect CP-2 (category vector) + backend-architect CP-1 (schema-lint) + refactoring-expert (stderr 고지) + root-cause-analyst (기존 escalation config 재활용).
+
 ### 0.9 한 flag 매트릭스 대신 profile 단일화 — 구성 표면적 최소화 (category 6 Plugin 배포, UX)
 
 - **문제**: v1.2.x의 e2e run이 2시간+ · 토큰 수백만 소모. "lean mode"로 축소하려는 v1.3.0 초안이 4개 boolean 플래그 (`--lean --previews=N --single-team --skip-panels`) → 16개 조합을 만들어 사용자가 "어떤 조합이 올바른 조합인지" 판단 불가. devops-architect 패널이 "이 매트릭스는 문서화도 테스트도 지원 불가"라고 거부.
