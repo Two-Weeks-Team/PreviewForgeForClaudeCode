@@ -87,7 +87,8 @@ print(json.load(open('$PLUGIN_ROOT/profiles/$profile_name.json'))['caching']['tt
   fi
 
   if [[ "$ttl" -gt 0 ]]; then
-    local age=$(($(date +%s) - $(stat -f %m "$file" 2>/dev/null || stat -c %Y "$file")))
+    local age
+    age=$(python3 -c "import os,time; print(int(time.time() - os.path.getmtime('$file')))")
     if [[ "$age" -gt "$ttl" ]]; then
       return 1
     fi
@@ -139,7 +140,8 @@ print(json.load(open('$PLUGIN_ROOT/profiles/$profile_name.json'))['caching']['tt
       removed=$((removed + 1))
       continue
     fi
-    local age=$(($(date +%s) - $(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f")))
+    local age
+    age=$(python3 -c "import os,time; print(int(time.time() - os.path.getmtime('$f')))")
     if [[ "$age" -gt "$ttl" ]]; then
       rm -f "$f"
       removed=$((removed + 1))
