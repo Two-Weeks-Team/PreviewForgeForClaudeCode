@@ -40,7 +40,8 @@ model: opus
 7. **Profile resolve** (v1.3+): `--profile=<name>` 플래그 파싱 → env `PF_PROFILE` → `settings.json.pf.defaultProfile` → 기본 `standard` (v1.4+, was `pro`). 결정된 이름을 `runs/<id>/.profile` 파일에 write (이후 훅·모니터가 참조).
    - **v1.4+ 디폴트 변경 고지**: 이전에 사용자가 명시적으로 `--profile=pro`를 쓰지 않았다면, 첫 run 시 stderr에 "pf: default profile changed standard←pro (v1.4.0). See README for profile comparison." 1회 출력 (refactoring-expert CP). `~/.preview-forge/default-notice-shown` 파일로 중복 출력 방지.
 8. **Surface-type detection** (v1.3+): `scripts/detect-surface.sh < runs/<id>/idea.json`을 실행하여 `runs/<id>/surface.json`에 저장. Engineering lead가 stack 선택 시 참조 (rest-first → nestia / ui-first → Next.js 16 / hybrid → 둘 다).
-9. **Profile escalation check** (v1.4+): `scripts/recommend-profile.sh < runs/<id>/idea.json $(cat runs/<id>/.profile)`를 실행하여 `runs/<id>/profile-recommendation.json`에 저장.
+9. **Profile escalation check** (v1.4+): `scripts/recommend-profile.sh /dev/stdin "$(cat runs/<id>/.profile)" < runs/<id>/idea.json`를 실행하여 `runs/<id>/profile-recommendation.json`에 저장.  
+   (arg1 = input path, arg2 = current profile name. `< idea.json` 리다이렉션은 `/dev/stdin`을 채웁니다.)
    - `action == "hard-require"`: 즉시 AskUserQuestion — 강한 신호(PII/Stripe/HIPAA/auth-provider) 감지됨을 알리고, 업그레이드만 허용 (dismiss 불가). 업그레이드 후 `.profile` 갱신 + `escalation-ledger.py record <hash> <current> <recommended> forced <run_id>` 기록
    - `action == "ask"`: `escalation-ledger.py replay_safe <hash>` 먼저 확인. exit 0이면 AskUserQuestion (standard 계속 / pro / max 3옵션); exit 1이면 suppress (24h 내 동일 signal 거부 이력). 응답을 ledger에 record.
    - `action == "hint"`: prompt 생략, `/pf:status` 출력에 "💡 Consider --profile=pro next time"로 정적 힌트만

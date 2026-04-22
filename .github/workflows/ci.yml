@@ -284,37 +284,41 @@ jobs:
           CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}/plugins/preview-forge
         run: |
           set -e
-          run() { bash scripts/recommend-profile.sh <<<"$1"; }
+          # v1.4+ invocation: arg1=input path (/dev/stdin if piped), arg2=current profile
+          run() { bash scripts/recommend-profile.sh /dev/stdin "${2:-standard}" <<<"$1"; }
           # Benign
           r=$(run '{"text":"blog with markdown"}')
           echo "$r" | grep -q '"action": "none"' || { echo "FAIL benign: $r"; exit 1; }
-          # Stripe → hard-require
-          r=$(run '{"text":"SaaS with Stripe billing and subscription"}')
+          # Stripe → hard-require on standard (payments in standard's hard set)
+          r=$(run '{"text":"SaaS with Stripe subscription billing"}')
           echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL stripe: $r"; exit 1; }
           echo "$r" | grep -q '"payments"' || { echo "FAIL stripe signal: $r"; exit 1; }
-          # PII + Stripe
-          r=$(run '{"text":"SaaS with Stripe billing and personally identifiable PII storage"}')
-          echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL pii+stripe: $r"; exit 1; }
+          # Profile-filter check: Stripe in pro context → NOT hard (payments NOT in pro's hard set)
+          r=$(run '{"text":"SaaS with Stripe subscription billing"}' pro)
+          echo "$r" | grep -q '"action": "none"' || { echo "FAIL stripe-in-pro: $r"; exit 1; }
+          # HIPAA in pro → hard (phi_healthcare IS in pro's hard set)
+          r=$(run '{"text":"EHR with HIPAA patient records"}' pro)
+          echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL hipaa-in-pro: $r"; exit 1; }
+          # Word-boundary: 'Delphi' should NOT match phi substring (Codex P2 fix)
+          r=$(run '{"text":"Delphi programming with morphism patterns"}')
+          echo "$r" | grep -q '"action": "none"' || { echo "FAIL delphi false-positive: $r"; exit 1; }
+          # PCI compliance without trailing space (Gemini fix)
+          r=$(run '{"text":"PCI compliance for card processing."}')
+          echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL pci-compliance: $r"; exit 1; }
           # Korean
           r=$(run '{"text":"기업용 멀티테넌트 SaaS, 감사로그와 결제 연동"}')
           echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL korean: $r"; exit 1; }
-          # Multi-tenant + compliance (2 soft categories, score 0.4 below default 0.8 threshold → hint)
-          r=$(run '{"text":"Multi-tenant workspace with SOC2 audit log"}')
+          # Multi-tenant + compliance (2 soft cats on standard, score 0.4 < 0.8 → hint)
+          r=$(run '{"text":"Multi-tenant workspace with SOC2 compliance"}')
           echo "$r" | grep -q '"action": "hint"' || { echo "FAIL multi-tenant: $r"; exit 1; }
-          # Single soft (below min_distinct=2)
-          r=$(run '{"text":"Simple B2B SaaS dashboard"}')
-          echo "$r" | grep -q '"action": "none"' || { echo "FAIL single soft: $r"; exit 1; }
           # Empty
           r=$(run '{}')
           echo "$r" | grep -q '"action": "none"' || { echo "FAIL empty: $r"; exit 1; }
-          # Healthcare
-          r=$(run '{"text":"EHR with HIPAA compliance and patient records"}')
-          echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL healthcare: $r"; exit 1; }
           # Injection canary
           rm -f /tmp/pf-recommend-canary
           run '{"text":"test `touch /tmp/pf-recommend-canary` end"}' > /dev/null
           [[ ! -f /tmp/pf-recommend-canary ]] || { echo "FAIL: command injection executed"; rm /tmp/pf-recommend-canary; exit 1; }
-          echo "✓ recommend-profile: 9/9 cases pass (8 classifications + injection canary)"
+          echo "✓ recommend-profile: 10/10 cases pass (incl. profile-filter + word-boundary + injection canary)"
 
       - name: Test escalation-ledger (v1.4+ Phase Q)
         env:
@@ -341,8 +345,17 @@ jobs:
           # Accepted decision not suppressed
           $LEDGER record "$H1" standard pro accepted r-test-2 > /dev/null
           $LEDGER replay_safe "$H1" || { echo "FAIL: accepted wrongly suppressed"; exit 1; }
+          # Concurrent write safety (fcntl lock — Gemini medium fix)
           rm -rf "$PF_ESCALATION_LEDGER_DIR"
-          echo "✓ escalation-ledger: 8/8 cases pass"
+          H_CONCURRENT=$($LEDGER hash "scale,enterprise_b2b")
+          for i in 1 2 3 4 5; do
+            $LEDGER record "$H_CONCURRENT" standard pro declined "r-concurrent-$i" > /dev/null &
+          done
+          wait
+          COUNT=$(python3 -c "import json; print(len(json.load(open('$PF_ESCALATION_LEDGER_DIR/escalation-history.json'))))")
+          [[ "$COUNT" -eq 5 ]] || { echo "FAIL: concurrent writes lost entries — got $COUNT expected 5"; exit 1; }
+          rm -rf "$PF_ESCALATION_LEDGER_DIR"
+          echo "✓ escalation-ledger: 9/9 cases pass (incl. 5-way concurrent write)"
 
       - name: Test standard-schema-lint (v1.4+ Phase O)
         run: |

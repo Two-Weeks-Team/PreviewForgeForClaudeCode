@@ -33,7 +33,8 @@ if [[ -f prisma/schema.prisma ]]; then
 
   # Replace datasource provider + url (use env DATABASE_URL — same env var,
   # different contents: file:dev.db → postgres://...)
-  sed -i.bak -E 's|provider\s*=\s*"sqlite"|provider = "postgresql"|' prisma/schema.prisma
+  # Use POSIX [[:space:]] — GNU \s is not portable to BSD sed (macOS default).
+  sed -i.bak -E 's|provider[[:space:]]*=[[:space:]]*"sqlite"|provider = "postgresql"|' prisma/schema.prisma
   rm -f prisma/schema.prisma.bak
   echo "  ✓ prisma/schema.prisma: sqlite → postgresql"
 

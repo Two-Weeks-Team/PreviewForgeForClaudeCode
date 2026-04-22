@@ -33,12 +33,22 @@ Usage:
 """
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import json
 import os
 import sys
 import time
 from pathlib import Path
+
+# POSIX advisory file locking (fcntl). Windows has no equivalent — on
+# Windows we fall back to non-locked write, acceptable since escalation
+# is rarely concurrent (single-run CLI tool).
+try:
+    import fcntl  # noqa: F401
+    _HAVE_FCNTL = True
+except ImportError:
+    _HAVE_FCNTL = False
 
 LEDGER_DIR = Path(os.environ.get("PF_ESCALATION_LEDGER_DIR", "~/.preview-forge")).expanduser()
 LEDGER_FILE = LEDGER_DIR / "escalation-history.json"
@@ -52,6 +62,28 @@ def signal_hash(categories: list[str]) -> str:
     sorted_cats = sorted(categories)
     payload = "\x1f".join(sorted_cats).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()[:16]
+
+
+@contextlib.contextmanager
+def _lockfile(path: Path):
+    """POSIX advisory lock. Serialises concurrent record calls so
+    read-modify-write doesn't lose entries (Gemini medium finding).
+    No-op on Windows / when fcntl unavailable."""
+    LEDGER_DIR.mkdir(parents=True, exist_ok=True)
+    lock_path = path.with_suffix(".lock")
+    if not _HAVE_FCNTL:
+        yield
+        return
+    import fcntl as _fcntl
+    f = open(lock_path, "w")
+    try:
+        _fcntl.flock(f.fileno(), _fcntl.LOCK_EX)
+        yield
+    finally:
+        try:
+            _fcntl.flock(f.fileno(), _fcntl.LOCK_UN)
+        finally:
+            f.close()
 
 
 def load_ledger() -> list[dict]:
@@ -92,11 +124,14 @@ def cmd_record(args: list[str]) -> int:
             else "stayed"
         ),
     }
-    rows = load_ledger()
-    rows.append(row)
-    # Cap ledger size to last 200 decisions.
-    rows = rows[-200:]
-    save_ledger(rows)
+    # Serialise the read-modify-write so concurrent `record` calls don't
+    # clobber each other (Gemini medium finding on non-atomic RMW).
+    with _lockfile(LEDGER_FILE):
+        rows = load_ledger()
+        rows.append(row)
+        # Cap ledger size to last 200 decisions.
+        rows = rows[-200:]
+        save_ledger(rows)
     print(json.dumps(row))
     return 0
 
