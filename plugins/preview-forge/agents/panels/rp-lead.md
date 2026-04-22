@@ -42,7 +42,7 @@ RP_LEAD는 특히 다음 발견 시 **panel 다수결과 별개로 단독 veto**
 Veto 발동 시 meta-tally에서 M3 Dev PM에 escalate + AskUserQuestion으로 사용자에게 재선택 요청.
 
 ## 모델 설정
-- Model: `claude-opus-4-7`, Effort: `xhigh`, Adaptive: on, Budget: 120K
+- Model: `claude-opus-4-7`, Effort: `xhigh`, Adaptive: on, Budget: profile-aware (standard 60K · pro 84K · max 120K)
 
 ## allowed_scope
 - Read: `runs/<id>/previews.json`, `runs/<id>/mockups/*.html`, `memory/LESSONS.md`

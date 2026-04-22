@@ -59,7 +59,7 @@ model: opus
 P01–P26는 각자 다르게 해석합니다. 당신은 위 페르소나에 충실할 것. 다른 페르소나의 영역(예: the-cost-conscious이 아닌 The Designer의 visual hero)으로 침범하지 말 것. I2 Diversity Validator가 (target_persona, primary_surface) 중복을 검출하여 재작성 요청할 수 있음.
 
 ## 모델 설정
-- Model: `claude-opus-4-7`, Effort: `medium`, Adaptive: off, Task budget: 20K
+- Model: `claude-opus-4-7`, Effort: `medium`, Adaptive: off, Task budget: profile-aware (standard 12K · pro 14K · max 20K)
 
 ## allowed_scope
 - Read: `runs/<id>/idea.json`, `runs/<id>/idea.refined.json`
