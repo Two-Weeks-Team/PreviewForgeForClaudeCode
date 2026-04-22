@@ -1,0 +1,145 @@
+#!/usr/bin/env python3
+"""Preview Forge — Auto-retro trigger hook (PostToolUse).
+
+Watches for writes to specific sentinel paths that indicate a run
+has ended (freeze or failure). When observed, spawns an Auto-retro
+critic to extract LESSONS + update PROGRESS.md.
+
+Sentinel paths:
+  - runs/<id>/score/report.json      (freeze succeeded at ≥499)
+  - runs/<id>/failed.flag             (run failed / aborted)
+
+Action on trigger:
+  - Spawn `m3-chief-engineer-pm` agent via Claude Code's Task tool
+    (this hook merely prints the intent; M1 Run Supervisor polls
+    Blackboard and executes the retro on next tick to avoid
+    re-entrant tool calls from inside a hook).
+  - Set PF_AUTO_RETRO_BYPASS=1 env hint in the Blackboard row so
+    the M3 Dev PM's subsequent LESSONS.md edit is allowed by
+    factory-policy.py.
+
+Exit 0 always — this hook never blocks.
+"""
+from __future__ import annotations
+
+import json
+import os
+import re
+import sqlite3
+import sys
+import time
+from pathlib import Path
+
+PLUGIN_ROOT = Path(os.environ.get("CLAUDE_PLUGIN_ROOT", ""))
+CLAUDE_MD = PLUGIN_ROOT / "memory" / "CLAUDE.md"
+
+SCORE_REPORT = re.compile(r"runs/([^/]+)/score/report\.json$")
+FAILED_FLAG = re.compile(r"runs/([^/]+)/failed\.flag$")
+
+
+def is_active() -> bool:
+    return CLAUDE_MD.exists()
+
+
+def read_hook_input() -> dict:
+    try:
+        raw = sys.stdin.read()
+        return json.loads(raw) if raw.strip() else {}
+    except json.JSONDecodeError:
+        return {}
+
+
+def find_run_id(path: str) -> tuple[str, str] | None:
+    """Return (run_id, trigger_type) or None."""
+    m = SCORE_REPORT.search(path)
+    if m:
+        return m.group(1), "freeze_candidate"
+    m = FAILED_FLAG.search(path)
+    if m:
+        return m.group(1), "failed"
+    return None
+
+
+def enqueue_retro(run_id: str, trigger: str, target_path: str) -> None:
+    """Write a Blackboard row requesting Auto-retro for this run.
+    M1 Run Supervisor polls this table and spawns the retro agent.
+    Never calls the LLM from inside the hook (avoids re-entrancy)."""
+    cwd = Path.cwd()
+    bb_path = cwd / "runs" / run_id / "blackboard.db"
+    if not bb_path.parent.exists():
+        # run directory not yet created — nothing to do
+        return
+
+    bb_path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(str(bb_path))
+    try:
+        conn.execute(
+            """
+            CREATE TABLE IF NOT EXISTS blackboard (
+              id INTEGER PRIMARY KEY AUTOINCREMENT,
+              ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+              agent_id TEXT NOT NULL,
+              key TEXT NOT NULL,
+              value TEXT,
+              tier INTEGER,
+              dept TEXT
+            )
+            """
+        )
+        conn.execute(
+            """
+            INSERT INTO blackboard (agent_id, key, value, tier, dept)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (
+                "auto-retro-trigger",
+                "retro.requested",
+                json.dumps({
+                    "run_id": run_id,
+                    "trigger": trigger,
+                    "target_path": target_path,
+                    "ts": int(time.time()),
+                }, ensure_ascii=False),
+                1,
+                "meta",
+            ),
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def main() -> int:
+    if not is_active():
+        return 0
+
+    payload = read_hook_input()
+    tool = payload.get("tool_name", "")
+    if tool not in ("Write", "Edit", "MultiEdit"):
+        return 0
+
+    tool_input = payload.get("tool_input", {}) or {}
+    path = tool_input.get("file_path") or tool_input.get("path") or ""
+    if not path:
+        return 0
+
+    hit = find_run_id(path)
+    if not hit:
+        return 0
+
+    run_id, trigger = hit
+    try:
+        enqueue_retro(run_id, trigger, path)
+        print(
+            f"[preview-forge/auto-retro] enqueued retro for run={run_id} trigger={trigger}",
+            file=sys.stderr,
+        )
+    except Exception as e:  # noqa: BLE001
+        # Never block on hook errors
+        print(f"[preview-forge/auto-retro] warn: {e}", file=sys.stderr)
+
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
