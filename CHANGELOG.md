@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.3.0...v1.4.0) (2026-04-22)
+
+
+### Features
+
+* **assets:** Phase O — standard-profile templates (SQLite + dockerless MVP) ([1a86e6c](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/1a86e6c863652def856b2cbf0277369a4e2dc081))
+* **hooks:** Phase Q — escalation decision ledger + pre-flight integration ([18de1ab](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/18de1ab325db4e96364abcda1fe1ec13041d717d))
+* **profiles:** Phase N — default=standard + stack hints + escalation config ([a41a97f](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/a41a97f9a38afbbbc9003237792c84a8817bb4f6))
+* **scripts:** Phase P — recommend-profile.sh (categorical signal scoring) ([a98e2ff](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/a98e2ff6012dd79c68da1e55f4d74413935e63b2))
+* **v1.4.0:** default=standard + local-first MVP (SQLite + no-Docker) + profile escalation ([c9d73b3](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/c9d73b34c3ce6418fffe61bd57c0bdb01d7bbe40))
+
+
+### Bug Fixes
+
+* **review:** Phase T — Gemini + Codex review feedback (6 issues) ([bfc0574](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/bfc05749ca2e9416e749ff34fffd19e562ea7a97))
+* **review:** Phase T-2 — CodeRabbit re-review feedback (10 issues) ([1de4c46](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/1de4c461915eca393714aff77e48c06aec369e9d))
+
 ## [1.3.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.2.1...v1.3.0) (2026-04-22)
 
 
