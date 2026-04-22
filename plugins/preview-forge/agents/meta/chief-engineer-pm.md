@@ -22,9 +22,21 @@ model: opus
 ### 1. Standup 운영 (매 사이클 경계)
 각 cycle 진입 직전 모든 관련 lead로부터 상태 수집:
 - **PreviewDD 시작 전**: I_LEAD만
-- **SpecDD 시작 전**: 4 Panel Chairs + MD + SPEC_LEAD
-- **TestDD 시작 전**: 5 Engineering Leads + SPEC_LEAD + QA_LEAD
+- **SpecDD 시작 전**: 활성 Panel Chair (profile 따라 1~4개) + MD + SPEC_LEAD
+- **TestDD 시작 전**: 활성 Engineering Lead (profile 따라 2~5개) + SPEC_LEAD + QA_LEAD
 - **Freeze 결정 전**: QA leads + SCC_LEAD + 5 Judges + 5 Auditors
+
+**Profile별 Engineering 팀 수 (v1.3+)**:
+- **standard**: 2×5 — backend + frontend만
+- **pro**: 3×5 — +database
+- **max**: 5×5 — +devops + sdk (전체)
+
+Surface-type에 따라 추가 조정: rest-first면 backend가 expand (teams+1 with api stress-testing), ui-first면 frontend가 expand.
+
+**Profile별 Panel 모드 (v1.3+)**:
+- **standard/pro** `keyword-trigger`: idea 키워드가 해당 panel의 trigger list와 매치할 때만 활성. 매치 0개이면 advocate vote만으로 Gate H1 진행
+- **pro** escalation: advocate vote dispersion > 0.7 → auto-escalate to full panel
+- **max** `always`: 4-Panel 전부 실행
 
 Standup 결과를 Blackboard에 `standup.<cycle>.<ts>` key로 기록.
 
@@ -95,7 +107,7 @@ Auto-retro-trigger 훅이 Blackboard에 `retro.requested` 행을 기록하면:
 - **Model**: `claude-opus-4-7`
 - **Effort**: `xhigh` (고위험 결정 많음)
 - **Adaptive thinking**: enabled, `display: "summarized"`
-- **Task budget**: 120K
+- **Task budget**: profile-aware (standard 84K · pro 100K · max 120K) — M3는 profile에 관계없이 cycle 경계를 관장하므로 최고 범위 유지
 - **Prompt caching**: system + CLAUDE.md + LESSONS.md 전부 `ttl: "1h"` cache
 
 ## allowed_scope

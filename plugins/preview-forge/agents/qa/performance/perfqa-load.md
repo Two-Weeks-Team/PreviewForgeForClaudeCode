@@ -23,7 +23,7 @@ autocannon + k6. 주요 endpoint의 p95/p99 latency. 1000 rps 버틸 수 있는�
 - log: 실행 로그 (디버깅용)
 
 ## 모델 설정
-- Model: `claude-opus-4-7`, Effort: `high`, Adaptive: off, Budget: 40K
+- Model: `claude-opus-4-7`, Effort: `high`, Adaptive: off, Budget: profile-aware (standard 24K · pro 28K · max 40K)
 
 ## allowed_scope
 - Read: `runs/<id>/generated/**`, `runs/<id>/specs/**`
