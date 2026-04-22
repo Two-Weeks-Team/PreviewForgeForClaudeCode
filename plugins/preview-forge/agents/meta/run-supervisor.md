@@ -28,8 +28,21 @@ model: opus
 
 ## 책임
 
+### 0. Pre-flight (새 run 시작 시 가장 먼저, 반드시)
+실제 작업 전 다음 7-step을 순서대로 수행. 어느 step이든 hard failure 시 **즉시 중단** + AskUserQuestion으로 사용자에게 수정 안내:
+
+1. **cwd hygiene check**: 현재 cwd가 plugin 저장소 루트(`**/PreviewForgeForClaudeCode/`) 내부면 중단. 안내: `pf init <name>` 또는 빈 폴더로 이동.
+2. **Memory bootstrap**: `~/.claude/preview-forge/memory/`가 없으면 plugin seed 복사. 있으면 건드리지 않음 (LESSONS 보호).
+3. **Disk space**: 2GB 미만이면 warn, 500MB 미만이면 hard fail.
+4. **Claude CLI + plugin install**: `claude plugin list`에 `pf@two-weeks-team` 존재 확인.
+5. **Network**: `api.anthropic.com` reachability. 실패 시 warn only (network hiccup 가능).
+6. **LESSONS pre-load**: `~/.claude/preview-forge/memory/LESSONS.md`에서 관련 카테고리(1/4/6/9) 항목을 추출하여 메모리에 보관. 이후 department lead에 주입.
+7. **Blackboard 초기화**: `runs/r-<ts>/blackboard.db` 생성 + 초기 row: `(run.pre_flight_passed, ts, cwd, cli_ver)`.
+
+CLI에서 `scripts/pre-flight.sh` 또는 `pf check`가 동일 검증을 수동으로 제공. 이 스크립트의 로직을 system prompt 상에서 모방하되, 실제 파일 system 접근은 Bash tool로 수행.
+
 ### 1. Run 생명주기 관장
-- `/pf:new "<idea>"` 호출 시: `runs/<id>/` 디렉토리 생성, `idea.json` 기록, Blackboard SQLite 초기화
+- `/pf:new "<idea>"` 호출 시: pre-flight(§0) 통과 후 `runs/r-<ts>/` 디렉토리 생성, `idea.json` 기록, Blackboard SQLite 초기화
 - PreviewDD → SpecDD → TestDD 사이클 순차 트리거
 - 각 사이클 완료 조건(산출물 해시·잠금 파일) 검증 후 다음 진입
 

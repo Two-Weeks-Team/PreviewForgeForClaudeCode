@@ -1,37 +1,147 @@
 #!/usr/bin/env bash
-# Preview Forge — CLI wrapper for /pf:new invocation from outside Claude Code.
-# Usage: pf "<idea>"
-#
-# This wrapper prints instructions. Inside Claude Code, use /pf:new directly.
+# Preview Forge — CLI wrapper.
+# Subcommands:
+#   pf "<idea>"          Start new run in current directory (opens Claude Code)
+#   pf init <name>       Create a new workspace folder + cd hint + bootstrap
+#   pf check             Run pre-flight (scripts/pre-flight.sh)
+#   pf --help            Show this help
 
 set -euo pipefail
 
-if [[ $# -eq 0 ]]; then
-  cat <<USAGE
+usage() {
+  cat <<'USAGE'
 pf — Preview Forge CLI
 
 Usage:
-  pf "<idea>"              Start a new run from a command line (opens Claude Code)
+  pf "<idea>"              Start a new run in the current directory
+  pf init <project-name>   Create a new workspace folder (safe template)
+  pf check                 Run pre-flight diagnostics on the current directory
   pf --help                Show this help
 
-Preview Forge must be installed as a Claude Code plugin first:
-
+First-time install:
   /plugin marketplace add Two-Weeks-Team/PreviewForgeForClaudeCode
-  /plugin install preview-forge@two-weeks-team
+  /plugin install pf@two-weeks-team
   /reload-plugins
   /pf:bootstrap
 
+Typical workflow for a new project:
+  pf init my-cool-app
+  cd ~/pf-workspace/my-cool-app
+  claude                     # opens Claude Code in this folder
+  /pf:new "my one-line idea"
+
 See: https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode
 USAGE
+}
+
+# Resolve plugin installation (for pre-flight script)
+resolve_pre_flight() {
+  # User's Claude plugin cache
+  local cache="${HOME}/.claude/plugins/cache/two-weeks-team/preview-forge/1.0.0/../../../.."
+  # 1. User's marketplace clone (when installed via /plugin marketplace add):
+  local mkt_cache="${HOME}/.claude/plugins/cache/two-weeks-team/PreviewForgeForClaudeCode/HEAD/scripts/pre-flight.sh"
+  if [[ -f "$mkt_cache" ]]; then
+    echo "$mkt_cache"
+    return 0
+  fi
+  # 2. Running from plugin repo clone (development):
+  #    bin/pf is at plugins/preview-forge/bin/pf
+  #    pre-flight is at scripts/pre-flight.sh (repo root)
+  local repo_cache
+  repo_cache="$(cd "$(dirname "$0")/../../.." && pwd)/scripts/pre-flight.sh"
+  if [[ -f "$repo_cache" ]]; then
+    echo "$repo_cache"
+    return 0
+  fi
+  return 1
+}
+
+if [[ $# -eq 0 ]] || [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+  usage
   exit 0
 fi
 
-IDEA="$1"
+case "$1" in
+  init)
+    shift
+    if [[ $# -eq 0 ]]; then
+      echo "error: pf init requires a project name" >&2
+      echo "usage: pf init my-cool-app" >&2
+      exit 1
+    fi
+    NAME="$1"
+    WORKSPACE_ROOT="${PF_WORKSPACE_ROOT:-$HOME/pf-workspace}"
+    TARGET="$WORKSPACE_ROOT/$NAME"
+    if [[ -e "$TARGET" ]]; then
+      echo "error: $TARGET already exists" >&2
+      exit 1
+    fi
+    mkdir -p "$TARGET"
+    cat > "$TARGET/README.md" <<EOF
+# $NAME
 
-if ! command -v claude >/dev/null 2>&1; then
-  echo "error: Claude Code CLI not found in PATH. Install from https://claude.com/product/claude-code" >&2
-  exit 1
-fi
+A new Preview Forge project.
 
-# Launch Claude Code with the /pf:new command
-exec claude "/pf:new "${IDEA}""
+## Next steps
+
+1. Open Claude Code in this directory:
+   \`\`\`bash
+   cd "$TARGET"
+   claude
+   \`\`\`
+
+2. (First time only for the whole plugin install)
+   \`/pf:bootstrap\`
+
+3. Start a run:
+   \`/pf:new "your one-line idea"\`
+
+## What happens next
+
+- \`runs/<id>/\` will appear in this folder as each run progresses
+- Generated app lives at \`runs/<id>/generated/\`
+- Cross-run learning stays in \`~/.claude/preview-forge/memory/\` (shared across all your projects)
+
+See: https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode
+EOF
+    cat > "$TARGET/.gitignore" <<'EOF'
+runs/
+*.log
+.DS_Store
+EOF
+    echo "✔ Workspace created: $TARGET"
+    echo
+    echo "Next:"
+    echo "  cd \"$TARGET\""
+    echo "  claude"
+    echo "  /pf:bootstrap     # first time only"
+    echo "  /pf:new \"your idea\""
+    exit 0
+    ;;
+
+  check)
+    PREFLIGHT=$(resolve_pre_flight || echo "")
+    if [[ -z "$PREFLIGHT" ]]; then
+      echo "error: pre-flight script not found in any known location" >&2
+      echo "     Ensure plugin is installed: /plugin install pf@two-weeks-team" >&2
+      exit 1
+    fi
+    exec bash "$PREFLIGHT"
+    ;;
+
+  --help|-h)
+    usage
+    exit 0
+    ;;
+
+  *)
+    # Treat any other single argument as the idea
+    IDEA="$1"
+    if ! command -v claude >/dev/null 2>&1; then
+      echo "error: claude CLI not found in PATH" >&2
+      echo "     Install from https://claude.com/product/claude-code" >&2
+      exit 1
+    fi
+    exec claude "/pf:new \"${IDEA}\""
+    ;;
+esac

@@ -9,6 +9,12 @@
 
 ## 0. 플러그인 개발 자체에서 배운 것 (bootstrap)
 
+### 0.5 cwd hygiene — plugin 저장소 내부에서 /pf:new 실행 금지 (category 6)
+- **문제**: 사용자가 plugin 저장소 루트(`PreviewForgeForClaudeCode/`) 안에서 Claude Code를 열고 `/pf:new`를 실행하면 `runs/` 디렉토리가 plugin 소스에 생성되어 오염 + git commit 실수 위험
+- **원인**: `/pf:new`는 cwd 기준으로 `runs/<id>/`를 만들기 때문. plugin 저장소는 개발·PR·이슈용이지 실제 사용자 workspace 아님
+- **해결**: M1 Run Supervisor가 pre-flight §0.1에서 cwd hygiene 검사. `**/PreviewForgeForClaudeCode/` 패턴 매칭 시 hard fail + 안내. `scripts/pre-flight.sh`가 동일 검사 CLI로 제공. `pf init <name>`이 안전한 workspace 자동 생성
+- **참조**: `scripts/pre-flight.sh` §1, `plugins/preview-forge/bin/pf init`, `commands/new.md` Pre-flight 섹션, run-supervisor.md §0
+
 ### 0.4 Dependabot 다중 PR의 workflow 파일 겹침 conflict (category 6)
 - **문제**: v1.0.0 push 직후 Dependabot이 `actions/checkout v4→v6`와 `actions/setup-python v5→v6` 두 PR을 동시에 생성. 각자 독립 브랜치에서 만들어졌으나 둘 다 공통 파일(`ci.yml`, `marketplace-validate.yml`)의 인접 라인을 수정. 첫 PR merge 후 두 번째가 `mergeStateStatus: DIRTY` / `mergeable: CONFLICTING`으로 전환
 - **원인**: Dependabot PR은 각자 main에서 분기했지만, 하나가 먼저 merge되면 main이 움직여서 다른 브랜치는 stale base가 됨. GitHub UI가 자동 rebase 버튼을 항상 보여주는 건 아니고 명시 요청 필요

@@ -81,7 +81,11 @@ for h in factory-policy askuser-enforcement auto-retro-trigger; do
 done
 echo
 
-echo "[5/5] Supporting assets"
+echo "[5/5] Supporting assets + fail-safes"
+[[ -x "$ROOT/scripts/pre-flight.sh" ]] && ok "scripts/pre-flight.sh executable" || bad "pre-flight.sh missing"
+grep -q "pf init" "$PLUGIN_DIR/bin/pf" && ok "bin/pf supports 'pf init <name>'" || bad "bin/pf missing init subcommand"
+grep -q "pf check" "$PLUGIN_DIR/bin/pf" && ok "bin/pf supports 'pf check'" || bad "bin/pf missing check subcommand"
+grep -q "cwd hygiene" "$PLUGIN_DIR/agents/meta/run-supervisor.md" && ok "M1 run-supervisor has pre-flight §0" || bad "M1 missing pre-flight section"
 [[ -f "$PLUGIN_DIR/memory/CLAUDE.md" ]] && ok "memory/CLAUDE.md" || bad "memory/CLAUDE.md missing"
 [[ -f "$PLUGIN_DIR/memory/PROGRESS.md" ]] && ok "memory/PROGRESS.md" || bad "memory/PROGRESS.md missing"
 [[ -f "$PLUGIN_DIR/memory/LESSONS.md" ]] && ok "memory/LESSONS.md" || bad "memory/LESSONS.md missing"
