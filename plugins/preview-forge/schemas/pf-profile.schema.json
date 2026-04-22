@@ -161,6 +161,58 @@
         "hard_tokens": { "type": "integer", "minimum": 1000 },
         "hard_minutes": { "type": "integer", "minimum": 1 }
       }
+    },
+    "stack": {
+      "type": "object",
+      "description": "v1.4+ — stack hints consumed by Engineering scaffold. Tells SpecDD/Engineering lead which DB engine + containerize flag to use. Frontend/backend split already comes from detect-surface.sh.",
+      "required": ["db", "containerize", "migration_cmd"],
+      "properties": {
+        "db": {
+          "type": "string",
+          "enum": ["sqlite", "sqlite-or-postgres", "postgres"]
+        },
+        "db_file_location": { "type": "string" },
+        "containerize": { "type": "boolean" },
+        "migration_cmd": { "type": "string" }
+      }
+    },
+    "profile_escalation": {
+      "type": "object",
+      "description": "v1.4+ — pre-flight profile recommender config. If current profile detects enterprise signals, suggest upgrade. HARD_REQUIRE signals force upgrade; SOFT_SUGGEST signals ask via AskUserQuestion.",
+      "required": ["upgrade_to", "confidence_threshold", "min_distinct_categories", "hard_require_signals", "soft_suggest_categories"],
+      "properties": {
+        "upgrade_to": {
+          "type": "string",
+          "enum": ["standard", "pro", "max"]
+        },
+        "confidence_threshold": {
+          "type": "number",
+          "minimum": 0.0,
+          "maximum": 1.0
+        },
+        "hard_require_signals": {
+          "type": "array",
+          "description": "Categories that FORCE upgrade, no user dismiss. E.g., PII/Stripe/HIPAA.",
+          "items": {
+            "type": "string",
+            "enum": ["payments", "phi_healthcare", "pii_storage", "auth_provider"]
+          }
+        },
+        "soft_suggest_categories": {
+          "type": "array",
+          "description": "Categories that trigger AskUserQuestion. User may decline.",
+          "items": {
+            "type": "string",
+            "enum": ["compliance", "multi_tenant", "enterprise_b2b", "scale"]
+          }
+        },
+        "min_distinct_categories": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 4,
+          "description": "Devops-architect CP-2: require ≥N distinct signal categories (not just keyword count) to fire."
+        }
+      }
     }
   }
 }

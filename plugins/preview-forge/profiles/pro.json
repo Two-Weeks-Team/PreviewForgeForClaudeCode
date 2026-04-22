@@ -1,8 +1,15 @@
 {
   "$schema": "../schemas/pf-profile.schema.json",
   "name": "pro",
-  "version": "1.3.0",
-  "_description": "Default profile. Balanced cost vs thoroughness. ~200k tokens / ~60 min target. Use for: most real projects. 18 previews, 3×5 eng, full QA, keyword-triggered panels with auto-escalation.",
+  "version": "1.4.0",
+  "_description": "Explicit opt-in profile (no longer the default as of v1.4.0). Dev-prod parity: SQLite dev / Postgres prod via Prisma migrate. Docker compose.yml generated. ~250k tokens / ~70 min target. Use for: real projects, compliance/SSO/audit work. 18 previews, 3×5 eng (+DB), full QA.",
+  "stack": {
+    "db": "sqlite-or-postgres",
+    "db_file_location": "~/.preview-forge/<project>/dev.db (dev) → postgres (prod)",
+    "containerize": true,
+    "migration_cmd": "prisma migrate dev",
+    "_note": "Generates Dockerfile + docker-compose.yml with Postgres (Redis optional, not in default template). Upgrade from standard: additive — only writes container artifacts, keeps existing app code (devops-architect CP-1). .env.example generated; compose reads credentials via env_file."
+  },
   "previews": {
     "count": 18,
     "max_user_expand": 26
@@ -51,5 +58,12 @@
     "p95_minutes": 70,
     "hard_tokens": 400000,
     "hard_minutes": 100
+  },
+  "profile_escalation": {
+    "upgrade_to": "max",
+    "confidence_threshold": 0.9,
+    "hard_require_signals": ["phi_healthcare"],
+    "soft_suggest_categories": ["scale"],
+    "min_distinct_categories": 1
   }
 }

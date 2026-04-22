@@ -68,6 +68,14 @@ jobs:
           python3 -m py_compile plugins/preview-forge/hooks/auto-retro-trigger.py
           python3 -m py_compile plugins/preview-forge/hooks/idea-drift-detector.py
           python3 -m py_compile plugins/preview-forge/hooks/cost-regression.py
+          python3 -m py_compile plugins/preview-forge/hooks/escalation-ledger.py
+          python3 -m py_compile scripts/standard-schema-lint.py
+
+      - name: Default profile is standard (v1.4+)
+        run: |
+          DEFAULT=$(python3 -c "import json; print(json.load(open('plugins/preview-forge/settings.json'))['pf']['defaultProfile'])")
+          [[ "$DEFAULT" == "standard" ]] || { echo "FAIL: defaultProfile expected 'standard', got '$DEFAULT'"; exit 1; }
+          echo "✓ settings.json defaultProfile = standard"
 
   test-hooks:
     name: Test hooks (unit)
@@ -270,6 +278,118 @@ jobs:
           bash scripts/detect-surface.sh <<<'{"text":"`touch /tmp/pf-injection-canary` injected"}' > /dev/null
           [[ ! -f /tmp/pf-injection-canary ]] || { echo "FAIL: command injection in idea text executed"; rm /tmp/pf-injection-canary; exit 1; }
           echo "✓ detect-surface: 5/5 cases (3 classify + 1 occurrence + 1 security)"
+
+      - name: Test recommend-profile.sh (v1.4+ Phase P)
+        env:
+          CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}/plugins/preview-forge
+        run: |
+          set -e
+          # v1.4+ invocation: arg1=input path (/dev/stdin if piped), arg2=current profile
+          run() { bash scripts/recommend-profile.sh /dev/stdin "${2:-standard}" <<<"$1"; }
+          # Benign
+          r=$(run '{"text":"blog with markdown"}')
+          echo "$r" | grep -q '"action": "none"' || { echo "FAIL benign: $r"; exit 1; }
+          # Stripe → hard-require on standard (payments in standard's hard set)
+          r=$(run '{"text":"SaaS with Stripe subscription billing"}')
+          echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL stripe: $r"; exit 1; }
+          echo "$r" | grep -q '"payments"' || { echo "FAIL stripe signal: $r"; exit 1; }
+          # Profile-filter check: Stripe in pro context → NOT hard (payments NOT in pro's hard set)
+          r=$(run '{"text":"SaaS with Stripe subscription billing"}' pro)
+          echo "$r" | grep -q '"action": "none"' || { echo "FAIL stripe-in-pro: $r"; exit 1; }
+          # HIPAA in pro → hard (phi_healthcare IS in pro's hard set)
+          r=$(run '{"text":"EHR with HIPAA patient records"}' pro)
+          echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL hipaa-in-pro: $r"; exit 1; }
+          # Word-boundary: 'Delphi' should NOT match phi substring (Codex P2 fix)
+          r=$(run '{"text":"Delphi programming with morphism patterns"}')
+          echo "$r" | grep -q '"action": "none"' || { echo "FAIL delphi false-positive: $r"; exit 1; }
+          # PCI compliance without trailing space (Gemini fix)
+          r=$(run '{"text":"PCI compliance for card processing."}')
+          echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL pci-compliance: $r"; exit 1; }
+          # Korean
+          r=$(run '{"text":"기업용 멀티테넌트 SaaS, 감사로그와 결제 연동"}')
+          echo "$r" | grep -q '"action": "hard-require"' || { echo "FAIL korean: $r"; exit 1; }
+          # Multi-tenant + compliance (2 soft cats on standard, score 0.4 < 0.8 → hint)
+          r=$(run '{"text":"Multi-tenant workspace with SOC2 compliance"}')
+          echo "$r" | grep -q '"action": "hint"' || { echo "FAIL multi-tenant: $r"; exit 1; }
+          # Empty
+          r=$(run '{}')
+          echo "$r" | grep -q '"action": "none"' || { echo "FAIL empty: $r"; exit 1; }
+          # Injection canary
+          rm -f /tmp/pf-recommend-canary
+          run '{"text":"test `touch /tmp/pf-recommend-canary` end"}' > /dev/null
+          [[ ! -f /tmp/pf-recommend-canary ]] || { echo "FAIL: command injection executed"; rm /tmp/pf-recommend-canary; exit 1; }
+          echo "✓ recommend-profile: 10/10 cases pass (incl. profile-filter + word-boundary + injection canary)"
+
+      - name: Test escalation-ledger (v1.4+ Phase Q)
+        env:
+          PF_ESCALATION_LEDGER_DIR: /tmp/pf-ledger-test
+        run: |
+          set -e
+          rm -rf "$PF_ESCALATION_LEDGER_DIR"
+          LEDGER="python3 plugins/preview-forge/hooks/escalation-ledger.py"
+          # Empty lookup → exit 1
+          $LEDGER lookup abc123 2>/dev/null && { echo "FAIL: empty lookup returned 0"; exit 1; } || true
+          # Hash determinism + normalisation (case + dedup + sort)
+          H1=$($LEDGER hash "compliance,multi_tenant")
+          H2=$($LEDGER hash "multi_tenant,compliance")
+          H3=$($LEDGER hash "COMPLIANCE,compliance,Multi_Tenant")
+          [[ "$H1" == "$H2" ]] || { echo "FAIL: hash not sort-invariant"; exit 1; }
+          [[ "$H1" == "$H3" ]] || { echo "FAIL: hash not case/dedup-invariant"; exit 1; }
+          [[ ${#H1} -eq 64 ]] || { echo "FAIL: hash not full sha256 (got ${#H1} chars, expected 64)"; exit 1; }
+          # Empty replay_safe → 0 (safe)
+          $LEDGER replay_safe "$H1" || { echo "FAIL: empty replay_safe should exit 0"; exit 1; }
+          # Record decline
+          $LEDGER record "$H1" standard pro declined r-test-1 > /dev/null
+          # Now replay_safe suppresses
+          $LEDGER replay_safe "$H1" 2>/dev/null && { echo "FAIL: should suppress after decline"; exit 1; } || true
+          # Different signals not suppressed
+          H3=$($LEDGER hash "scale")
+          $LEDGER replay_safe "$H3" || { echo "FAIL: different signals wrongly suppressed"; exit 1; }
+          # Accepted decision not suppressed
+          $LEDGER record "$H1" standard pro accepted r-test-2 > /dev/null
+          $LEDGER replay_safe "$H1" || { echo "FAIL: accepted wrongly suppressed"; exit 1; }
+          # Concurrent write safety (fcntl lock — Gemini medium fix)
+          rm -rf "$PF_ESCALATION_LEDGER_DIR"
+          H_CONCURRENT=$($LEDGER hash "scale,enterprise_b2b")
+          for i in 1 2 3 4 5; do
+            $LEDGER record "$H_CONCURRENT" standard pro declined "r-concurrent-$i" > /dev/null &
+          done
+          wait
+          COUNT=$(python3 -c "import json; print(len(json.load(open('$PF_ESCALATION_LEDGER_DIR/escalation-history.json'))))")
+          [[ "$COUNT" -eq 5 ]] || { echo "FAIL: concurrent writes lost entries — got $COUNT expected 5"; exit 1; }
+          rm -rf "$PF_ESCALATION_LEDGER_DIR"
+          echo "✓ escalation-ledger: 9/9 cases pass (incl. 5-way concurrent write)"
+
+      - name: Test standard-schema-lint (v1.4+ Phase O)
+        run: |
+          set -e
+          cat > /tmp/portable.prisma <<'EOF'
+          datasource db { provider = "sqlite"; url = env("DATABASE_URL") }
+          model User {
+            id String @id @default(cuid())
+            role String
+          }
+          EOF
+          set +e
+          python3 scripts/standard-schema-lint.py /tmp/portable.prisma
+          CODE=$?
+          set -e
+          [[ "$CODE" -eq 0 ]] || { echo "FAIL portable: expected exit 0, got $CODE"; exit 1; }
+
+          cat > /tmp/unportable.prisma <<'EOF'
+          datasource db { provider = "sqlite" }
+          enum Role { A B }
+          model User { id String @id; role Role; data Json @db.JsonB }
+          EOF
+          set +e
+          python3 scripts/standard-schema-lint.py /tmp/unportable.prisma 2>/dev/null
+          CODE=$?
+          set -e
+          # Specifically assert exit 2 (non-portable detected), not just "non-zero" —
+          # so linter crashes, usage errors, import errors don't falsely pass (CodeRabbit minor).
+          [[ "$CODE" -eq 2 ]] || { echo "FAIL unportable: expected exit 2, got $CODE"; exit 1; }
+          rm /tmp/portable.prisma /tmp/unportable.prisma
+          echo "✓ schema-lint: 2/2 cases pass (exit codes asserted specifically)"
 
       - name: Test preview-cache (Proposal #11)
         env:

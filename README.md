@@ -64,26 +64,40 @@ single HTML file, print-friendly.
 # 4. Initialize memory (first time only)
 /pf:bootstrap
 
-# 5. Run (profile defaults to `pro`)
+# 5. Run (profile defaults to `standard` as of v1.4.0)
 /pf:new "한 줄 아이디어"
 
 # …or pick a profile explicitly:
-/pf:new "demo-class idea"     --profile=standard   # ~60k tok · 2×5 eng · 9 previews
-/pf:new "real project"        --profile=pro         # ~250k tok · 3×5 eng · 18 previews  (default)
-/pf:new "production launch"   --profile=max         # ~600k tok · 5×5 eng · 26 previews
+/pf:new "demo-class idea"     --profile=standard   # default — ~60k tok · 2×5 eng · 9 previews · SQLite · no Docker
+/pf:new "real project"        --profile=pro         # ~250k tok · 3×5 eng · 18 previews · Postgres + Docker
+/pf:new "production launch"   --profile=max         # ~600k tok · 5×5 eng · 26 previews · full CI/CD
 ```
 
-## Profiles (v1.3+)
+## Profiles (v1.4+)
 
-| Profile | Previews | Eng teams | Panels | SCC iter | P95 ceiling | Use for |
-|---|---|---|---|---|---|---|
-| **standard** | 9 | 2×5 (BE+FE) | keyword-trigger | 3 | ~60k tok / 25 min | Demo · prototyping |
-| **pro** *(default)* | 18 | 3×5 (+DB) | keyword-trigger + escalation | 4 | ~250k tok / 70 min | Real projects |
-| **max** | 26 | 5×5 (all) | always-on | 5 | ~600k tok / 160 min | Production · baselines |
+| Profile | Previews | Eng teams | DB | Container | Panels | SCC iter | P95 ceiling | Use for |
+|---|---|---|---|---|---|---|---|---|
+| **standard** *(default)* | 9 | 2×5 (BE+FE) | **SQLite** | ❌ none | keyword-trigger | 3 | ~60k tok / 25 min | Local MVP · demo · prototyping |
+| **pro** | 18 | 3×5 (+DB) | Postgres (dev-prod parity) | Docker + compose | keyword-trigger + escalation | 4 | ~250k tok / 70 min | Real projects |
+| **max** | 26 | 5×5 (all) | Postgres | Docker + CI/CD | always-on | 5 | ~600k tok / 160 min | Production · baselines |
 
 - `--previews=N` overrides the count (bounded by `max_user_expand` = 26).
-- `--no-cache` bypasses the PreviewDD-level cache (default TTL: 7 days for standard/pro, never cached for max).
+- `--no-cache` bypasses the PreviewDD-level cache (7 days for standard/pro, never cached for max).
+- Standard = local-first: `npm install && npm run db:push && npm run dev` — no Docker, no Postgres setup. DB lives at `~/.preview-forge/<project>/dev.db` (outside repo tree for security).
+- Upgrade path: standard → pro via `bash scripts/graduate.sh pro` (additive; keeps your code, adds Dockerfile/compose/Postgres datasource).
 - Full spec: [`plugins/preview-forge/profiles/`](plugins/preview-forge/profiles/).
+
+### Profile escalation (v1.4+)
+
+When you run standard but your idea mentions enterprise signals (Stripe, PII, HIPAA, SSO provider, SOC2, multi-tenant), the plugin recommends the right profile **before** PreviewDD burns tokens:
+
+Evaluation precedence (highest wins):
+
+1. **Hard-require** (Stripe / PII / HIPAA / auth-provider): **any single** hit forces upgrade. You cannot dismiss — false assurance is worse than friction. The `min_distinct_categories=2` floor does NOT apply here.
+2. **Soft-suggest + category-floor** (SOC2 / multi-tenant / B2B / scale): needs **≥2 distinct categories** AND score ≥ threshold to ask via AskUserQuestion. Records your answer in `~/.preview-forge/escalation-history.json`. If you decline, same signals won't re-prompt within 24h (anti-nagging).
+3. **Hint** (weak signals, score < threshold but ≥ min-floor): shows "💡 Consider --profile=pro next time" in `/pf:status`, no interruption.
+
+Categorical scoring (not raw keyword count) means `"audit logging feature"` in a generic marketing copy app won't false-positive — it's one category, below the 2-category floor.
 
 ### Cost regression + drift detection (v1.3+)
 
