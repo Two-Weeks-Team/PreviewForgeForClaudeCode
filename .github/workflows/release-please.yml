@@ -1,0 +1,34 @@
+name: Release Please (CD)
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    name: Draft release PR (conventional commits → version bump)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          release-type: simple
+          package-name: preview-forge
+          # The manifests we keep in version-parity with the tag.
+          # release-please rewrites these when opening the Release PR.
+          extra-files: |
+            plugins/preview-forge/.claude-plugin/plugin.json
+            .claude-plugin/marketplace.json
+
+      - name: Show release-please output
+        if: always()
+        run: |
+          echo "release_created: ${{ steps.release.outputs.release_created }}"
+          echo "tag_name:        ${{ steps.release.outputs.tag_name }}"
+          echo "pr:              ${{ steps.release.outputs.pr }}"

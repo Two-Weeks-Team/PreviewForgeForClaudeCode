@@ -9,6 +9,7 @@
 
 [![CI](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/ci.yml/badge.svg)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/ci.yml)
 [![Marketplace Validate](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/marketplace-validate.yml/badge.svg)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/marketplace-validate.yml)
+[![Pages](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/pages.yml/badge.svg)](https://two-weeks-team.github.io/PreviewForgeForClaudeCode/)
 [![Release](https://img.shields.io/github/v/release/Two-Weeks-Team/PreviewForgeForClaudeCode?display_name=tag&sort=semver)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/releases)
 [![License: Apache 2.0](https://img.shields.io/github/license/Two-Weeks-Team/PreviewForgeForClaudeCode)](LICENSE)
 
@@ -66,6 +67,44 @@ single HTML file, print-friendly.
 # 5. Run
 /pf:new "한 줄 아이디어"
 ```
+
+## Updating
+
+We release patches and feature updates frequently (see
+[CHANGELOG.md](CHANGELOG.md) and [Releases](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/releases)).
+To update your local install:
+
+```bash
+# Check installed version
+claude plugin list | grep -A2 pf@two-weeks-team
+
+# Pull the latest manifest + plugin contents from the marketplace
+/plugin marketplace update two-weeks-team
+
+# Upgrade the plugin to the newest listed version
+/plugin update pf@two-weeks-team     # if you have this subcommand
+#   — or, if update is not available in your Claude Code version —
+/plugin uninstall pf@two-weeks-team
+/plugin install pf@two-weeks-team
+
+# Reload so hooks, agents, and commands refresh
+/reload-plugins
+```
+
+After updating, run `pf check` (or `/pf:bootstrap` once, then `pf check`) to
+confirm your local `~/.claude/preview-forge/memory/` is still intact — the
+update does **not** overwrite your `LESSONS.md`, so any cross-run learning
+you've accumulated is preserved.
+
+**Downgrading** (if a new version breaks something):
+
+```bash
+/plugin uninstall pf@two-weeks-team
+/plugin install pf@two-weeks-team@1.0.0    # any past version tag
+```
+
+Every release is signed via [GitHub Releases](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/releases),
+so you can verify the manifest `version` in `plugin.json` matches the tag.
 
 ## Slash Commands
 

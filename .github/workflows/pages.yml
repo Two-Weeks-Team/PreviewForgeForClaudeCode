@@ -1,0 +1,103 @@
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "preview-forge-proposal.html"
+      - "README.md"
+      - "docs/**"
+      - "CHANGELOG.md"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build static site
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Assemble site
+        run: |
+          mkdir -p _site
+          # Landing page (proposal HTML) served at root — same as canonical URL in repo
+          cp preview-forge-proposal.html _site/index.html
+
+          # Docs pages with a minimal index
+          mkdir -p _site/docs
+          cp -r docs/* _site/docs/ 2>/dev/null || true
+
+          # Additional linkable artifacts
+          cp README.md _site/README.md
+          cp CHANGELOG.md _site/CHANGELOG.md
+
+          # Docs index (simple, matches the proposal palette)
+          cat > _site/docs/index.html <<'HTML'
+          <!doctype html>
+          <html lang="ko"><head>
+          <meta charset="utf-8">
+          <title>Preview Forge — Docs</title>
+          <meta name="viewport" content="width=device-width,initial-scale=1">
+          <style>
+            :root { color-scheme: dark light; }
+            body { font-family: ui-sans-serif,system-ui,-apple-system,"Pretendard Variable","Apple SD Gothic Neo",sans-serif;
+                   max-width: 760px; margin: 3rem auto; padding: 0 1.5rem; line-height: 1.65;
+                   color: #d8e0ec; background: oklch(0.13 0.012 270); }
+            h1 { font-weight: 600; letter-spacing: -0.02em; }
+            a { color: oklch(0.82 0.14 70); text-decoration: none; border-bottom: 1px dotted currentColor; }
+            a:hover { color: oklch(0.78 0.12 230); }
+            code { background: oklch(0.17 0.016 272); padding: 2px 7px; border-radius: 6px; font-size: 0.95em; }
+            ul { padding-left: 1.2rem; }
+            li { margin: 0.5rem 0; }
+            @media (prefers-color-scheme: light) {
+              body { color: #1a1a1a; background: #fff; }
+              code { background: #f2f0ea; }
+            }
+          </style>
+          </head><body>
+          <h1>Preview Forge — Docs</h1>
+          <p>Supplementary documents beyond the <a href="../">main proposal (v8.0)</a>:</p>
+          <ul>
+            <li><a href="FIRST-RUN.md">FIRST-RUN.md</a> — step-by-step e2e run guide</li>
+            <li><a href="DEMO-STORYBOARD.md">DEMO-STORYBOARD.md</a> — 3-minute demo video storyboard</li>
+            <li><a href="SUBMISSION.md">SUBMISSION.md</a> — hackathon submission package</li>
+            <li><a href="../CHANGELOG.md">CHANGELOG</a> — phase-by-phase build log</li>
+            <li><a href="../README.md">README</a> — repo overview + install</li>
+          </ul>
+          <p><a href="https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode">GitHub repository ↗</a></p>
+          </body></html>
+          HTML
+
+          ls -R _site | head -30
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v4
+        with:
+          path: _site
+
+  deploy:
+    name: Deploy to GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy
+        id: deployment
+        uses: actions/deploy-pages@v4
