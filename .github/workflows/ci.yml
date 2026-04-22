@@ -95,7 +95,23 @@ jobs:
           PF_AUTO_RETRO_BYPASS=1 bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"memory/LESSONS.md\"}}' | python3 plugins/preview-forge/hooks/factory-policy.py"
           [[ $? -eq 0 ]] || { echo "FAIL: auto-retro bypass did not work"; exit 1; }
 
-          echo "✓ factory-policy: 6/6 tests pass"
+          echo "✓ factory-policy: 6/6 Rule 1-7 tests pass"
+
+          # Rule 8 — run artifact single-writer
+          # external writer tries chosen_preview.json → should exit 2
+          echo '{"tool_name":"Edit","tool_input":{"file_path":"/x/runs/r-001/chosen_preview.json"}}' | python3 plugins/preview-forge/hooks/factory-policy.py
+          [[ $? -eq 2 ]] || { echo "FAIL: external writer not blocked for chosen_preview.json"; exit 1; }
+
+          # M1 supervisor with PF_WRITER_ROLE=supervisor → should exit 0
+          PF_WRITER_ROLE=supervisor bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"/x/runs/r-001/chosen_preview.json\"}}' | python3 plugins/preview-forge/hooks/factory-policy.py"
+          [[ $? -eq 0 ]] || { echo "FAIL: supervisor env bypass did not work"; exit 1; }
+
+          # external writer tries .frozen-hash → should exit 2
+          echo '{"tool_name":"Edit","tool_input":{"file_path":"/x/runs/r-001/.frozen-hash"}}' | python3 plugins/preview-forge/hooks/factory-policy.py
+          [[ $? -eq 2 ]] || { echo "FAIL: external writer not blocked for .frozen-hash"; exit 1; }
+
+          echo "✓ factory-policy Rule 8: 3/3 tests pass"
+          echo "✓ factory-policy: 9/9 total tests pass"
 
       - name: Test askuser-enforcement warns on freeform
         env:

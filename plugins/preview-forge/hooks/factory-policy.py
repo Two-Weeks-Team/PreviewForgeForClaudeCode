@@ -63,6 +63,23 @@ LOCK_FILE_PATTERN = re.compile(r"\.(lock|frozen-hash)$")
 # Rule 5 — cross-agent reflection access
 REFLECTION_PATH = re.compile(r"/memories/agents/([^/]+)/reflection\.md$")
 
+# Rule 8 (v1.2) — Run artifact single-writer.
+# Only M1 Run Supervisor may write decisive run artifacts. External
+# out-of-band editors (sibling skills, other assistant sessions) must not
+# modify these paths while a run is live. Gate H1/H2 events come through
+# /pf:* commands which set PF_WRITER_ROLE=supervisor.
+RUN_ARTIFACT_PATTERNS = [
+    re.compile(r"runs/[^/]+/chosen_preview\.json$"),
+    re.compile(r"runs/[^/]+/chosen_preview\.json\.lock$"),
+    re.compile(r"runs/[^/]+/chosen_preview\.panel-recommended\.json$"),
+    re.compile(r"runs/[^/]+/design-approved\.json$"),
+    re.compile(r"runs/[^/]+/design-approved\.json\.lock$"),
+    re.compile(r"runs/[^/]+/mitigations\.json$"),
+    re.compile(r"runs/[^/]+/panels/meta-tally\.json$"),
+    re.compile(r"runs/[^/]+/score/report\.json$"),
+    re.compile(r"runs/[^/]+/\.frozen-hash$"),
+]
+
 
 def is_active() -> bool:
     """Active only when plugin's CLAUDE.md is readable."""
@@ -107,11 +124,27 @@ def check_edit(tool_name: str, tool_input: dict) -> tuple[bool, str]:
             f"Use Blackboard to request changes. Path: {path}"
         )
 
-    # Rule 4: lock files
-    if LOCK_FILE_PATTERN.search(abs_path):
+    # Rule 4: lock files (generic) — but run-artifact .lock is handled by Rule 8 below
+    if LOCK_FILE_PATTERN.search(abs_path) and not any(p.search(abs_path) for p in RUN_ARTIFACT_PATTERNS):
         return True, (
             f"Layer-0 Rule 4 — .lock and .frozen-hash are script-generated only. "
             f"Path: {path}"
+        )
+
+    # Rule 8: run artifact single-writer (only M1 Run Supervisor)
+    if any(p.search(abs_path) for p in RUN_ARTIFACT_PATTERNS):
+        writer_role = os.environ.get("PF_WRITER_ROLE", "")
+        agent_id = os.environ.get("PF_AGENT_ID", "")
+        # Allowed: env says we're the supervisor, or the supervisor explicitly
+        # marked a writer role via slash command flow.
+        if writer_role == "supervisor" or agent_id == "run-supervisor":
+            return False, ""
+        return True, (
+            f"Layer-0 Rule 8 — run artifact is single-writer (M1 Run Supervisor).\n"
+            f"     Path: {path}\n"
+            f"     You are: agent_id={agent_id or '(unknown)'}, role={writer_role or '(unset)'}.\n"
+            f"     Fix: use /pf:design or /pf:freeze (they route through M1).\n"
+            f"     If you are M1 in a slash-command flow, set env PF_WRITER_ROLE=supervisor."
         )
 
     # Rule 5: other agent's reflection (agent id comes from env PF_AGENT_ID)

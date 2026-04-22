@@ -50,6 +50,28 @@
 - Blackboard에 `status: needs_human` + 상세 이유 기록
 - M1 Run Supervisor가 kill switch로 전체 run 일시정지 → 사용자에게 AskUserQuestion
 
+### Rule 8 — Run artifact는 M1 Run Supervisor 단일 writer (v1.2+)
+다음 파일들은 **M1 Run Supervisor만** 쓸 수 있습니다 (`factory-policy.py`가 강제):
+
+- `runs/<id>/chosen_preview.json` + `.lock`
+- `runs/<id>/chosen_preview.panel-recommended.json`
+- `runs/<id>/design-approved.json` + `.lock`
+- `runs/<id>/mitigations.json`
+- `runs/<id>/panels/meta-tally.json`
+- `runs/<id>/score/report.json`
+- `runs/<id>/.frozen-hash`
+
+**허용 조건**: env `PF_WRITER_ROLE=supervisor` 또는 `PF_AGENT_ID=run-supervisor`가 세팅된 프로세스만.
+
+**차단 대상**:
+- 외부 Claude 대화 세션 (다른 assistant 창에서 run 파일 직접 편집)
+- 다른 plugin의 sibling skill
+- 사용자 수동 edit (사용자도 편집 대신 `/pf:design` · `/pf:freeze` 사용)
+
+**이유** (LESSON 0.8): Race condition 방지. 다중 writer가 동시에 decisive artifact를 쓰면 플러그인이 이를 "stale override"로 감지하고 되돌릴 수는 있지만, 사용자 혼란과 토큰 낭비 발생. Single-writer가 훨씬 단순.
+
+**우회 경로**: 정상적인 사용자 의도 반영은 Gate H1(`/pf:design`) · Gate H2(`/pf:freeze`)를 통해서만. 이들이 AskUserQuestion으로 사용자 선택 수집 → M1이 env 세팅한 상태로 artifact 업데이트.
+
 ---
 
 ## 모델 · effort 강제 정책

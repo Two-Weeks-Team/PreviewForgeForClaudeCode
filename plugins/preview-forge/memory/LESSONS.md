@@ -9,6 +9,16 @@
 
 ## 0. 플러그인 개발 자체에서 배운 것 (bootstrap)
 
+### 0.8 Live run artifact에 외부 writer 금지 — single-writer 원칙 (category 9 Agent communication, 경쟁 조건)
+
+- **문제**: 2026-04-22 r-20260422-184337 실행 중, 외부 대화 세션(보조 assistant)이 `/pf:design` Gate H1이 열리기 전 `chosen_preview.json`을 P02 → P19로 직접 덮어썼음 (`blackboard.db` 11:19:15 user-override 이벤트). 같은 시점에 사용자의 플러그인 세션이 정식 Gate H1 AskUserQuestion을 실행 중이었고, 사용자는 P10(TP 단독 1위 API-first)을 선택. run-supervisor가 11:42:30에 chosen_preview를 P10으로 재작성, lock도 `1d8f9193…afbb`로 재계산. 결과적으로 P19 편집은 "stale override"로 `selection_metadata.prior_stale_override_noted`에 기록되고 폐기됨. 플러그인 자체는 **정확히 작동** — 사용자의 in-flow 선택이 외부 out-of-band 편집을 이기도록 설계됨. 하지만 혼란과 낭비 발생.
+
+- **원인**: `chosen_preview.json` / `.lock` / `mitigations.json` 등 run artifact는 **run-supervisor(M1)가 유일한 writer**라는 원칙이 코드·훅에 명시되지 않았음. factory-policy.py는 `memory/` 경로만 보호하고 `runs/<id>/` 경로는 누구나 쓸 수 있음. 외부 assistant/skill이 "사용자를 도와주려고" direct 편집을 시도하면 충돌.
+
+- **해결**: (i) 즉시 — Gate H1 이후 artifact는 건드리지 않기. `/pf:*` 명령이나 AskUserQuestion으로만 선택 변경. (ii) v1.2.0 plugin — `factory-policy.py`에 "locked run artifacts" 매처 추가: `runs/<id>/chosen_preview.json` · `.lock` · `design-approved.json` 등은 오직 M1 Run Supervisor(env `PF_AGENT_ID=run-supervisor` 또는 `PF_WRITER_ROLE=supervisor`)만 쓰기 허용. 그 외 writer는 Bash/Edit/Write 모두 차단. 외부 대화 세션처럼 env 세팅 없는 경우 자동 차단. (iii) 외부 assistant 지침 — "사용자의 live run에 파일을 직접 수정하지 말고, AskUserQuestion으로 의도를 명확화한 후 사용자가 플러그인 내에서 `/pf:*` 로 실행하도록 안내만 하기". README 또는 CONTRIBUTING에 명시.
+
+- **참조**: `runs/r-20260422-184337/chosen_preview.json` `selection_metadata.prior_stale_override_noted` 필드, blackboard 이벤트 `user-override 11:19:15`(외부) vs `chosen_preview.locked 11:43:17`(내부), commit이 반영된 `v1.2.0` 향후 hook 강화 TODO.
+
 ### 0.7 Panel 추천 ≠ 사용자 의지 — Preview 선택은 사용자가 해야 (category 1 PreviewDD, 핵심 UX 결함)
 - **문제**: v1.0.0의 PreviewDD는 4-Panel meta-tally로 1개 자동 선정 → `chosen_preview.json` 즉시 lock → Gate H1은 design tweak만. 사용자는 **선택 자체에 개입 불가**, "143 agent가 정해버린" 느낌. 실제 첫 run에서 composite 1위는 P02 Slack bot이었으나 사용자는 P19(legal depo paralegal, 소송 증언녹취 도구)를 의도적으로 선택 — 4 패널 어디에도 top-N 진입 못한 niche. panel 관점은 수량화 가능한 축을 재는 도구이지 사용자 의지의 대체물이 아님
 - **원인**: "인간의 2-click" 마케팅에 집중하다 보니 이상적 경로에서 Gate H1이 design-only가 됨. 하지만 26 advocate는 **디자인만 다른 게 아니라 target_persona·primary_surface·unique_value·killer_feature가 완전히 다른 제품** — 선택 = 제품 방향 결정
