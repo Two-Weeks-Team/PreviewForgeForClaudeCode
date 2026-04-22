@@ -1,0 +1,24 @@
+Preview Forge plugin for Claude Code
+Copyright 2026 Two-Weeks-Team
+
+This plugin is part of the "Preview Forge for Claude Code" project,
+developed during the Built with Opus 4.7 hackathon (April 21-28, 2026).
+
+Licensed under the Apache License, Version 2.0.
+See the root LICENSE for details.
+
+This plugin uses only Anthropic-native features available to Claude Code
+Pro/Max/Team/Enterprise subscribers:
+
+  - Claude Opus 4.7 (claude-opus-4-7)
+  - Claude Managed Agents (managed-agents-2026-04-01)
+  - Anthropic Memory Tool (memory_20250818)
+  - Context Editing (context-management-2025-06-27)
+  - Compaction (compact_20260112)
+  - Task Budgets (task-budgets-2026-03-13)
+  - Prompt Caching with 1-hour TTL
+  - Batch API
+  - Fine-grained Tool Streaming
+  - Claude Design (research preview)
+
+No third-party service dependencies.
