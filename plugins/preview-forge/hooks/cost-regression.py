@@ -71,21 +71,36 @@ def load_snapshot(run_dir: Path) -> dict | None:
 
 
 def write_blackboard(run_dir: Path, severity: str, payload: dict) -> None:
-    """Insert a row into runs/<id>/blackboard.db. Creates table on demand."""
+    """Insert a row into runs/<id>/blackboard.db `blackboard` table.
+
+    Schema matches CLAUDE.md §6 so /pf:status and /pf:budget can read it
+    using the same SELECT patterns as other hooks (auto-retro-trigger,
+    factory-policy observability, supervisor polling).
+    """
     db = run_dir / "blackboard.db"
     try:
         con = sqlite3.connect(str(db))
         con.execute("""
-            CREATE TABLE IF NOT EXISTS events (
-                ts INTEGER NOT NULL,
-                kind TEXT NOT NULL,
-                severity TEXT NOT NULL,
-                payload TEXT NOT NULL
+            CREATE TABLE IF NOT EXISTS blackboard (
+                ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                agent_id TEXT NOT NULL,
+                key TEXT NOT NULL,
+                value TEXT,
+                tier INTEGER,
+                dept TEXT
             )
         """)
+        con.execute("CREATE INDEX IF NOT EXISTS idx_bb_key ON blackboard(key)")
         con.execute(
-            "INSERT INTO events (ts, kind, severity, payload) VALUES (?, ?, ?, ?)",
-            (int(time.time()), "cost-regression", severity, json.dumps(payload)),
+            "INSERT INTO blackboard (agent_id, key, value, tier, dept) "
+            "VALUES (?, ?, ?, ?, ?)",
+            (
+                "cost-regression",
+                f"status.cost_{severity}",
+                json.dumps(payload),
+                1,  # Meta tier
+                "meta",
+            ),
         )
         con.commit()
         con.close()
@@ -124,6 +139,15 @@ def main(argv: list[str]) -> int:
     if not profile:
         return 0
 
+    ceiling = profile.get("cost_ceiling")
+    if not ceiling or not all(
+        k in ceiling for k in ("p95_tokens", "p95_minutes", "hard_tokens", "hard_minutes")
+    ):
+        # Malformed or partial profile — treat as "no baseline", skip.
+        # Schema validation in CI catches this at merge time, but guard
+        # at runtime so a bad user-authored profile doesn't crash runs.
+        return 0
+
     snap = load_snapshot(run_dir)
     if not snap:
         return 0
@@ -131,12 +155,12 @@ def main(argv: list[str]) -> int:
     tokens = int(snap.get("tokens_total", 0))
     minutes = float(snap.get("elapsed_minutes", 0))
 
-    severity, reason = classify(tokens, minutes, profile["cost_ceiling"])
+    severity, reason = classify(tokens, minutes, ceiling)
     payload = {
-        "profile": profile["name"],
+        "profile": profile.get("name", "unknown"),
         "tokens": tokens,
         "minutes": minutes,
-        "ceiling": profile["cost_ceiling"],
+        "ceiling": ceiling,
         "reason": reason,
     }
 

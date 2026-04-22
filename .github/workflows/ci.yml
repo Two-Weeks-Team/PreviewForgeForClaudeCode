@@ -221,11 +221,37 @@ jobs:
               else:
                   print(f"  ✗ {name}: expected {expected}, got {p.returncode}")
                   failed += 1
+
+          # Canonical blackboard schema: confirm breach writes to `blackboard` (not `events`)
+          import sqlite3
+          breach_run = [r for name, profile, snap, expected in cases if expected > 0
+                        for r in [f"{tmp}/runs/r-{profile}-{snap['tokens_total']}"]
+                        if os.path.exists(f"{r}/blackboard.db")][0]
+          con = sqlite3.connect(f"{breach_run}/blackboard.db")
+          tables = [r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+          if "blackboard" not in tables:
+              print(f"  ✗ schema: canonical 'blackboard' table missing, found: {tables}")
+              failed += 1
+          else:
+              print(f"  ✓ schema: writes to canonical 'blackboard' table (not 'events')")
+
+          # Defensive: malformed profile must NOT crash
+          bad_run = f"{tmp}/runs/r-malformed"
+          os.makedirs(bad_run, exist_ok=True)
+          with open(f"{bad_run}/.profile", "w") as f: f.write("nonexistent")
+          with open(f"{bad_run}/cost-snapshot.json", "w") as f: json.dump({"tokens_total": 999999}, f)
+          p = subprocess.run(["python3", "plugins/preview-forge/hooks/cost-regression.py", bad_run], env=env, capture_output=True, text=True)
+          if p.returncode == 0:
+              print(f"  ✓ defensive: unknown profile returns 0 (no crash)")
+          else:
+              print(f"  ✗ defensive: unknown profile returned {p.returncode}: {p.stderr}")
+              failed += 1
+
           shutil.rmtree(tmp)
           if failed:
               print(f"FAIL: {failed} cost-regression cases")
               sys.exit(1)
-          print("✓ cost-regression: 6/6 tests pass")
+          print("✓ cost-regression: 8/8 tests pass (6 classification + schema + defensive)")
           PYEOF
 
       - name: Test detect-surface (Proposal #2)
@@ -236,7 +262,14 @@ jobs:
           echo "$R2" | grep -q '"surface": "ui-first"' || { echo "FAIL: UI case: $R2"; exit 1; }
           R3=$(bash scripts/detect-surface.sh <<<'{"text":"Admin panel with dashboard UI and REST API for programmatic access. Self-service customer portal with settings page."}')
           echo "$R3" | grep -q '"surface": "hybrid"' || { echo "FAIL: hybrid case: $R3"; exit 1; }
-          echo "✓ detect-surface: 3/3 fixtures classify correctly"
+          # Regression guard: grep -oc vs grep -o|wc -l — three "api" must score 3, not 1.
+          R4=$(bash scripts/detect-surface.sh <<<'{"text":"api api api"}')
+          echo "$R4" | grep -q '"rest": 3' || { echo "FAIL: grep occurrence count regression: $R4"; exit 1; }
+          # Security guard: command injection in idea text must not execute.
+          rm -f /tmp/pf-injection-canary
+          bash scripts/detect-surface.sh <<<'{"text":"`touch /tmp/pf-injection-canary` injected"}' > /dev/null
+          [[ ! -f /tmp/pf-injection-canary ]] || { echo "FAIL: command injection in idea text executed"; rm /tmp/pf-injection-canary; exit 1; }
+          echo "✓ detect-surface: 5/5 cases (3 classify + 1 occurrence + 1 security)"
 
       - name: Test preview-cache (Proposal #11)
         env:
@@ -249,6 +282,9 @@ jobs:
           [[ "$K1" == "$K2" ]] || { echo "FAIL: key not deterministic"; exit 1; }
           K3=$(bash scripts/preview-cache.sh key "build todo app" standard)
           [[ "$K1" != "$K3" ]] || { echo "FAIL: profile doesn't change key"; exit 1; }
+          # --previews=N override must produce a distinct key (same idea + profile, different N)
+          K4=$(bash scripts/preview-cache.sh key "build todo app" pro 9)
+          [[ "$K1" != "$K4" ]] || { echo "FAIL: --previews override didn't change key"; exit 1; }
           echo '{"profile":"pro","previews":[]}' > /tmp/pf-test.json
           bash scripts/preview-cache.sh put "$K1" /tmp/pf-test.json
           bash scripts/preview-cache.sh get "$K1" > /dev/null || { echo "FAIL: get miss after put"; exit 1; }

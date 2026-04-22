@@ -6,7 +6,7 @@
   },
   {
     "name": "cost-regression",
-    "command": "for d in $(ls -d runs/*/ 2>/dev/null); do python3 ${CLAUDE_PLUGIN_ROOT}/hooks/cost-regression.py \"$d\" 2>&1 | grep -E '(WARN|ALERT)' || true; done; sleep 30",
+    "command": "for d in runs/*/; do [ -d \"$d\" ] || continue; python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/cost-regression.py\" \"$d\" 2>&1 | grep -E '(WARN|ALERT)' || true; done; sleep 30",
     "description": "P0-B cost-regression sentinel — per-profile P95/hard ceiling breach detection. Writes blackboard row + emits to stderr. M1 supervisor reacts to alert severity."
   },
   {

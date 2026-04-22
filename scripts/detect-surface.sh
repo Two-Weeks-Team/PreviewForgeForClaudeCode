@@ -29,11 +29,13 @@ else
   JSON=$(cat "$INPUT")
 fi
 
-# Extract idea fields (handle missing gracefully). No jq dep — python3 only.
-IDEA_TEXT=$(python3 -c "
+# Extract idea fields via python stdin (NO shell substitution — prevents
+# command injection from user-controlled idea text like `$(rm -rf ~)` or
+# backticks). No jq dep — python3 only.
+IDEA_TEXT=$(printf '%s' "$JSON" | python3 -c "
 import json, sys
 try:
-    d = json.loads('''$JSON''')
+    d = json.loads(sys.stdin.read())
     parts = [str(d.get('text','')), str(d.get('idea','')), str(d.get('title','')), str(d.get('pitch',''))]
     print(' '.join(p for p in parts if p).lower())
 except Exception:
@@ -42,7 +44,7 @@ except Exception:
 
 if [[ -z "$IDEA_TEXT" ]]; then
   # Treat raw stdin as the idea text.
-  IDEA_TEXT=$(echo "$JSON" | tr '[:upper:]' '[:lower:]')
+  IDEA_TEXT=$(printf '%s' "$JSON" | tr '[:upper:]' '[:lower:]')
 fi
 
 # REST-first signals
@@ -75,8 +77,12 @@ count_hits() {
   shift
   local hits=0
   for kw in "$@"; do
-    # word-boundary-ish match; grep -c returns lines, we need occurrences
-    local n=$(echo "$text" | grep -oc "$kw" 2>/dev/null || true)
+    # grep -o prints each match on its own line; wc -l counts lines.
+    # grep -oc returns *line* count (max 1 for single-line text), so
+    # repeated occurrences within one line would undercount.
+    local n
+    n=$(printf '%s' "$text" | grep -o -- "$kw" 2>/dev/null | wc -l | tr -d ' ')
+    [[ -z "$n" ]] && n=0
     hits=$((hits + n))
   done
   echo "$hits"
@@ -109,12 +115,20 @@ elif [[ "$REST_HITS" -ge "$UI_HITS" && "$REST_HITS" -gt 0 ]]; then
   STACK_HINT="nestia"
 fi
 
-# Emit single-line JSON, easily consumed by SpecDD lead.
+# Emit single-line JSON via env vars (no shell interpolation into python
+# source — SURFACE/STACK_HINT come from fixed string literals but we pipe
+# through env for consistency with defense-in-depth).
+SURFACE="$SURFACE" STACK_HINT="$STACK_HINT" \
+REST_HITS="$REST_HITS" UI_HITS="$UI_HITS" HYBRID_HITS="$HYBRID_HITS" \
 python3 -c "
-import json
+import json, os
 print(json.dumps({
-    'surface': '$SURFACE',
-    'scores': {'rest': $REST_HITS, 'ui': $UI_HITS, 'hybrid': $HYBRID_HITS},
-    'stack_hint': '$STACK_HINT'
+    'surface': os.environ['SURFACE'],
+    'scores': {
+        'rest': int(os.environ['REST_HITS']),
+        'ui': int(os.environ['UI_HITS']),
+        'hybrid': int(os.environ['HYBRID_HITS']),
+    },
+    'stack_hint': os.environ['STACK_HINT'],
 }))
 "

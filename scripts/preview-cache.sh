@@ -41,19 +41,29 @@ print(hashlib.sha256(data).hexdigest()[:16])
 cmd_key() {
   local idea="$1"
   local profile="${2:-pro}"
+  # Optional 3rd arg: explicit preview count override (from /pf:new --previews=N).
+  # When set, the advocate set is distinct from the profile's default count —
+  # runs with different N must not collide in cache.
+  local previews_override="${3:-}"
 
   # Load profile's preview count to derive advocate set hash. If profile
   # file missing, fall back to the profile name as the set discriminator.
-  local advocate_set=""
+  local advocate_count=""
   if [[ -n "$PLUGIN_ROOT" && -f "$PLUGIN_ROOT/profiles/$profile.json" ]]; then
-    advocate_set=$(python3 -c "
-import json
-p = json.load(open('$PLUGIN_ROOT/profiles/$profile.json'))
-print(f'{p[\"previews\"][\"count\"]}-{p[\"name\"]}')
-")
-  else
-    advocate_set="$profile"
+    advocate_count=$(python3 -c "
+import json, sys
+try:
+    p = json.load(open(sys.argv[1]))
+    print(p['previews']['count'])
+except Exception:
+    print('')
+" "$PLUGIN_ROOT/profiles/$profile.json")
   fi
+  # Override takes precedence if provided.
+  if [[ -n "$previews_override" ]]; then
+    advocate_count="$previews_override"
+  fi
+  local advocate_set="${advocate_count:-unknown}-${profile}"
 
   printf '%s\x1f%s\x1f%s\x1f%s' "$idea" "$advocate_set" "$MODEL_VERSION" "$profile" | hash
 }
@@ -67,28 +77,30 @@ cmd_get() {
   fi
 
   # TTL check — compare file mtime against profile's ttl_seconds.
-  # We need the profile to know TTL, but the key doesn't carry it;
-  # read .profile field from the cached blob itself.
+  # Path args passed via argv (NOT shell-interpolated into source) to
+  # stay safe even if PLUGIN_ROOT or cache keys ever contain odd chars.
   local ttl=0
   local profile_name
   profile_name=$(python3 -c "
-import json
+import json, sys
 try:
-    d = json.load(open('$file'))
-    print(d.get('profile', 'pro'))
+    print(json.load(open(sys.argv[1])).get('profile', 'pro'))
 except Exception:
     print('pro')
-")
+" "$file")
   if [[ -n "$PLUGIN_ROOT" && -f "$PLUGIN_ROOT/profiles/$profile_name.json" ]]; then
     ttl=$(python3 -c "
-import json
-print(json.load(open('$PLUGIN_ROOT/profiles/$profile_name.json'))['caching']['ttl_seconds'])
-")
+import json, sys
+try:
+    print(json.load(open(sys.argv[1]))['caching']['ttl_seconds'])
+except Exception:
+    print(0)
+" "$PLUGIN_ROOT/profiles/$profile_name.json")
   fi
 
   if [[ "$ttl" -gt 0 ]]; then
     local age
-    age=$(python3 -c "import os,time; print(int(time.time() - os.path.getmtime('$file')))")
+    age=$(python3 -c "import os,sys,time; print(int(time.time() - os.path.getmtime(sys.argv[1])))" "$file")
     if [[ "$age" -gt "$ttl" ]]; then
       return 1
     fi
@@ -122,18 +134,21 @@ cmd_prune() {
     [[ -f "$f" ]] || continue
     local profile_name
     profile_name=$(python3 -c "
-import json
+import json, sys
 try:
-    print(json.load(open('$f')).get('profile', 'pro'))
+    print(json.load(open(sys.argv[1])).get('profile', 'pro'))
 except Exception:
     print('pro')
-")
+" "$f")
     local ttl=0
     if [[ -f "$PLUGIN_ROOT/profiles/$profile_name.json" ]]; then
       ttl=$(python3 -c "
-import json
-print(json.load(open('$PLUGIN_ROOT/profiles/$profile_name.json'))['caching']['ttl_seconds'])
-")
+import json, sys
+try:
+    print(json.load(open(sys.argv[1]))['caching']['ttl_seconds'])
+except Exception:
+    print(0)
+" "$PLUGIN_ROOT/profiles/$profile_name.json")
     fi
     if [[ "$ttl" -eq 0 ]]; then
       rm -f "$f"
@@ -141,7 +156,7 @@ print(json.load(open('$PLUGIN_ROOT/profiles/$profile_name.json'))['caching']['tt
       continue
     fi
     local age
-    age=$(python3 -c "import os,time; print(int(time.time() - os.path.getmtime('$f')))")
+    age=$(python3 -c "import os,sys,time; print(int(time.time() - os.path.getmtime(sys.argv[1])))" "$f")
     if [[ "$age" -gt "$ttl" ]]; then
       rm -f "$f"
       removed=$((removed + 1))

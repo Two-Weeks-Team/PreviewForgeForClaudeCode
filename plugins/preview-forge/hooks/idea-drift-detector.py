@@ -63,9 +63,18 @@ WORD_RE = re.compile(r"[\w가-힣]+", re.UNICODE)
 
 
 def tokenize(text: str) -> set[str]:
-    """Lowercased word set with stopwords removed."""
+    """Lowercased word set with stopwords removed.
+
+    Keeps single-character CJK/Hangul tokens (앱, 웹, 봇, 툴) because
+    they carry product-intent meaning in Korean ideas, while dropping
+    single-char ASCII tokens (a, i, o) which are almost always noise.
+    Korean particles (가, 는, 을, …) are already in STOPWORDS.
+    """
     tokens = {w.lower() for w in WORD_RE.findall(text or "")}
-    return {t for t in tokens if len(t) > 1 and t not in STOPWORDS}
+    return {
+        t for t in tokens
+        if t not in STOPWORDS and (len(t) > 1 or not t.isascii())
+    }
 
 
 def containment(reference: set[str], candidate: set[str]) -> float:
