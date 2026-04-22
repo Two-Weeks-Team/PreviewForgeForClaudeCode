@@ -37,9 +37,15 @@ model: opus
 4. **Claude CLI + plugin install**: `claude plugin list`에 `pf@two-weeks-team` 존재 확인.
 5. **Network**: `api.anthropic.com` reachability. 실패 시 warn only (network hiccup 가능).
 6. **LESSONS pre-load**: `~/.claude/preview-forge/memory/LESSONS.md`에서 관련 카테고리(1/4/6/9) 항목을 추출하여 메모리에 보관. 이후 department lead에 주입.
-7. **Profile resolve** (v1.3+): `--profile=<name>` 플래그 파싱 → env `PF_PROFILE` → `settings.json.pf.defaultProfile` → 기본 `pro`. 결정된 이름을 `runs/<id>/.profile` 파일에 write (이후 훅·모니터가 참조).
+7. **Profile resolve** (v1.3+): `--profile=<name>` 플래그 파싱 → env `PF_PROFILE` → `settings.json.pf.defaultProfile` → 기본 `standard` (v1.4+, was `pro`). 결정된 이름을 `runs/<id>/.profile` 파일에 write (이후 훅·모니터가 참조).
+   - **v1.4+ 디폴트 변경 고지**: 이전에 사용자가 명시적으로 `--profile=pro`를 쓰지 않았다면, 첫 run 시 stderr에 "pf: default profile changed standard←pro (v1.4.0). See README for profile comparison." 1회 출력 (refactoring-expert CP). `~/.preview-forge/default-notice-shown` 파일로 중복 출력 방지.
 8. **Surface-type detection** (v1.3+): `scripts/detect-surface.sh < runs/<id>/idea.json`을 실행하여 `runs/<id>/surface.json`에 저장. Engineering lead가 stack 선택 시 참조 (rest-first → nestia / ui-first → Next.js 16 / hybrid → 둘 다).
-9. **Blackboard 초기화**: `runs/r-<ts>/blackboard.db` 생성 + 초기 row: `(run.pre_flight_passed, ts, cwd, cli_ver, profile, surface)`.
+9. **Profile escalation check** (v1.4+): `scripts/recommend-profile.sh < runs/<id>/idea.json $(cat runs/<id>/.profile)`를 실행하여 `runs/<id>/profile-recommendation.json`에 저장.
+   - `action == "hard-require"`: 즉시 AskUserQuestion — 강한 신호(PII/Stripe/HIPAA/auth-provider) 감지됨을 알리고, 업그레이드만 허용 (dismiss 불가). 업그레이드 후 `.profile` 갱신 + `escalation-ledger.py record <hash> <current> <recommended> forced <run_id>` 기록
+   - `action == "ask"`: `escalation-ledger.py replay_safe <hash>` 먼저 확인. exit 0이면 AskUserQuestion (standard 계속 / pro / max 3옵션); exit 1이면 suppress (24h 내 동일 signal 거부 이력). 응답을 ledger에 record.
+   - `action == "hint"`: prompt 생략, `/pf:status` 출력에 "💡 Consider --profile=pro next time"로 정적 힌트만
+   - `action == "none"`: no-op
+10. **Blackboard 초기화**: `runs/r-<ts>/blackboard.db` 생성 + 초기 row: `(run.pre_flight_passed, ts, cwd, cli_ver, profile, surface, escalation_action)`.
 
 CLI에서 `scripts/pre-flight.sh` 또는 `pf check`가 동일 검증을 수동으로 제공. 이 스크립트의 로직을 system prompt 상에서 모방하되, 실제 파일 system 접근은 Bash tool로 수행.
 
