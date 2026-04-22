@@ -1,0 +1,33 @@
+// Preview Forge — standard profile Prisma schema template.
+// Generated when profile=standard (local-first, SQLite, no Docker).
+//
+// backend-architect CP-1: this profile rejects non-portable Prisma features
+// (enum, @db.JsonB, raw SQL) so the schema can be cleanly moved to Postgres
+// on upgrade to pro/max. See `scripts/standard-schema-lint.py`.
+//
+// security-engineer CP-2: DB lives OUTSIDE the project tree.
+// Path: ~/.preview-forge/<project-name>/dev.db
+// .gitignore handles *.db, *.db-wal, *.db-shm for defense-in-depth.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  // %%PF_DB_URL%% is rewritten by engineering scaffold to:
+  //   file:~/.preview-forge/<project>/dev.db
+  // Never hardcode to a repo-relative path.
+  url      = env("DATABASE_URL")
+}
+
+// Example model — Engineering lead replaces with product-specific models.
+// Use String instead of enum (SQLite limitation; also portable to Postgres).
+// Use String instead of Json unless Postgres-first. JsonB ops don't work here.
+model Example {
+  id        String   @id @default(cuid())
+  title     String
+  status    String   // NOT enum — portable constraint
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

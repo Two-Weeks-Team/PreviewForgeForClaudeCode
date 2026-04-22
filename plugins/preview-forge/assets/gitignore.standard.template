@@ -1,0 +1,26 @@
+# Preview Forge — standard profile .gitignore additions
+# security-engineer CP-2: SQLite files must NEVER be committed.
+# The DB lives at ~/.preview-forge/<project>/dev.db (outside repo), but WAL
+# sidecars or a misplaced dev copy inside repo would leak auth/PII data.
+
+# SQLite
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+*.sqlite3-journal
+
+# Prisma local artifacts
+prisma/*.db
+prisma/.prisma/
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Node
+node_modules/
+.next/
+dist/
+coverage/
