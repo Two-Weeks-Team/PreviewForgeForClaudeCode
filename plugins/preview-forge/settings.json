@@ -18,8 +18,9 @@
     },
     "driftDetection": {
       "enabled": true,
-      "minSimilarity": 0.7,
-      "onBreach": "block-and-ask"
+      "minSimilarity": 0.4,
+      "onBreach": "block-and-ask",
+      "_note": "Containment coefficient |chosen ∩ incoming| / |chosen|. 0.4 calibrated so P02-Slack-bot writes to P10-API spec score ~0.17 (block) while on-idea writes score ~0.5+ (allow)."
     },
     "costRegression": {
       "enabled": true,

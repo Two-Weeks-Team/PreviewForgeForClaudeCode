@@ -72,6 +72,33 @@
 
 **우회 경로**: 정상적인 사용자 의도 반영은 Gate H1(`/pf:design`) · Gate H2(`/pf:freeze`)를 통해서만. 이들이 AskUserQuestion으로 사용자 선택 수집 → M1이 env 세팅한 상태로 artifact 업데이트.
 
+### Rule 9 — Gate H1 선택 아이디어 유지 (v1.3+)
+SpecDD/Engineering 단계의 write가 Gate H1에서 사용자가 선택한 `chosen_preview.json`의 `idea_summary` · `title` · `pitch`와 **containment coefficient ≥ 0.4**을 유지해야 합니다.
+
+`containment = |chosen_tokens ∩ incoming_tokens| / |chosen_tokens|` — chosen_preview의 핵심 어휘가 incoming write에 얼마나 담겨 있는지. Jaccard 대신 containment를 쓰는 이유: chosen_preview는 짧고 SPEC.md는 길어 size asymmetry가 커서 Jaccard는 항상 낮게 나옴.
+
+**강제**: `hooks/idea-drift-detector.py`가 다음 경로에 대한 Write/Edit/MultiEdit을 검사:
+- `runs/<id>/specs/SPEC.md`
+- `runs/<id>/specs/openapi.yaml(.lock)?`
+- `runs/<id>/apps/<name>/README.md`
+- `runs/<id>/packages/<name>/README.md`
+
+**동작**:
+- containment ≥ 0.4 → allow
+- 0.3 ≤ containment < 0.4 → exit 1 (WARN)
+- containment < 0.3 → exit 2 (BLOCK)
+
+**이유**: P10 (API-first) 선택 후 SpecDD가 P02 (Slack UI) 내용으로 drift하는 실패 모드 방지. 템플릿 캐싱 또는 agent memory leak이 주 원인.
+
+**우회 경로** (의도적인 scope 확장 시에만):
+```bash
+export PF_DRIFT_BYPASS=1 PF_DRIFT_REASON="SpecDD explicitly expanding to include webhook layer"
+```
+
+**제외 조건**:
+- Gate H1 완료 전 (chosen_preview.json 없음) → no-op
+- 120자 미만 write → no-op (오타 수정 false positive 방지)
+
 ---
 
 ## 모델 · effort 강제 정책
