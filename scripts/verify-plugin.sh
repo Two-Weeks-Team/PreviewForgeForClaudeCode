@@ -83,12 +83,30 @@ for cmd in bootstrap budget design export freeze gallery help lessons new panel 
 done
 echo
 
-echo "[4/5] Hooks"
+echo "[4/5] Hooks (v1.3+: 5 hooks)"
 python3 -c "import json; d=json.load(open('$PLUGIN_DIR/hooks/hooks.json')); assert 'PreToolUse' in d['hooks'] and 'PostToolUse' in d['hooks']" && \
   ok "hooks.json schema" || bad "hooks.json invalid"
-for h in factory-policy askuser-enforcement auto-retro-trigger; do
+for h in factory-policy askuser-enforcement auto-retro-trigger idea-drift-detector cost-regression; do
   python3 -m py_compile "$PLUGIN_DIR/hooks/$h.py" && ok "hooks/$h.py compiles" || bad "hooks/$h.py syntax"
 done
+echo
+
+echo "[4b/5] Profiles (v1.3+)"
+profile_count=$(find "$PLUGIN_DIR/profiles" -name "*.json" 2>/dev/null | wc -l | tr -d ' ')
+[[ "$profile_count" -eq 3 ]] && ok "profile count: 3 (standard/pro/max)" || bad "profiles: $profile_count (expected 3)"
+for p in standard pro max; do
+  [[ -f "$PLUGIN_DIR/profiles/$p.json" ]] && ok "profile: $p" || bad "profile $p missing"
+done
+if command -v python3 >/dev/null && python3 -c "import jsonschema" 2>/dev/null; then
+  python3 <<PYEOF && ok "all 3 profiles validate against schema" || bad "profile validation failed"
+import json, jsonschema
+schema = json.load(open("$PLUGIN_DIR/schemas/pf-profile.schema.json"))
+for name in ["standard", "pro", "max"]:
+    jsonschema.validate(json.load(open(f"$PLUGIN_DIR/profiles/{name}.json")), schema)
+PYEOF
+else
+  echo "  ⚠ skip schema validation (jsonschema not installed)"
+fi
 echo
 
 echo "[5/5] Supporting assets + fail-safes"
@@ -103,7 +121,7 @@ grep -q "cwd hygiene" "$PLUGIN_DIR/agents/meta/run-supervisor.md" && ok "M1 run-
 seed_count=$(find "$PLUGIN_DIR/seed-ideas" -name "*.md" | wc -l | tr -d ' ')
 [[ "$seed_count" -eq 10 ]] && ok "10 seed ideas" || bad "seed-ideas: $seed_count (expected 10)"
 schema_count=$(find "$PLUGIN_DIR/schemas" -name "*.json" | wc -l | tr -d ' ')
-[[ "$schema_count" -eq 3 ]] && ok "3 JSON schemas" || bad "schemas: $schema_count (expected 3)"
+[[ "$schema_count" -eq 4 ]] && ok "4 JSON schemas (preview-card, panel-vote, score-report, pf-profile)" || bad "schemas: $schema_count (expected 4)"
 asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f | wc -l | tr -d ' ')
 [[ "$asset_count" -eq 4 ]] && ok "4 asset templates" || bad "assets: $asset_count (expected 4)"
 [[ -f "$PLUGIN_DIR/monitors/monitors.json" ]] && ok "monitors/monitors.json" || bad "monitors missing"
