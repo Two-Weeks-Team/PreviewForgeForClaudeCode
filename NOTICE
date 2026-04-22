@@ -1,0 +1,29 @@
+Preview Forge for Claude Code
+Copyright 2026 Two-Weeks-Team
+
+This product includes software developed by Two-Weeks-Team during the
+"Built with Opus 4.7" hackathon (April 21–28, 2026) organized by
+Anthropic and Cerebral Valley.
+
+This product is licensed under the Apache License, Version 2.0.
+See LICENSE for details.
+
+----
+
+Preview Forge introduces the "3-DD Methodology" (PreviewDD · SpecDD · TestDD)
+and is a self-contained Claude Code plugin distributed via GitHub-hosted
+marketplace. The plugin bundles its own 143-agent engineering organization,
+hook-based policy enforcement, memory system (LESSONS/PROGRESS/CLAUDE.md),
+and design studio fallback. It has no third-party service dependencies.
+
+Built with:
+  - Claude Opus 4.7 (Anthropic)
+  - Claude Code (Anthropic)
+  - Claude Managed Agents (Anthropic, beta)
+  - Anthropic Memory Tool (memory_20250818)
+  - Context Editing (context-management-2025-06-27)
+  - Compaction (compact_20260112)
+  - Task Budgets (task-budgets-2026-03-13)
+  - NestJS + @nestia/core + @nestia/sdk + typia (MIT)
+  - Next.js + React (MIT)
+  - Prisma (Apache-2.0)

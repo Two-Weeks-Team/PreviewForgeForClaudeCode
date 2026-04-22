@@ -1,0 +1,43 @@
+# deps
+node_modules/
+.pnpm-store/
+
+# build
+dist/
+build/
+.next/
+*.tsbuildinfo
+
+# env
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# claude / plugin runtime
+runs/
+.claude/cache/
+**/memory/agents/
+**/trace.jsonl
+
+# os
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/
+.idea/
+*.swp
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+
+# test
+coverage/
+.nyc_output/
+
+# misc
+.turbo

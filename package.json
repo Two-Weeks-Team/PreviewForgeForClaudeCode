@@ -1,0 +1,39 @@
+{
+  "name": "preview-forge-marketplace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Built with Opus 4.7 hackathon — 3-DD Methodology (PreviewDD → SpecDD → TestDD) plugin for Claude Code. Marketplace-hosting repository.",
+  "homepage": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode.git"
+  },
+  "bugs": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues",
+  "license": "Apache-2.0",
+  "author": "Two-Weeks-Team <app.2weeks@gmail.com>",
+  "keywords": [
+    "claude-code",
+    "plugin",
+    "marketplace",
+    "opus-4-7",
+    "multi-agent",
+    "spec-driven",
+    "preview-driven",
+    "test-driven",
+    "3-dd",
+    "hackathon"
+  ],
+  "workspaces": [
+    "plugins/*"
+  ],
+  "scripts": {
+    "lint:manifests": "node scripts/validate-manifests.mjs",
+    "test": "echo \"no tests yet — phase 13\"",
+    "validate": "pnpm run lint:manifests"
+  },
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  },
+  "packageManager": "pnpm@9.15.0"
+}
