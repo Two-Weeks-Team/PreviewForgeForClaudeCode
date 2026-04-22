@@ -9,6 +9,16 @@
 
 ## 0. 플러그인 개발 자체에서 배운 것 (bootstrap)
 
+### 0.9 한 flag 매트릭스 대신 profile 단일화 — 구성 표면적 최소화 (category 6 Plugin 배포, UX)
+
+- **문제**: v1.2.x의 e2e run이 2시간+ · 토큰 수백만 소모. "lean mode"로 축소하려는 v1.3.0 초안이 4개 boolean 플래그 (`--lean --previews=N --single-team --skip-panels`) → 16개 조합을 만들어 사용자가 "어떤 조합이 올바른 조합인지" 판단 불가. devops-architect 패널이 "이 매트릭스는 문서화도 테스트도 지원 불가"라고 거부.
+
+- **원인**: 세 가지 직교 축(속도·깊이·안전)을 독립 플래그로 노출하면 matrix explosion. 사용자는 의미 있는 '세트'를 원하지 축별 토글을 원하지 않음.
+
+- **해결**: v1.3.0에서 `--profile=standard|pro|max` 단일 플래그로 치환. 각 profile이 previews 수·eng 팀 수·panel 모드·SCC iter·budget ceiling을 통째로 묶음. `standard=demo/prototype`, `pro=default/real project`, `max=production/baseline`. 플래그 매트릭스 폐기. settings.json의 `defaultProfile`로 tenant/팀별 기본값 설정 가능. 개별 축 override는 `--previews=N` 같은 명시적 escape 플래그로만 제한.
+
+- **참조**: `plugins/preview-forge/profiles/{standard,pro,max}.json`, `schemas/pf-profile.schema.json`, v1.3.0 PR body의 5-전문가 패널 토론 요약, devops-architect 투표 ("config in settings.json not env, profile not flag-matrix").
+
 ### 0.8 Live run artifact에 외부 writer 금지 — single-writer 원칙 (category 9 Agent communication, 경쟁 조건)
 
 - **문제**: 2026-04-22 r-20260422-184337 실행 중, 외부 대화 세션(보조 assistant)이 `/pf:design` Gate H1이 열리기 전 `chosen_preview.json`을 P02 → P19로 직접 덮어썼음 (`blackboard.db` 11:19:15 user-override 이벤트). 같은 시점에 사용자의 플러그인 세션이 정식 Gate H1 AskUserQuestion을 실행 중이었고, 사용자는 P10(TP 단독 1위 API-first)을 선택. run-supervisor가 11:42:30에 chosen_preview를 P10으로 재작성, lock도 `1d8f9193…afbb`로 재계산. 결과적으로 P19 편집은 "stale override"로 `selection_metadata.prior_stale_override_noted`에 기록되고 폐기됨. 플러그인 자체는 **정확히 작동** — 사용자의 in-flow 선택이 외부 out-of-band 편집을 이기도록 설계됨. 하지만 혼란과 낭비 발생.
