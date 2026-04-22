@@ -29,8 +29,18 @@ bad() { echo "  ✗ $1" >&2; fail=$((fail + 1)); }
 echo "[1/5] Manifests"
 python3 -c "import json; d=json.load(open('.claude-plugin/marketplace.json')); assert d['plugins'][0]['name']=='pf'" && \
   ok "marketplace.json: plugin 'pf' declared" || bad "marketplace.json invalid"
-python3 -c "import json; d=json.load(open('$PLUGIN_DIR/.claude-plugin/plugin.json')); assert d['name']=='pf' and d['version']=='1.0.0'" && \
-  ok "plugin.json: name=pf v1.0.0" || bad "plugin.json invalid"
+python3 -c "
+import json, re
+d = json.load(open('$PLUGIN_DIR/.claude-plugin/plugin.json'))
+assert d['name']=='pf', 'name must be pf'
+assert re.match(r'^\d+\.\d+\.\d+', d['version']), 'version must be SemVer'
+# also ensure marketplace version matches
+m = json.load(open('.claude-plugin/marketplace.json'))
+pf = next(p for p in m['plugins'] if p['name']=='pf')
+assert pf['version'] == d['version'], f'version mismatch: marketplace {pf[\"version\"]} vs plugin {d[\"version\"]}'
+print(d['version'])
+" >/tmp/pf_version 2>/dev/null && \
+  ok "plugin.json: name=pf v$(cat /tmp/pf_version)  (marketplace parity ✓)" || bad "plugin.json invalid"
 echo
 
 echo "[2/5] Agents (143 target)"

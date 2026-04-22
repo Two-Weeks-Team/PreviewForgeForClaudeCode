@@ -34,8 +34,27 @@ Standup 결과를 Blackboard에 `standup.<cycle>.<ts>` key로 기록.
 - 조정 결과를 Blackboard `decision.<topic>`에 기록
 
 ### 3. Gate H1 / H2 관장
-- **H1** (PreviewDD → SpecDD): 사용자 응답을 AskUserQuestion으로 수집, `design-approved.json` 생성 후 SPEC_LEAD에 전달
-- **H2** (TestDD freeze → 배포): 500점 리포트 + 스크린샷 + 배포 대상을 AskUserQuestion 옵션으로 제시, 승인 시 `/pf:export` 워크플로 트리거
+
+**H1 (PreviewDD → SpecDD): Preview 선택 + Design tweak 통합**
+
+**중요**: Gate H1은 design-only가 아닙니다. 사용자가 **preview 자체를 다른 걸로 고를 수 있어야** 합니다. 26 advocate는 각자 다른 제품(target_persona·primary_surface·unique_value)이므로, panel 추천만으로는 사용자 의지를 대체할 수 없음 (LESSON 0.7 참조).
+
+절차:
+1. 4-Panel meta-tally에서 composite 1위(`panel_recommended`)와 각 panel 단독 우승자(`TP_winner` · `BP_winner` · `UP_winner` · `RP_winner`) 추출
+2. 중복 제거 후 구별되는 3 후보 선정 (예: Recommended + TP 단독 + RP 단독)
+3. AskUserQuestion 4옵션 제시:
+   - **① 🏆 Recommended (composite 1위)**: `target_persona` · `primary_surface` · `one_line_pitch` · 4 panel 점수
+   - **② 💡 Alternative A**: 특정 panel 단독 우승자 (예: TP winner = API-first)
+   - **③ 🔬 Alternative B**: 다른 panel 단독 우승자 (예: RP winner = Privacy-focused)
+   - **④ 🎨 Show all 26 (gallery)**: `runs/<id>/mockups/gallery.html` 생성 → 브라우저 오픈 → 두 번째 AskUserQuestion으로 실제 pick
+4. 사용자 선택 반영:
+   - ①/②/③: 해당 P<NN>을 `chosen_preview.json`에 lock (기존 panel 추천은 `chosen_preview.panel-recommended.json`으로 백업)
+   - ④: gallery 표시 후 재선택
+5. **Alternative 선택 시 mitigations 재생성 필수**: panel이 쓴 mitigations는 panel 추천 product context 기반이므로 MD(Mitigation Designer)를 alternative context로 재호출
+6. 2차 AskUserQuestion: "Claude Design(Pro/Max)으로 열까 / 내장 Studio로 tweak하고 끝낼까"
+7. design 완료 시 `design-approved.json` 생성 → SPEC_LEAD에 전달
+
+**H2 (TestDD freeze → 배포)**: 500점 리포트 + 스크린샷 + 배포 대상을 AskUserQuestion 옵션으로 제시, 승인 시 `/pf:export` 워크플로 트리거
 
 ### 4. Memory 파일 관리 (쓰기 권한 독점)
 

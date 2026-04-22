@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] — 2026-04-22 (in progress)
+
+### Fixed — UX gap from first real run
+
+- **Gate H1 is now preview-selection + design-tweak (was design-only)**
+  - 첫 real run(r-20260422-184337)에서 사용자가 panel top-3 밖의 P19(legal-depo)를
+    선택. v1.0.0은 panel 추천만 자동 lock하고 agency를 주지 않았음.
+  - `commands/design.md` rewritten: AskUserQuestion 4옵션 (Recommended / Alt A /
+    Alt B / Gallery of 26).
+  - `agents/meta/chief-engineer-pm.md` §3 rewritten: full selection procedure.
+  - Alternative 선택 시 mitigations 재생성 의무화 (제품 context 달라짐).
+  - `chosen_preview.panel-recommended.json`으로 panel 원본 백업.
+
+### Added
+- `memory/LESSONS.md` 0.7: "Panel 추천 ≠ 사용자 의지" (category 1 PreviewDD, 핵심 결함)
+
+### Real run artifact (preserved as example)
+- `runs/r-20260422-184337/chosen_preview.panel-recommended.json` (P02 Slack bot)
+- `runs/r-20260422-184337/chosen_preview.json` (user-overridden to P19 legal-depo)
+
+
 ## [1.0.0] — 2026-04-22
 
 Plugin scaffold complete. Ready for `/plugin install pf@two-weeks-team` via

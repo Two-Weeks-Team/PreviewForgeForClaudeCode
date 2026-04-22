@@ -9,6 +9,17 @@
 
 ## 0. 플러그인 개발 자체에서 배운 것 (bootstrap)
 
+### 0.7 Panel 추천 ≠ 사용자 의지 — Preview 선택은 사용자가 해야 (category 1 PreviewDD, 핵심 UX 결함)
+- **문제**: v1.0.0의 PreviewDD는 4-Panel meta-tally로 1개 자동 선정 → `chosen_preview.json` 즉시 lock → Gate H1은 design tweak만. 사용자는 **선택 자체에 개입 불가**, "143 agent가 정해버린" 느낌. 실제 첫 run에서 composite 1위는 P02 Slack bot이었으나 사용자는 P19(legal depo paralegal, 소송 증언녹취 도구)를 의도적으로 선택 — 4 패널 어디에도 top-N 진입 못한 niche. panel 관점은 수량화 가능한 축을 재는 도구이지 사용자 의지의 대체물이 아님
+- **원인**: "인간의 2-click" 마케팅에 집중하다 보니 이상적 경로에서 Gate H1이 design-only가 됨. 하지만 26 advocate는 **디자인만 다른 게 아니라 target_persona·primary_surface·unique_value·killer_feature가 완전히 다른 제품** — 선택 = 제품 방향 결정
+- **해결**: v1.1.0에서 Gate H1을 **"Preview 선택 + Design tweak" 통합 AskUserQuestion**으로 재설계. 4 옵션 구성:
+    1. **추천** (composite 1위, Recommended)
+    2. **대안 A** (특정 panel 단독 우승자, 다른 축 강조)
+    3. **대안 B** (다른 panel 단독 우승자)
+    4. **전체 gallery** — 26 mockup HTML grid를 별도 브라우저로 열어 고르기
+  click 1번 안에 선택+진입 통합. 2-click narrative 유지
+- **참조**: `runs/r-20260422-184337/chosen_preview.panel-recommended.json` (P02 백업) vs `chosen_preview.json` (P19 override), v1.1.0 commit, 첫 실제 run 피드백 2026-04-22
+
 ### 0.6 `claude --print` 서브프로세스는 /pf:new 자동 실행 불가 (category 6)
 - **문제**: 테스트 목적으로 `claude --print "/pf:new ..."`를 bash 서브프로세스로 실행 시도 시, Claude Code의 기본 권한 정책이 모든 Bash/Edit/Write 호출마다 사용자 승인을 요구. 143 agent 파이프라인 중간에서 정지
 - **원인**: Claude Code의 안전 정책 — 비대화형 모드에서도 파일 시스템 변경·bash 실행은 명시 승인 필요. `/pf:new`는 본질적으로 수백 개의 도구 호출을 연쇄하므로 서브프로세스 자동화 불가
