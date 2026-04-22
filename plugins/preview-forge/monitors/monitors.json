@@ -1,16 +1,12 @@
-{
-  "monitors": [
-    {
-      "name": "blackboard-tail",
-      "command": "tail -F runs/*/blackboard.db 2>/dev/null || sleep 1",
-      "description": "Watch for new blackboard rows across all runs",
-      "when": "session-start"
-    },
-    {
-      "name": "cost-threshold",
-      "command": "while true; do sleep 30; find runs -name 'cost-snapshot.json' -newer runs/.last-check 2>/dev/null && touch runs/.last-check; done",
-      "description": "Cost Monitor threshold alert watcher",
-      "when": "session-start"
-    }
-  ]
-}
+[
+  {
+    "name": "blackboard-tail",
+    "command": "find runs -name 'blackboard.db' -newer runs/.last-check 2>/dev/null | head -1 || sleep 1",
+    "description": "Watch for new blackboard rows across all runs"
+  },
+  {
+    "name": "cost-threshold",
+    "command": "while true; do sleep 30; find runs -name 'cost-snapshot.json' -newer runs/.last-check 2>/dev/null && touch runs/.last-check; done",
+    "description": "Cost Monitor threshold alert watcher"
+  }
+]
