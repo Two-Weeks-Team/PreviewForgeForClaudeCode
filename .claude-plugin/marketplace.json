@@ -7,14 +7,14 @@
   },
   "metadata": {
     "description": "Two-Weeks-Team marketplace hosting the Preview Forge plugin — a 143-agent engineering swarm implementing the 3-DD Methodology (PreviewDD → SpecDD → TestDD) for Claude Code.",
-    "version": "1.2.1",
+    "version": "1.3.0",
     "homepage": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode"
   },
   "plugins": [
     {
       "name": "pf",
       "description": "Preview Forge — 한 줄 아이디어 → 143명의 Opus 4.7 가상 엔지니어링 조직이 PreviewDD · SpecDD · TestDD 3 사이클로 풀스택 앱을 freeze까지. /pf:* 14 slash commands. 인간은 디자인·배포 2 클릭만.",
-      "version": "1.2.1",
+      "version": "1.3.0",
       "author": {
         "name": "Two-Weeks-Team"
       },
