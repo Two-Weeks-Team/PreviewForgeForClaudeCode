@@ -370,15 +370,26 @@ jobs:
             role String
           }
           EOF
-          python3 scripts/standard-schema-lint.py /tmp/portable.prisma || { echo "FAIL portable"; exit 1; }
+          set +e
+          python3 scripts/standard-schema-lint.py /tmp/portable.prisma
+          CODE=$?
+          set -e
+          [[ "$CODE" -eq 0 ]] || { echo "FAIL portable: expected exit 0, got $CODE"; exit 1; }
+
           cat > /tmp/unportable.prisma <<'EOF'
           datasource db { provider = "sqlite" }
           enum Role { A B }
           model User { id String @id; role Role; data Json @db.JsonB }
           EOF
-          python3 scripts/standard-schema-lint.py /tmp/unportable.prisma 2>/dev/null && { echo "FAIL: unportable should exit 2"; exit 1; } || true
+          set +e
+          python3 scripts/standard-schema-lint.py /tmp/unportable.prisma 2>/dev/null
+          CODE=$?
+          set -e
+          # Specifically assert exit 2 (non-portable detected), not just "non-zero" —
+          # so linter crashes, usage errors, import errors don't falsely pass (CodeRabbit minor).
+          [[ "$CODE" -eq 2 ]] || { echo "FAIL unportable: expected exit 2, got $CODE"; exit 1; }
           rm /tmp/portable.prisma /tmp/unportable.prisma
-          echo "✓ schema-lint: 2/2 cases pass"
+          echo "✓ schema-lint: 2/2 cases pass (exit codes asserted specifically)"
 
       - name: Test preview-cache (Proposal #11)
         env:
