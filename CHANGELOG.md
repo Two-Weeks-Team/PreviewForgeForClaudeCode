@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.1.0...v1.2.0) (2026-04-22)
+
+
+### Features
+
+* **hooks:** Rule 8 — run artifact single-writer enforcement ([da643d2](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/da643d266a0a9c03652ebda4804817d9b24cd127))
+
+
+### Bug Fixes
+
+* **ci:** shell-safe release-please output debug (env pattern, no shell interpolation of JSON blob) ([76b1bb9](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/76b1bb9c5986d3ef0eb2a9b211cef0aacc849d02))
+
 ## [1.1.0] — 2026-04-22 (in progress)
 
 ### Fixed — UX gap from first real run
