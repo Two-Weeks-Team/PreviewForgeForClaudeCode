@@ -1,0 +1,166 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://two-weeks-team.github.io/PreviewForgeForClaudeCode/schemas/pf-profile.schema.json",
+  "title": "PF Profile",
+  "description": "Preview Forge run profile — controls cost, speed, and thoroughness of a 3-DD cycle. Three values ship: standard (cheapest), pro (default, balanced), max (all-in 143 agents).",
+  "type": "object",
+  "required": [
+    "name",
+    "version",
+    "previews",
+    "engineering",
+    "qa",
+    "panels",
+    "scc",
+    "budget",
+    "caching",
+    "cost_ceiling"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "enum": ["standard", "pro", "max"],
+      "description": "Profile identifier used by --profile flag and settings.json defaultProfile."
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "previews": {
+      "type": "object",
+      "required": ["count", "max_user_expand"],
+      "properties": {
+        "count": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 26,
+          "description": "Number of Preview Advocates to dispatch in PreviewDD."
+        },
+        "max_user_expand": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 26,
+          "description": "Upper bound if user requests --previews=N override."
+        }
+      }
+    },
+    "engineering": {
+      "type": "object",
+      "required": ["teams", "members_per_team", "disciplines"],
+      "properties": {
+        "teams": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 5
+        },
+        "members_per_team": {
+          "type": "integer",
+          "minimum": 3,
+          "maximum": 5
+        },
+        "disciplines": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["backend", "frontend", "database", "devops", "sdk"]
+          },
+          "minItems": 2,
+          "uniqueItems": true
+        }
+      }
+    },
+    "qa": {
+      "type": "object",
+      "required": ["security", "performance", "accessibility", "functional", "tools_retained"],
+      "properties": {
+        "security": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "performance": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "accessibility": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "functional": { "type": "integer", "minimum": 1, "maximum": 5 },
+        "tools_retained": {
+          "type": "array",
+          "description": "Tools always run regardless of agent count. Load-bearing per quality-engineer panel vote.",
+          "items": {
+            "type": "string",
+            "enum": ["semgrep", "gitleaks", "axe-core", "lighthouse", "owasp-zap"]
+          }
+        }
+      }
+    },
+    "panels": {
+      "type": "object",
+      "required": ["mode", "keyword_triggers", "escalation"],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["off", "keyword-trigger", "always"],
+          "description": "off: skip all 4 panels. keyword-trigger: only activate panels whose keywords match. always: run all 4."
+        },
+        "keyword_triggers": {
+          "type": "object",
+          "properties": {
+            "tp": { "type": "array", "items": { "type": "string" } },
+            "bp": { "type": "array", "items": { "type": "string" } },
+            "up": { "type": "array", "items": { "type": "string" } },
+            "rp": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "escalation": {
+          "type": "object",
+          "required": ["on_unknown_unknown", "confidence_threshold"],
+          "properties": {
+            "on_unknown_unknown": {
+              "type": "boolean",
+              "description": "If advocate vote dispersion > threshold, auto-escalate to full panel."
+            },
+            "confidence_threshold": {
+              "type": "number",
+              "minimum": 0.0,
+              "maximum": 1.0
+            }
+          }
+        }
+      }
+    },
+    "scc": {
+      "type": "object",
+      "required": ["max_iter", "auto_extend_on_error_decrease"],
+      "properties": {
+        "max_iter": { "type": "integer", "minimum": 1, "maximum": 10 },
+        "auto_extend_on_error_decrease": {
+          "type": "boolean",
+          "description": "Extend by +1 iter when error count trajectory is decreasing."
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": ["advocate_tokens", "panel_tokens", "eng_tokens", "spec_tokens"],
+      "properties": {
+        "advocate_tokens": { "type": "integer", "minimum": 500 },
+        "panel_tokens": { "type": "integer", "minimum": 200 },
+        "eng_tokens": { "type": "integer", "minimum": 2000 },
+        "spec_tokens": { "type": "integer", "minimum": 1500 }
+      }
+    },
+    "caching": {
+      "type": "object",
+      "required": ["preview_dd", "ttl_seconds"],
+      "properties": {
+        "preview_dd": { "type": "boolean" },
+        "ttl_seconds": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "cost_ceiling": {
+      "type": "object",
+      "required": ["p95_tokens", "p95_minutes", "hard_tokens", "hard_minutes"],
+      "description": "Telemetry baselines used by monitors/cost-regression.sh. Breach triggers AskUserQuestion pause.",
+      "properties": {
+        "p95_tokens": { "type": "integer", "minimum": 1000 },
+        "p95_minutes": { "type": "integer", "minimum": 1 },
+        "hard_tokens": { "type": "integer", "minimum": 1000 },
+        "hard_minutes": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}

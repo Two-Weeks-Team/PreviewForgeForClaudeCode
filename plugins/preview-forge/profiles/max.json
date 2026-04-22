@@ -1,0 +1,55 @@
+{
+  "$schema": "../schemas/pf-profile.schema.json",
+  "name": "max",
+  "version": "1.3.0",
+  "_description": "All-in 143-agent full cycle. ~500k tokens / ~150 min target. Use for: production launch, high-stakes decisions, regression baselines. 26 previews, 5×5 eng across all disciplines, all 4 panels always on, full QA.",
+  "previews": {
+    "count": 26,
+    "max_user_expand": 26
+  },
+  "engineering": {
+    "teams": 5,
+    "members_per_team": 5,
+    "disciplines": ["backend", "frontend", "database", "devops", "sdk"]
+  },
+  "qa": {
+    "security": 5,
+    "performance": 3,
+    "accessibility": 3,
+    "functional": 3,
+    "tools_retained": ["semgrep", "gitleaks", "axe-core", "lighthouse", "owasp-zap"]
+  },
+  "panels": {
+    "mode": "always",
+    "keyword_triggers": {
+      "tp": [],
+      "bp": [],
+      "up": [],
+      "rp": []
+    },
+    "escalation": {
+      "on_unknown_unknown": false,
+      "confidence_threshold": 0.9
+    }
+  },
+  "scc": {
+    "max_iter": 5,
+    "auto_extend_on_error_decrease": true
+  },
+  "budget": {
+    "advocate_tokens": 1500,
+    "panel_tokens": 600,
+    "eng_tokens": 7000,
+    "spec_tokens": 5000
+  },
+  "caching": {
+    "preview_dd": false,
+    "ttl_seconds": 0
+  },
+  "cost_ceiling": {
+    "p95_tokens": 600000,
+    "p95_minutes": 160,
+    "hard_tokens": 900000,
+    "hard_minutes": 220
+  }
+}

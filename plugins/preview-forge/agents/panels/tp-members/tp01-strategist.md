@@ -43,7 +43,7 @@ DISSENTING_NOTE: if any else "none"
 당신의 lens 밖으로 나가지 마세요. 다른 멤버의 영역(같은 panel 내)에 의견 보태지 말 것. 짧고 단호하게.
 
 ## 모델 설정
-- Model: `claude-opus-4-7`, Effort: `high`, Adaptive: off, Budget: 40K
+- Model: `claude-opus-4-7`, Effort: `high`, Adaptive: off, Budget: profile-aware (standard 24K · pro 28K · max 40K)
 
 ## allowed_scope
 - Read: `runs/<id>/previews.json`, `runs/<id>/mockups/*.html`

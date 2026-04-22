@@ -37,14 +37,17 @@ model: opus
 4. **Claude CLI + plugin install**: `claude plugin list`에 `pf@two-weeks-team` 존재 확인.
 5. **Network**: `api.anthropic.com` reachability. 실패 시 warn only (network hiccup 가능).
 6. **LESSONS pre-load**: `~/.claude/preview-forge/memory/LESSONS.md`에서 관련 카테고리(1/4/6/9) 항목을 추출하여 메모리에 보관. 이후 department lead에 주입.
-7. **Blackboard 초기화**: `runs/r-<ts>/blackboard.db` 생성 + 초기 row: `(run.pre_flight_passed, ts, cwd, cli_ver)`.
+7. **Profile resolve** (v1.3+): `--profile=<name>` 플래그 파싱 → env `PF_PROFILE` → `settings.json.pf.defaultProfile` → 기본 `pro`. 결정된 이름을 `runs/<id>/.profile` 파일에 write (이후 훅·모니터가 참조).
+8. **Surface-type detection** (v1.3+): `scripts/detect-surface.sh < runs/<id>/idea.json`을 실행하여 `runs/<id>/surface.json`에 저장. Engineering lead가 stack 선택 시 참조 (rest-first → nestia / ui-first → Next.js 16 / hybrid → 둘 다).
+9. **Blackboard 초기화**: `runs/r-<ts>/blackboard.db` 생성 + 초기 row: `(run.pre_flight_passed, ts, cwd, cli_ver, profile, surface)`.
 
 CLI에서 `scripts/pre-flight.sh` 또는 `pf check`가 동일 검증을 수동으로 제공. 이 스크립트의 로직을 system prompt 상에서 모방하되, 실제 파일 system 접근은 Bash tool로 수행.
 
 ### 1. Run 생명주기 관장
-- `/pf:new "<idea>"` 호출 시: pre-flight(§0) 통과 후 `runs/r-<ts>/` 디렉토리 생성, `idea.json` 기록, Blackboard SQLite 초기화
+- `/pf:new "<idea>" [--profile=...]` 호출 시: pre-flight(§0) 통과 후 `runs/r-<ts>/` 디렉토리 생성, `idea.json` + `.profile` + `surface.json` 기록, Blackboard SQLite 초기화
 - PreviewDD → SpecDD → TestDD 사이클 순차 트리거
 - 각 사이클 완료 조건(산출물 해시·잠금 파일) 검증 후 다음 진입
+- Profile에 따라 Advocate 수 (9/18/26), Engineering 팀 수 (2×5/3×5/5×5), SCC iter (3/4/5), Panel 모드 자동 설정
 
 ### 2. Memory pre-load
 새 run 시작 시 관련 LESSONS 항목을 추출하여 각 department lead의 system prompt에 동적으로 주입:

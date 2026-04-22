@@ -64,9 +64,31 @@ single HTML file, print-friendly.
 # 4. Initialize memory (first time only)
 /pf:bootstrap
 
-# 5. Run
+# 5. Run (profile defaults to `pro`)
 /pf:new "한 줄 아이디어"
+
+# …or pick a profile explicitly:
+/pf:new "demo-class idea"     --profile=standard   # ~60k tok · 2×5 eng · 9 previews
+/pf:new "real project"        --profile=pro         # ~250k tok · 3×5 eng · 18 previews  (default)
+/pf:new "production launch"   --profile=max         # ~600k tok · 5×5 eng · 26 previews
 ```
+
+## Profiles (v1.3+)
+
+| Profile | Previews | Eng teams | Panels | SCC iter | P95 ceiling | Use for |
+|---|---|---|---|---|---|---|
+| **standard** | 9 | 2×5 (BE+FE) | keyword-trigger | 3 | ~60k tok / 25 min | Demo · prototyping |
+| **pro** *(default)* | 18 | 3×5 (+DB) | keyword-trigger + escalation | 4 | ~250k tok / 70 min | Real projects |
+| **max** | 26 | 5×5 (all) | always-on | 5 | ~600k tok / 160 min | Production · baselines |
+
+- `--previews=N` overrides the count (bounded by `max_user_expand` = 26).
+- `--no-cache` bypasses the PreviewDD-level cache (default TTL: 7 days for standard/pro, never cached for max).
+- Full spec: [`plugins/preview-forge/profiles/`](plugins/preview-forge/profiles/).
+
+### Cost regression + drift detection (v1.3+)
+
+- **Rule 9 idea-drift detector** (`hooks/idea-drift-detector.py`) catches the failure where Gate H1 picks product A but SpecDD/Engineering drift to product B. Containment coefficient over token sets (no external ML deps). Block threshold 0.3, warn at 0.4.
+- **P0-B cost-regression sentinel** (`hooks/cost-regression.py`) compares `cost-snapshot.json` against the active profile's P95/hard ceiling every 30s. Hard breach triggers auto-pause + AskUserQuestion handoff.
 
 ## Updating
 

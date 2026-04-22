@@ -44,10 +44,21 @@ jobs:
           pip install jsonschema
           python3 -c "
           import json, jsonschema
-          for s in ['preview-card', 'panel-vote', 'score-report']:
+          for s in ['preview-card', 'panel-vote', 'score-report', 'pf-profile']:
               schema = json.load(open(f'plugins/preview-forge/schemas/{s}.schema.json'))
               jsonschema.Draft7Validator.check_schema(schema)
               print(f'✓ {s}.schema.json is valid Draft-07')
+          "
+
+      - name: Validate all profiles against schema (v1.3+)
+        run: |
+          python3 -c "
+          import json, jsonschema
+          schema = json.load(open('plugins/preview-forge/schemas/pf-profile.schema.json'))
+          for name in ['standard', 'pro', 'max']:
+              p = json.load(open(f'plugins/preview-forge/profiles/{name}.json'))
+              jsonschema.validate(p, schema)
+              print(f'✓ {name} profile valid — {p[\"previews\"][\"count\"]} previews, {p[\"engineering\"][\"teams\"]}×{p[\"engineering\"][\"members_per_team\"]} eng, P95 {p[\"cost_ceiling\"][\"p95_tokens\"]:,} tok')
           "
 
       - name: Python hooks syntax
@@ -55,6 +66,8 @@ jobs:
           python3 -m py_compile plugins/preview-forge/hooks/factory-policy.py
           python3 -m py_compile plugins/preview-forge/hooks/askuser-enforcement.py
           python3 -m py_compile plugins/preview-forge/hooks/auto-retro-trigger.py
+          python3 -m py_compile plugins/preview-forge/hooks/idea-drift-detector.py
+          python3 -m py_compile plugins/preview-forge/hooks/cost-regression.py
 
   test-hooks:
     name: Test hooks (unit)
@@ -130,6 +143,158 @@ jobs:
           [[ "$OUTPUT" == *"enqueued retro"* ]] || { echo "FAIL: auto-retro did not enqueue"; exit 1; }
           [[ -f runs/r-001/blackboard.db ]] || { echo "FAIL: blackboard.db not created"; exit 1; }
           echo "✓ auto-retro-trigger creates blackboard row"
+
+      - name: Test idea-drift-detector (v1.3+ Rule 9)
+        env:
+          CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}/plugins/preview-forge
+        run: |
+          python3 - <<'PYEOF'
+          import json, subprocess, os, tempfile, shutil, sys
+
+          tmp = tempfile.mkdtemp()
+          os.makedirs(f"{tmp}/runs/r-test/specs")
+          with open(f"{tmp}/runs/r-test/chosen_preview.json", "w") as f:
+              json.dump({
+                  "advocate": "P10",
+                  "title": "Minutes.ai API — meeting transcription as a service",
+                  "idea_summary": "Developer-first REST API for asynchronous meeting transcription. Accept audio upload, return speaker-diarized transcript with timestamps. Priced per-minute. Target: SaaS companies adding meeting intelligence without building ML infra.",
+                  "pitch": "One HTTP POST, webhook callback, transcript JSON out. No dashboard needed — just keys, webhooks, and the playground for debugging."
+              }, f)
+
+          HIGH = "# Minutes.ai API Product Spec\n\nRESTful endpoint for async meeting transcription. POST /v1/transcripts accepts audio file upload, returns job_id. Webhook fires with diarized transcript JSON when complete. Per-minute pricing with usage-based billing. Developer dashboard exposes API keys, webhook URLs, and a request playground for debugging REST integration. Target: SaaS companies adding meeting intelligence."
+          LOW = "# MeetingBot for Slack\n\nSlack bot that joins meeting channels, listens to voice calls, posts summaries as threaded replies. Install via OAuth. Team workspace billing model. Bot mentions trigger interactive summaries. Action buttons for follow-ups. Slack app directory listing. Notifications sent via Slack Events API. Installer onboarding. Workspace admin panel."
+          SHORT = "# Note\nShort edit."
+
+          env = os.environ.copy()
+
+          cases = [
+              ("HIGH (on-idea)", {"tool_name": "Write", "tool_input": {"file_path": f"{tmp}/runs/r-test/specs/SPEC.md", "content": HIGH}}, env, 0),
+              ("LOW (Slack pivot)", {"tool_name": "Write", "tool_input": {"file_path": f"{tmp}/runs/r-test/specs/SPEC.md", "content": LOW}}, env, 2),
+              ("SHORT (<120)", {"tool_name": "Write", "tool_input": {"file_path": f"{tmp}/runs/r-test/specs/SPEC.md", "content": SHORT}}, env, 0),
+              ("BYPASS", {"tool_name": "Write", "tool_input": {"file_path": f"{tmp}/runs/r-test/specs/SPEC.md", "content": LOW}}, {**env, "PF_DRIFT_BYPASS": "1"}, 0),
+              ("non-protected", {"tool_name": "Write", "tool_input": {"file_path": f"{tmp}/notes.md", "content": LOW}}, env, 0),
+          ]
+
+          failed = 0
+          for name, payload, e, expected in cases:
+              p = subprocess.run(["python3", "plugins/preview-forge/hooks/idea-drift-detector.py"], input=json.dumps(payload), env=e, capture_output=True, text=True)
+              if p.returncode == expected:
+                  print(f"  ✓ {name}: exit {p.returncode}")
+              else:
+                  print(f"  ✗ {name}: expected {expected}, got {p.returncode}")
+                  failed += 1
+          shutil.rmtree(tmp)
+          if failed:
+              print(f"FAIL: {failed} drift-detector cases")
+              sys.exit(1)
+          print("✓ idea-drift-detector: 5/5 tests pass")
+          PYEOF
+
+      - name: Test cost-regression (v1.3+ P0-B)
+        env:
+          CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}/plugins/preview-forge
+        run: |
+          python3 - <<'PYEOF'
+          import json, subprocess, os, tempfile, shutil, sys
+
+          tmp = tempfile.mkdtemp()
+          env = os.environ.copy()
+
+          cases = [
+              ("standard under P95", "standard", {"tokens_total": 30000, "elapsed_minutes": 10}, 0),
+              ("standard P95 breach", "standard", {"tokens_total": 75000, "elapsed_minutes": 10}, 1),
+              ("standard hard breach", "standard", {"tokens_total": 120000, "elapsed_minutes": 10}, 2),
+              ("pro under P95", "pro", {"tokens_total": 100000, "elapsed_minutes": 30}, 0),
+              ("pro hard breach (time)", "pro", {"tokens_total": 100000, "elapsed_minutes": 120}, 2),
+              ("max hard breach", "max", {"tokens_total": 950000, "elapsed_minutes": 100}, 2),
+          ]
+
+          failed = 0
+          for name, profile, snap, expected in cases:
+              run = f"{tmp}/runs/r-{profile}-{snap['tokens_total']}"
+              os.makedirs(run, exist_ok=True)
+              with open(f"{run}/.profile", "w") as f: f.write(profile)
+              with open(f"{run}/cost-snapshot.json", "w") as f: json.dump(snap, f)
+              p = subprocess.run(["python3", "plugins/preview-forge/hooks/cost-regression.py", run], env=env, capture_output=True, text=True)
+              if p.returncode == expected:
+                  print(f"  ✓ {name}: exit {p.returncode}")
+              else:
+                  print(f"  ✗ {name}: expected {expected}, got {p.returncode}")
+                  failed += 1
+
+          # Canonical blackboard schema: confirm breach writes to `blackboard` (not `events`)
+          import sqlite3
+          breach_run = [r for name, profile, snap, expected in cases if expected > 0
+                        for r in [f"{tmp}/runs/r-{profile}-{snap['tokens_total']}"]
+                        if os.path.exists(f"{r}/blackboard.db")][0]
+          con = sqlite3.connect(f"{breach_run}/blackboard.db")
+          tables = [r[0] for r in con.execute("SELECT name FROM sqlite_master WHERE type='table'")]
+          if "blackboard" not in tables:
+              print(f"  ✗ schema: canonical 'blackboard' table missing, found: {tables}")
+              failed += 1
+          else:
+              print(f"  ✓ schema: writes to canonical 'blackboard' table (not 'events')")
+
+          # Defensive: malformed profile must NOT crash
+          bad_run = f"{tmp}/runs/r-malformed"
+          os.makedirs(bad_run, exist_ok=True)
+          with open(f"{bad_run}/.profile", "w") as f: f.write("nonexistent")
+          with open(f"{bad_run}/cost-snapshot.json", "w") as f: json.dump({"tokens_total": 999999}, f)
+          p = subprocess.run(["python3", "plugins/preview-forge/hooks/cost-regression.py", bad_run], env=env, capture_output=True, text=True)
+          if p.returncode == 0:
+              print(f"  ✓ defensive: unknown profile returns 0 (no crash)")
+          else:
+              print(f"  ✗ defensive: unknown profile returned {p.returncode}: {p.stderr}")
+              failed += 1
+
+          shutil.rmtree(tmp)
+          if failed:
+              print(f"FAIL: {failed} cost-regression cases")
+              sys.exit(1)
+          print("✓ cost-regression: 8/8 tests pass (6 classification + schema + defensive)")
+          PYEOF
+
+      - name: Test detect-surface (Proposal #2)
+        run: |
+          R1=$(bash scripts/detect-surface.sh <<<'{"text":"REST API for meeting transcription with webhooks."}')
+          echo "$R1" | grep -q '"surface": "rest-first"' || { echo "FAIL: REST case: $R1"; exit 1; }
+          R2=$(bash scripts/detect-surface.sh <<<'{"text":"Mobile dashboard with drag-drop layout and wizard onboarding."}')
+          echo "$R2" | grep -q '"surface": "ui-first"' || { echo "FAIL: UI case: $R2"; exit 1; }
+          R3=$(bash scripts/detect-surface.sh <<<'{"text":"Admin panel with dashboard UI and REST API for programmatic access. Self-service customer portal with settings page."}')
+          echo "$R3" | grep -q '"surface": "hybrid"' || { echo "FAIL: hybrid case: $R3"; exit 1; }
+          # Regression guard: grep -oc vs grep -o|wc -l — three "api" must score 3, not 1.
+          R4=$(bash scripts/detect-surface.sh <<<'{"text":"api api api"}')
+          echo "$R4" | grep -q '"rest": 3' || { echo "FAIL: grep occurrence count regression: $R4"; exit 1; }
+          # Security guard: command injection in idea text must not execute.
+          rm -f /tmp/pf-injection-canary
+          bash scripts/detect-surface.sh <<<'{"text":"`touch /tmp/pf-injection-canary` injected"}' > /dev/null
+          [[ ! -f /tmp/pf-injection-canary ]] || { echo "FAIL: command injection in idea text executed"; rm /tmp/pf-injection-canary; exit 1; }
+          echo "✓ detect-surface: 5/5 cases (3 classify + 1 occurrence + 1 security)"
+
+      - name: Test preview-cache (Proposal #11)
+        env:
+          CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}/plugins/preview-forge
+          PF_CACHE_DIR: /tmp/pf-cache-test
+        run: |
+          mkdir -p "$PF_CACHE_DIR"
+          K1=$(bash scripts/preview-cache.sh key "build todo app" pro)
+          K2=$(bash scripts/preview-cache.sh key "build todo app" pro)
+          [[ "$K1" == "$K2" ]] || { echo "FAIL: key not deterministic"; exit 1; }
+          K3=$(bash scripts/preview-cache.sh key "build todo app" standard)
+          [[ "$K1" != "$K3" ]] || { echo "FAIL: profile doesn't change key"; exit 1; }
+          # --previews=N override must produce a distinct key (same idea + profile, different N)
+          K4=$(bash scripts/preview-cache.sh key "build todo app" pro 9)
+          [[ "$K1" != "$K4" ]] || { echo "FAIL: --previews override didn't change key"; exit 1; }
+          echo '{"profile":"pro","previews":[]}' > /tmp/pf-test.json
+          bash scripts/preview-cache.sh put "$K1" /tmp/pf-test.json
+          bash scripts/preview-cache.sh get "$K1" > /dev/null || { echo "FAIL: get miss after put"; exit 1; }
+          # max profile should always miss
+          K_MAX=$(bash scripts/preview-cache.sh key "anything" max)
+          echo '{"profile":"max"}' > /tmp/pf-max.json
+          bash scripts/preview-cache.sh put "$K_MAX" /tmp/pf-max.json
+          bash scripts/preview-cache.sh get "$K_MAX" > /dev/null && { echo "FAIL: max shouldn't cache"; exit 1; } || true
+          rm -rf "$PF_CACHE_DIR" /tmp/pf-test.json /tmp/pf-max.json
+          echo "✓ preview-cache: 4/4 tests pass"
 
   agent-counts:
     name: Agent inventory (143 target)

@@ -1,0 +1,55 @@
+{
+  "$schema": "../schemas/pf-profile.schema.json",
+  "name": "pro",
+  "version": "1.3.0",
+  "_description": "Default profile. Balanced cost vs thoroughness. ~200k tokens / ~60 min target. Use for: most real projects. 18 previews, 3×5 eng, full QA, keyword-triggered panels with auto-escalation.",
+  "previews": {
+    "count": 18,
+    "max_user_expand": 26
+  },
+  "engineering": {
+    "teams": 3,
+    "members_per_team": 5,
+    "disciplines": ["backend", "frontend", "database"]
+  },
+  "qa": {
+    "security": 3,
+    "performance": 2,
+    "accessibility": 2,
+    "functional": 3,
+    "tools_retained": ["semgrep", "gitleaks", "axe-core", "lighthouse"]
+  },
+  "panels": {
+    "mode": "keyword-trigger",
+    "keyword_triggers": {
+      "tp": ["latency", "scale", "throughput", "uptime", "concurrent", "performance", "sla"],
+      "bp": ["pricing", "revenue", "customer", "market", "monetization", "gtm", "churn"],
+      "up": ["usability", "onboarding", "retention", "accessibility", "ux", "friction"],
+      "rp": ["security", "compliance", "gdpr", "pii", "audit", "risk", "soc2", "legal"]
+    },
+    "escalation": {
+      "on_unknown_unknown": true,
+      "confidence_threshold": 0.7
+    }
+  },
+  "scc": {
+    "max_iter": 4,
+    "auto_extend_on_error_decrease": true
+  },
+  "budget": {
+    "advocate_tokens": 1200,
+    "panel_tokens": 500,
+    "eng_tokens": 5500,
+    "spec_tokens": 3500
+  },
+  "caching": {
+    "preview_dd": true,
+    "ttl_seconds": 604800
+  },
+  "cost_ceiling": {
+    "p95_tokens": 250000,
+    "p95_minutes": 70,
+    "hard_tokens": 400000,
+    "hard_minutes": 100
+  }
+}

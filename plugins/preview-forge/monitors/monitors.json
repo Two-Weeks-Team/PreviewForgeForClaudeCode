@@ -5,8 +5,13 @@
     "description": "Watch for new blackboard rows across all runs"
   },
   {
-    "name": "cost-threshold",
-    "command": "while true; do sleep 30; find runs -name 'cost-snapshot.json' -newer runs/.last-check 2>/dev/null && touch runs/.last-check; done",
-    "description": "Cost Monitor threshold alert watcher"
+    "name": "cost-regression",
+    "command": "for d in runs/*/; do [ -d \"$d\" ] || continue; python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/cost-regression.py\" \"$d\" 2>&1 | grep -E '(WARN|ALERT)' || true; done; sleep 30",
+    "description": "P0-B cost-regression sentinel — per-profile P95/hard ceiling breach detection. Writes blackboard row + emits to stderr. M1 supervisor reacts to alert severity."
+  },
+  {
+    "name": "cost-snapshot-watcher",
+    "command": "find runs -name 'cost-snapshot.json' -newer runs/.last-check 2>/dev/null && touch runs/.last-check; sleep 15",
+    "description": "Cost Monitor threshold watcher — triggers cost-regression check on snapshot update"
   }
 ]

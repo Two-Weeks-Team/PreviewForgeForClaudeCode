@@ -1,0 +1,55 @@
+{
+  "$schema": "../schemas/pf-profile.schema.json",
+  "name": "standard",
+  "version": "1.3.0",
+  "_description": "Fastest and cheapest. ~50k tokens / ~20 min target. Use for: prototyping, known-domain tasks, demo loops. Skips non-triggered panels, uses 2×5 eng team, runs regex-gated critics only.",
+  "previews": {
+    "count": 9,
+    "max_user_expand": 26
+  },
+  "engineering": {
+    "teams": 2,
+    "members_per_team": 5,
+    "disciplines": ["backend", "frontend"]
+  },
+  "qa": {
+    "security": 2,
+    "performance": 1,
+    "accessibility": 1,
+    "functional": 3,
+    "tools_retained": ["semgrep", "gitleaks", "axe-core"]
+  },
+  "panels": {
+    "mode": "keyword-trigger",
+    "keyword_triggers": {
+      "tp": ["latency", "scale", "throughput", "uptime", "concurrent"],
+      "bp": ["pricing", "revenue", "customer", "market", "monetization"],
+      "up": ["usability", "onboarding", "retention", "accessibility", "ux"],
+      "rp": ["security", "compliance", "gdpr", "pii", "audit", "risk"]
+    },
+    "escalation": {
+      "on_unknown_unknown": true,
+      "confidence_threshold": 0.6
+    }
+  },
+  "scc": {
+    "max_iter": 3,
+    "auto_extend_on_error_decrease": true
+  },
+  "budget": {
+    "advocate_tokens": 1000,
+    "panel_tokens": 400,
+    "eng_tokens": 4000,
+    "spec_tokens": 2500
+  },
+  "caching": {
+    "preview_dd": true,
+    "ttl_seconds": 604800
+  },
+  "cost_ceiling": {
+    "p95_tokens": 60000,
+    "p95_minutes": 25,
+    "hard_tokens": 100000,
+    "hard_minutes": 40
+  }
+}

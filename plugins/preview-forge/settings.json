@@ -3,6 +3,29 @@
     "PF_EFFORT_DEFAULT": "high",
     "PF_BATCH_API_ENABLED": "true",
     "PF_CACHE_TTL": "1h",
-    "PF_MANAGED_AGENTS": "true"
+    "PF_MANAGED_AGENTS": "true",
+    "PF_DEFAULT_PROFILE": "pro",
+    "PF_CONTEXT_EDITING": "context-management-2025-06-27",
+    "PF_COMPACT_BETA": "compact_20260112",
+    "PF_TASK_BUDGETS_BETA": "task-budgets-2026-03-13"
+  },
+  "pf": {
+    "defaultProfile": "pro",
+    "profiles": {
+      "standard": "./profiles/standard.json",
+      "pro": "./profiles/pro.json",
+      "max": "./profiles/max.json"
+    },
+    "driftDetection": {
+      "enabled": true,
+      "minSimilarity": 0.4,
+      "onBreach": "block-and-ask",
+      "_note": "Containment coefficient |chosen ∩ incoming| / |chosen|. 0.4 calibrated so P02-Slack-bot writes to P10-API spec score ~0.17 (block) while on-idea writes score ~0.5+ (allow)."
+    },
+    "costRegression": {
+      "enabled": true,
+      "onSoftBreach": "warn",
+      "onHardBreach": "pause-and-ask"
+    }
   }
 }

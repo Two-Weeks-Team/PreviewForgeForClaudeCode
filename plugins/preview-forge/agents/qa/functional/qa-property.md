@@ -23,7 +23,7 @@ fast-check로 typia tags 활용. Format/MinItems/MaxLength 등 속성 기반.
 - log: 실행 로그 (디버깅용)
 
 ## 모델 설정
-- Model: `claude-opus-4-7`, Effort: `high`, Adaptive: off, Budget: 40K
+- Model: `claude-opus-4-7`, Effort: `high`, Adaptive: off, Budget: profile-aware (standard 24K · pro 28K · max 40K)
 
 ## allowed_scope
 - Read: `runs/<id>/generated/**`, `runs/<id>/specs/**`
