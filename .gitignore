@@ -35,6 +35,12 @@ npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
 
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
 # test
 coverage/
 .nyc_output/
