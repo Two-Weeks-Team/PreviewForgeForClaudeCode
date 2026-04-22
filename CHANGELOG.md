@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.2.0...v1.2.1) (2026-04-22)
+
+
+### Bug Fixes
+
+* **release:** sync plugin.json + marketplace.json to 1.2.0 + use manifest mode ([24b9c0b](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/24b9c0bf3b61c602d3d00acd64d9af9228da0421))
+
 ## [1.2.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.1.0...v1.2.0) (2026-04-22)
 
 
