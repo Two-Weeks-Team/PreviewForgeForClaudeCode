@@ -1,0 +1,35 @@
+# Preview Forge generated Caddyfile
+# Replace ${DOMAIN} with your domain
+
+${DOMAIN} {
+  reverse_proxy api:3000
+
+  header {
+    -Server
+    Strict-Transport-Security "max-age=63072000; includeSubDomains"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "no-referrer-when-downgrade"
+    Content-Security-Policy "default-src 'self'"
+    Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  }
+
+  encode gzip zstd
+
+  # Simple rate limit example (Caddy v2 rate_limit module required)
+  # rate_limit {
+  #   zone default {
+  #     key {remote_host}
+  #     events 60
+  #     window 1m
+  #   }
+  # }
+
+  log {
+    output file /data/access.log {
+      roll_size 10mb
+      roll_keep 5
+    }
+    format json
+  }
+}

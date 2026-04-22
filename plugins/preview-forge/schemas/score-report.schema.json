@@ -1,0 +1,119 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/schemas/score-report.schema.json",
+  "title": "ScoreReport",
+  "description": "Stage 7 consolidated score report (5 Judges × 100pt = 500pt).",
+  "type": "object",
+  "required": [
+    "run_id",
+    "judges",
+    "auditors",
+    "total",
+    "freeze_eligible"
+  ],
+  "properties": {
+    "run_id": {
+      "type": "string"
+    },
+    "judges": {
+      "type": "object",
+      "required": [
+        "J1",
+        "J2",
+        "J3",
+        "J4",
+        "J5"
+      ],
+      "properties": {
+        "J1": {
+          "$ref": "#/definitions/judgeScore"
+        },
+        "J2": {
+          "$ref": "#/definitions/judgeScore"
+        },
+        "J3": {
+          "$ref": "#/definitions/judgeScore"
+        },
+        "J4": {
+          "$ref": "#/definitions/judgeScore"
+        },
+        "J5": {
+          "$ref": "#/definitions/judgeScore"
+        }
+      }
+    },
+    "auditors": {
+      "type": "object",
+      "required": [
+        "AU1",
+        "AU2",
+        "AU3",
+        "AU4",
+        "AU5"
+      ],
+      "properties": {
+        "AU1": {
+          "$ref": "#/definitions/auditorVerdict"
+        },
+        "AU2": {
+          "$ref": "#/definitions/auditorVerdict"
+        },
+        "AU3": {
+          "$ref": "#/definitions/auditorVerdict"
+        },
+        "AU4": {
+          "$ref": "#/definitions/auditorVerdict"
+        },
+        "AU5": {
+          "$ref": "#/definitions/auditorVerdict"
+        }
+      }
+    },
+    "total": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 500
+    },
+    "freeze_eligible": {
+      "type": "boolean",
+      "description": "true only when total>=499 AND all 5 auditors PASS"
+    }
+  },
+  "definitions": {
+    "judgeScore": {
+      "type": "object",
+      "required": [
+        "score",
+        "breakdown"
+      ],
+      "properties": {
+        "score": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 100
+        },
+        "breakdown": {
+          "type": "object"
+        }
+      }
+    },
+    "auditorVerdict": {
+      "type": "object",
+      "required": [
+        "verdict"
+      ],
+      "properties": {
+        "verdict": {
+          "type": "string",
+          "enum": [
+            "PASS",
+            "FAIL"
+          ]
+        },
+        "findings": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/schemas/preview-card.schema.json",
+  "title": "PreviewCard",
+  "description": "One of the 26 preview cards produced in PreviewDD Stage 2 by an Advocate.",
+  "type": "object",
+  "required": [
+    "id",
+    "advocate",
+    "framing",
+    "target_persona",
+    "primary_surface",
+    "opus_4_7_capability",
+    "mvp_scope",
+    "one_liner_pitch",
+    "mockup_path"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^P[0-9]{2}$"
+    },
+    "advocate": {
+      "type": "string",
+      "minLength": 3
+    },
+    "framing": {
+      "type": "string",
+      "minLength": 20
+    },
+    "target_persona": {
+      "type": "string",
+      "minLength": 5
+    },
+    "primary_surface": {
+      "type": "string",
+      "enum": [
+        "Web PWA",
+        "Mobile Web",
+        "iOS Native",
+        "Android Native",
+        "Slack Bot",
+        "Discord Bot",
+        "CLI",
+        "Terminal TUI",
+        "Desktop App",
+        "Browser Extension",
+        "Email",
+        "SMS/Voice",
+        "AR/VR",
+        "Embedded SDK",
+        "API Only"
+      ]
+    },
+    "opus_4_7_capability": {
+      "type": "string"
+    },
+    "mvp_scope": {
+      "type": "string"
+    },
+    "one_liner_pitch": {
+      "type": "string",
+      "maxLength": 200
+    },
+    "mockup_path": {
+      "type": "string",
+      "pattern": "^mockups/P[0-9]{2}-.*\\.html$"
+    }
+  },
+  "additionalProperties": false
+}

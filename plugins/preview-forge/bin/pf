@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# Preview Forge — CLI wrapper for /pf:new invocation from outside Claude Code.
+# Usage: pf "<idea>"
+#
+# This wrapper prints instructions. Inside Claude Code, use /pf:new directly.
+
+set -euo pipefail
+
+if [[ $# -eq 0 ]]; then
+  cat <<USAGE
+pf — Preview Forge CLI
+
+Usage:
+  pf "<idea>"              Start a new run from a command line (opens Claude Code)
+  pf --help                Show this help
+
+Preview Forge must be installed as a Claude Code plugin first:
+
+  /plugin marketplace add Two-Weeks-Team/PreviewForgeForClaudeCode
+  /plugin install preview-forge@two-weeks-team
+  /reload-plugins
+  /pf:bootstrap
+
+See: https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode
+USAGE
+  exit 0
+fi
+
+IDEA="$1"
+
+if ! command -v claude >/dev/null 2>&1; then
+  echo "error: Claude Code CLI not found in PATH. Install from https://claude.com/product/claude-code" >&2
+  exit 1
+fi
+
+# Launch Claude Code with the /pf:new command
+exec claude "/pf:new "${IDEA}""

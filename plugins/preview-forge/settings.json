@@ -1,0 +1,8 @@
+{
+  "env": {
+    "PF_EFFORT_DEFAULT": "high",
+    "PF_BATCH_API_ENABLED": "true",
+    "PF_CACHE_TTL": "1h",
+    "PF_MANAGED_AGENTS": "true"
+  }
+}

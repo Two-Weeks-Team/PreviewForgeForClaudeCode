@@ -1,0 +1,23 @@
+// Preview Forge generated nestia.config.ts template
+import type { INestiaConfig } from "@nestia/sdk";
+import { NestFactory } from "@nestjs/core";
+import { AppModule } from "./src/app.module";
+
+const NESTIA_CONFIG: INestiaConfig = {
+  input: async () => NestFactory.create(AppModule),
+  output: "../../packages/sdk/src",
+  swagger: {
+    output: "specs/swagger.json",
+    security: {
+      bearer: { type: "http", scheme: "bearer" },
+    },
+    servers: [
+      { url: "http://localhost:3000", description: "local" },
+      { url: "https://api.example.com", description: "production" },
+    ],
+  },
+  distribute: "../../packages/sdk",
+  primitive: true,
+  simulate: true,
+};
+export default NESTIA_CONFIG;
