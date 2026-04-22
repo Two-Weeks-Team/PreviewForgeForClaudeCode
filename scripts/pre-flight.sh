@@ -12,10 +12,32 @@ set -euo pipefail
 
 # Resolve paths
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PLUGIN_REPO_ROOT=""
-if [[ -f "$SCRIPT_DIR/../.claude-plugin/marketplace.json" ]]; then
-  PLUGIN_REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-fi
+
+# Walk up from cwd looking for a plugin repo signature
+# (`.claude-plugin/marketplace.json` — this is any Claude Code plugin marketplace repo).
+# We deliberately don't restrict to "two-weeks-team" since forks, other marketplace
+# repos also need this guard.
+find_plugin_repo_root() {
+  local dir="$(pwd)"
+  while [[ "$dir" != "/" && "$dir" != "" ]]; do
+    if [[ -f "$dir/.claude-plugin/marketplace.json" ]]; then
+      # Ignore the marketplace mirror under ~/.claude/plugins/marketplaces/
+      # (that dir itself is system-owned, not a user workspace)
+      case "$dir" in
+        "$HOME/.claude/plugins/marketplaces/"*) ;;
+        "$HOME/.claude/plugins/cache/"*) ;;
+        *)
+          echo "$dir"
+          return 0
+          ;;
+      esac
+    fi
+    dir="$(dirname "$dir")"
+  done
+  return 1
+}
+
+PLUGIN_REPO_ROOT="$(find_plugin_repo_root || true)"
 
 # ------- Checks ----------------------------------------------------------
 
@@ -32,12 +54,15 @@ echo
 # 1. cwd hygiene
 CWD="$(pwd)"
 echo "[1/6] Workspace (cwd)"
-if [[ -n "$PLUGIN_REPO_ROOT" && "$CWD" == "$PLUGIN_REPO_ROOT"* ]]; then
-  fail "You are inside the plugin repo itself ($CWD). New runs would pollute plugin source."
+if [[ -n "$PLUGIN_REPO_ROOT" ]]; then
+  fail "You are inside a Claude Code plugin repo at: $PLUGIN_REPO_ROOT"
+  echo "     New runs would create runs/ inside plugin source (pollution + commit risk)." >&2
   echo "     Fix: cd to an empty workspace folder, e.g.:" >&2
+  echo "       pf init my-cool-app  &&  cd ~/pf-workspace/my-cool-app" >&2
+  echo "       — or —" >&2
   echo "       mkdir -p ~/projects/my-new-app && cd ~/projects/my-new-app" >&2
 else
-  ok "cwd is not the plugin repo: $CWD"
+  ok "cwd is not a plugin repo: $CWD"
 fi
 
 # 2. Disk space (need at least 2GB free for a reasonable run)

@@ -38,15 +38,16 @@ USAGE
 resolve_pre_flight() {
   # User's Claude plugin cache
   local cache="${HOME}/.claude/plugins/cache/two-weeks-team/preview-forge/1.0.0/../../../.."
-  # 1. User's marketplace clone (when installed via /plugin marketplace add):
-  local mkt_cache="${HOME}/.claude/plugins/cache/two-weeks-team/PreviewForgeForClaudeCode/HEAD/scripts/pre-flight.sh"
-  if [[ -f "$mkt_cache" ]]; then
-    echo "$mkt_cache"
+  # 1. Marketplace mirror (when installed via /plugin marketplace add):
+  #    Claude Code mirrors the full repo at ~/.claude/plugins/marketplaces/<name>/
+  local mkt_mirror="${HOME}/.claude/plugins/marketplaces/two-weeks-team/scripts/pre-flight.sh"
+  if [[ -f "$mkt_mirror" ]]; then
+    echo "$mkt_mirror"
     return 0
   fi
   # 2. Running from plugin repo clone (development):
   #    bin/pf is at plugins/preview-forge/bin/pf
-  #    pre-flight is at scripts/pre-flight.sh (repo root)
+  #    pre-flight is at scripts/pre-flight.sh (repo root, 3 levels up)
   local repo_cache
   repo_cache="$(cd "$(dirname "$0")/../../.." && pwd)/scripts/pre-flight.sh"
   if [[ -f "$repo_cache" ]]; then
