@@ -76,26 +76,30 @@ fi
 
 if [[ ! -f docker-compose.yml ]]; then
   cat > docker-compose.yml <<'COMPOSE'
+# Credentials come from .env (not committed). Copy .env.example → .env and fill.
 services:
   app:
     build: .
     ports: ["3000:3000"]
-    environment:
-      DATABASE_URL: postgres://pf:pf@db:5432/pf
+    env_file: [.env]
     depends_on: [db]
   db:
     image: postgres:16-alpine
-    environment:
-      POSTGRES_USER: pf
-      POSTGRES_PASSWORD: pf
-      POSTGRES_DB: pf
+    env_file: [.env]
     ports: ["5432:5432"]
     volumes: ["pg_data:/var/lib/postgresql/data"]
 
 volumes:
   pg_data:
 COMPOSE
-  echo "  ✓ docker-compose.yml"
+  cat > .env.example <<'ENVEX'
+# Copy to .env before `docker compose up`. .env is gitignored.
+POSTGRES_USER=pf
+POSTGRES_PASSWORD=change-me-before-deploy
+POSTGRES_DB=pf
+DATABASE_URL=postgres://pf:change-me-before-deploy@db:5432/pf
+ENVEX
+  echo "  ✓ docker-compose.yml + .env.example (credentials via env_file)"
 fi
 
 if [[ ! -f .dockerignore ]]; then

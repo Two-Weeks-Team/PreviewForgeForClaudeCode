@@ -8,7 +8,7 @@
     "db_file_location": "~/.preview-forge/<project>/dev.db (dev) → postgres (prod)",
     "containerize": true,
     "migration_cmd": "prisma migrate dev",
-    "_note": "Generates Dockerfile + docker-compose.yml with postgres + redis. Upgrade from standard: additive — only writes container artifacts, keeps existing app code (devops-architect CP-1)."
+    "_note": "Generates Dockerfile + docker-compose.yml with Postgres (Redis optional, not in default template). Upgrade from standard: additive — only writes container artifacts, keeps existing app code (devops-architect CP-1). .env.example generated; compose reads credentials via env_file."
   },
   "previews": {
     "count": 18,

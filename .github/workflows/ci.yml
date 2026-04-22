@@ -329,10 +329,13 @@ jobs:
           LEDGER="python3 plugins/preview-forge/hooks/escalation-ledger.py"
           # Empty lookup → exit 1
           $LEDGER lookup abc123 2>/dev/null && { echo "FAIL: empty lookup returned 0"; exit 1; } || true
-          # Hash determinism
+          # Hash determinism + normalisation (case + dedup + sort)
           H1=$($LEDGER hash "compliance,multi_tenant")
           H2=$($LEDGER hash "multi_tenant,compliance")
+          H3=$($LEDGER hash "COMPLIANCE,compliance,Multi_Tenant")
           [[ "$H1" == "$H2" ]] || { echo "FAIL: hash not sort-invariant"; exit 1; }
+          [[ "$H1" == "$H3" ]] || { echo "FAIL: hash not case/dedup-invariant"; exit 1; }
+          [[ ${#H1} -eq 64 ]] || { echo "FAIL: hash not full sha256 (got ${#H1} chars, expected 64)"; exit 1; }
           # Empty replay_safe → 0 (safe)
           $LEDGER replay_safe "$H1" || { echo "FAIL: empty replay_safe should exit 0"; exit 1; }
           # Record decline

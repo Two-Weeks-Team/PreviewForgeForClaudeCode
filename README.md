@@ -78,7 +78,7 @@ single HTML file, print-friendly.
 | Profile | Previews | Eng teams | DB | Container | Panels | SCC iter | P95 ceiling | Use for |
 |---|---|---|---|---|---|---|---|---|
 | **standard** *(default)* | 9 | 2×5 (BE+FE) | **SQLite** | ❌ none | keyword-trigger | 3 | ~60k tok / 25 min | Local MVP · demo · prototyping |
-| **pro** | 18 | 3×5 (+DB) | SQLite → Postgres | Docker + compose | keyword-trigger + escalation | 4 | ~250k tok / 70 min | Real projects |
+| **pro** | 18 | 3×5 (+DB) | Postgres (dev-prod parity) | Docker + compose | keyword-trigger + escalation | 4 | ~250k tok / 70 min | Real projects |
 | **max** | 26 | 5×5 (all) | Postgres | Docker + CI/CD | always-on | 5 | ~600k tok / 160 min | Production · baselines |
 
 - `--previews=N` overrides the count (bounded by `max_user_expand` = 26).
@@ -91,11 +91,13 @@ single HTML file, print-friendly.
 
 When you run standard but your idea mentions enterprise signals (Stripe, PII, HIPAA, SSO provider, SOC2, multi-tenant), the plugin recommends the right profile **before** PreviewDD burns tokens:
 
-- **Hard-require** (Stripe / PII / HIPAA / auth-provider): forces upgrade. You cannot dismiss — false assurance is worse than friction.
-- **Soft-suggest** (SOC2 / compliance / multi-tenant / B2B / scale): asks you via AskUserQuestion once, records your answer in `~/.preview-forge/escalation-history.json`. If you decline, the same signals won't re-prompt you within 24h (anti-nagging).
-- **Hint** (weak signals): shows "💡 Consider --profile=pro next time" in `/pf:status`, no interruption.
+Evaluation precedence (highest wins):
 
-Categorical scoring: ≥2 distinct signal categories required to trigger (not raw keyword count), so `"audit logging feature"` in a generic marketing copy app won't false-positive.
+1. **Hard-require** (Stripe / PII / HIPAA / auth-provider): **any single** hit forces upgrade. You cannot dismiss — false assurance is worse than friction. The `min_distinct_categories=2` floor does NOT apply here.
+2. **Soft-suggest + category-floor** (SOC2 / multi-tenant / B2B / scale): needs **≥2 distinct categories** AND score ≥ threshold to ask via AskUserQuestion. Records your answer in `~/.preview-forge/escalation-history.json`. If you decline, same signals won't re-prompt within 24h (anti-nagging).
+3. **Hint** (weak signals, score < threshold but ≥ min-floor): shows "💡 Consider --profile=pro next time" in `/pf:status`, no interruption.
+
+Categorical scoring (not raw keyword count) means `"audit logging feature"` in a generic marketing copy app won't false-positive — it's one category, below the 2-category floor.
 
 ### Cost regression + drift detection (v1.3+)
 

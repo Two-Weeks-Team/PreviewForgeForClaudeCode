@@ -38,12 +38,48 @@ VIOLATIONS = [
         "serialize/deserialize at the application layer as String.",
     ),
     (
-        re.compile(r"\$executeRaw(Unsafe)?\s*`[^`]*(::(?:tsvector|jsonb|uuid))"),
+        # Catch both $executeRaw and $queryRaw variants + Unsafe suffix.
+        re.compile(r"\$(?:execute|query)Raw(?:Unsafe)?\s*`[^`]*(::(?:tsvector|jsonb|uuid|interval))"),
         "raw SQL with Postgres-specific cast",
-        "$executeRaw with ::tsvector, ::jsonb, ::uuid breaks on SQLite. "
-        "Move to application code or guard with profile check.",
+        "$executeRaw / $queryRaw with ::tsvector, ::jsonb, ::uuid, ::interval "
+        "breaks on SQLite. Move to application code or guard with profile check.",
+    ),
+    (
+        re.compile(r"@db\.(Xml|Citext|Inet|Macaddr|Bit\(|VarBit)"),
+        "Postgres-specific column type",
+        "@db.Xml / Citext / Inet / Macaddr / Bit / VarBit are Postgres-only. "
+        "Use portable String equivalents in standard profile.",
     ),
 ]
+
+
+def lint_sql_files(search_root: Path) -> list[tuple[int, str, str, str]]:
+    """Scan prisma/migrations/*.sql for Postgres-specific casts.
+    Returns list of (line_no, feature, fix, code_line) tuples.
+    """
+    violations = []
+    migrations_dir = search_root.parent / "migrations"
+    if not migrations_dir.exists():
+        return violations
+    pg_cast_pattern = re.compile(r"::(?:tsvector|jsonb|uuid|interval)")
+    for sql_file in migrations_dir.rglob("*.sql"):
+        try:
+            content = sql_file.read_text()
+        except OSError:
+            continue
+        for match in pg_cast_pattern.finditer(content):
+            line_no = content[: match.start()].count("\n") + 1
+            line_text = content.splitlines()[line_no - 1].strip()
+            violations.append(
+                (
+                    line_no,
+                    f"Postgres-cast in {sql_file.name}",
+                    "Migration contains Postgres-specific type cast. Regenerate "
+                    "migration under SQLite or drop the cast.",
+                    line_text,
+                )
+            )
+    return violations
 
 
 def lint(schema_path: Path) -> int:
@@ -59,6 +95,9 @@ def lint(schema_path: Path) -> int:
         for m in pattern.finditer(content):
             line_no = content[: m.start()].count("\n") + 1
             violations_found.append((line_no, feature, fix, lines[line_no - 1].strip()))
+
+    # Also scan prisma/migrations/*.sql for Postgres-specific casts.
+    violations_found.extend(lint_sql_files(schema_path))
 
     if not violations_found:
         print(f"✓ {schema_path.name}: portable (standard → pro/max graduation safe)")

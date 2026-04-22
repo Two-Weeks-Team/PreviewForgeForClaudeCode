@@ -15,9 +15,10 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  // %%PF_DB_URL%% is rewritten by engineering scaffold to:
-  //   file:~/.preview-forge/<project>/dev.db
-  // Never hardcode to a repo-relative path.
+  // url comes from env DATABASE_URL. Prisma does NOT expand `~` —
+  // the Engineering scaffold writes an absolute path at scaffold time:
+  //   DATABASE_URL="file:$HOME/.preview-forge/<project>/dev.db"
+  // into .env. Never use `~` literal in Prisma schema URLs.
   url      = env("DATABASE_URL")
 }
 

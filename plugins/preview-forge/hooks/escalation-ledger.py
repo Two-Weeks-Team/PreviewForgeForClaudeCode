@@ -58,10 +58,16 @@ SUPPRESSION_WINDOW_SECONDS = 24 * 3600
 
 
 def signal_hash(categories: list[str]) -> str:
-    """Deterministic hash over sorted category list."""
-    sorted_cats = sorted(categories)
-    payload = "\x1f".join(sorted_cats).encode("utf-8")
-    return hashlib.sha256(payload).hexdigest()[:16]
+    """Full sha256 hex over normalised category set.
+
+    Normalisation: lowercase + dedup + sorted — ensures case variance
+    and duplicate submissions produce identical hash (CodeRabbit: replay
+    suppression must not be bypassable via casing/duplication).
+    Full 64-hex output matches PR body claim of "sha256 signal_hash".
+    """
+    normalised = sorted({c.lower() for c in categories if c})
+    payload = "\x1f".join(normalised).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 @contextlib.contextmanager

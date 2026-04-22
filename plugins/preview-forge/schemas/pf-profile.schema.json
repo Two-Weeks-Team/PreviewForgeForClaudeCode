@@ -165,6 +165,7 @@
     "stack": {
       "type": "object",
       "description": "v1.4+ — stack hints consumed by Engineering scaffold. Tells SpecDD/Engineering lead which DB engine + containerize flag to use. Frontend/backend split already comes from detect-surface.sh.",
+      "required": ["db", "containerize", "migration_cmd"],
       "properties": {
         "db": {
           "type": "string",
@@ -178,6 +179,7 @@
     "profile_escalation": {
       "type": "object",
       "description": "v1.4+ — pre-flight profile recommender config. If current profile detects enterprise signals, suggest upgrade. HARD_REQUIRE signals force upgrade; SOFT_SUGGEST signals ask via AskUserQuestion.",
+      "required": ["upgrade_to", "confidence_threshold", "min_distinct_categories", "hard_require_signals", "soft_suggest_categories"],
       "properties": {
         "upgrade_to": {
           "type": "string",
