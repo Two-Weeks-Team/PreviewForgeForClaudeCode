@@ -1,0 +1,58 @@
+name: 📚 LESSON contribution
+description: Share a failure pattern learned from a real run (goes into memory/LESSONS.md)
+labels: [lesson, triage]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for contributing a LESSON. Preview Forge's cross-run learning
+        depends on the community sharing failure patterns.
+
+        LESSONS.md format is strict: **문제 → 원인 → 해결 → 참조**.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Category (matches LESSONS.md 10 categories)
+      options:
+        - "1. PreviewDD (26 mockup, diversity, panel)"
+        - "2. SpecDD (OpenAPI, nestia, hash lock)"
+        - "3. TestDD (tests, holdout, self-correction, scoring)"
+        - "4. Memory/Context (Memory Tool, compaction, context editing)"
+        - "5. Managed Agents (sessions, events, resume)"
+        - "6. Plugin distribution (marketplace, manifest, hook)"
+        - "7. Cost/Budget (task_budget, caching, Batch API)"
+        - "8. Design integration (Claude Design, fallback)"
+        - "9. Agent communication (Blackboard, hierarchy)"
+        - "10. Layer-0 / Security (hooks, blocked patterns)"
+    validations:
+      required: true
+  - type: input
+    id: summary
+    attributes:
+      label: One-line summary
+      placeholder: "Nestia swagger drift → openapi-diff hash mismatch → 즉시 self-correction"
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 문제 (Problem — what failed or was discovered)
+    validations:
+      required: true
+  - type: textarea
+    id: cause
+    attributes:
+      label: 원인 (Root cause)
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: 해결 (Solution — concrete fix with code references)
+    validations:
+      required: true
+  - type: textarea
+    id: reference
+    attributes:
+      label: 참조 (Reference — file paths, commits, related LESSONS)

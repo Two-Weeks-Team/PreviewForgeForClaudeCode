@@ -1,0 +1,47 @@
+name: ✨ Feature request
+description: Propose an addition or improvement
+labels: [enhancement, triage]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which area?
+      options:
+        - New Preview Advocate persona
+        - New Panel member role
+        - New Specialist Critic
+        - New Engineering Team member
+        - New QA check category
+        - New slash command
+        - Memory/LESSONS improvement
+        - Design Studio enhancement
+        - Performance / cost optimization
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      placeholder: What can't be done today, or what's painful?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed design
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints checklist
+      options:
+        - label: Uses only Anthropic-native features (no 3rd-party services)
+        - label: All Opus 4.7 (no Sonnet/Haiku)
+        - label: Self-contained (no external CDN / fonts / images)
+        - label: Fits Layer-0 rules (methodology/global.md)

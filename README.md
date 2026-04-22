@@ -1,147 +1,213 @@
+<div align="center">
+
 # Preview Forge for Claude Code
 
-> **TDD** drove code with tests. **SpecDD** drove code with specs. We put **PreviewDD** in front.
->
-> A self-contained Claude Code plugin that introduces the **3-DD Methodology** (PreviewDD → SpecDD → TestDD). 143 Opus 4.7 agents turn a one-line idea into a frozen full-stack app with only two human clicks.
+### `TDD` drove code with tests. `SpecDD` drove code with specs. We put `PreviewDD` in front.
 
-[![Built with Opus 4.7](https://img.shields.io/badge/Built%20with-Opus%204.7-d4a574)](https://www.anthropic.com/claude/opus)
-[![License](https://img.shields.io/badge/License-Apache%202.0-7aa6c2)](LICENSE)
-[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-84c984)](https://code.claude.com/docs/en/plugins)
-[![Hackathon](https://img.shields.io/badge/Hackathon-Built%20with%204.7-e07d6e)](https://cerebralvalley.ai/events/~/e/built-with-4-7-hackathon)
+**A self-contained Claude Code plugin that introduces the 3-DD Methodology.**
+143 Opus 4.7 agents turn a one-line idea into a frozen full-stack app with only two human clicks.
 
-## What You Get
+[![CI](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/ci.yml/badge.svg)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/ci.yml)
+[![Marketplace Validate](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/marketplace-validate.yml/badge.svg)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/marketplace-validate.yml)
+[![Release](https://img.shields.io/github/v/release/Two-Weeks-Team/PreviewForgeForClaudeCode?display_name=tag&sort=semver)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/releases)
+[![License: Apache 2.0](https://img.shields.io/github/license/Two-Weeks-Team/PreviewForgeForClaudeCode)](LICENSE)
 
-A **14-command** plugin that runs a **3-cycle Driven-Development** pipeline inside Claude Code:
+[![Built with Opus 4.7](https://img.shields.io/badge/Built%20with-Claude%20Opus%204.7-d4a574?logo=anthropic&logoColor=white)](https://www.anthropic.com/claude/opus)
+[![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-7aa6c2?logo=anthropic&logoColor=white)](https://code.claude.com/docs/en/plugins)
+[![143 Agents](https://img.shields.io/badge/Agents-143-84c984)](preview-forge-proposal.html)
+[![3-DD Methodology](https://img.shields.io/badge/Methodology-PreviewDD%20%E2%86%92%20SpecDD%20%E2%86%92%20TestDD-d4a574)](#the-3-dd-methodology)
+[![14 Slash Commands](https://img.shields.io/badge/%2Fpf%3A*-14%20commands-7aa6c2)](#slash-commands)
+[![Stars](https://img.shields.io/github/stars/Two-Weeks-Team/PreviewForgeForClaudeCode?style=social)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/stargazers)
 
-- `/pf:new "<idea>"` — start a new run (PreviewDD cycle begins)
-- `/pf:status` — current run state, agent progress, blackboard
-- `/pf:design` — open Gate H1 (Claude Design main / built-in Studio fallback)
-- `/pf:freeze` — force evaluate Judges + Auditors
-- `/pf:replay <run_id>` — deterministic replay from `trace.jsonl`
-- `/pf:lessons` — view/edit the cross-run failure catalog
-- `/pf:gallery` — browse/fork past runs
-- `/pf:export <run_id>` — package frozen app as tarball or plugin
-- `/pf:budget` — cost dashboard (soft cap tracking)
-- `/pf:retry` — rerun a failed agent
-- `/pf:seed` — browse pre-verified demo ideas
-- `/pf:bootstrap` — initialize memory (LESSONS/PROGRESS/CLAUDE.md)
-- `/pf:panel` — manually trigger 4-panel vote
-- `/pf:help` — all 14 commands summary
+</div>
 
-Plus a **143-agent engineering organization** exposed in `/agents`:
+---
 
-- **Meta (3)** — M1 Run Supervisor · M2 Cost Monitor · M3 Chief Engineer PM
-- **Ideation Dept (29)** — I_LEAD + I1 Clarifier + I2 Diversity Validator + **26 persona-distinct Advocates** (P01 The Contrarian … P26 The Anti-AI)
-- **4 Panels + MD (45)** — Technical · Business · UX · Risk Panels (10 each) + 5 chairs + Mitigation Designer
-- **Spec Dept (9)** — Lead + Author + 7 specialist critics (security, performance, a11y, i18n, idempotency, error model, API design)
-- **5 Engineering Teams (25)** — Backend · Frontend · Database · DevOps · SDK (lead + members)
-- **QA Dept (14)** — Functional · Security · Performance · A11y (lead + members)
-- **Self-Correction Squad (5)** — Lead + backend/frontend/type/dep fixers
-- **Judge Council (5)** + **Specialist Auditors (5)** — double-gate scoring
-- **Documentation Squad (3)** — README · Changelog · Demo Script writers
+## About
 
-## Requirements
+**Preview Forge** is a Claude Code plugin submitted to the
+[Built with Opus 4.7](https://cerebralvalley.ai/events/~/e/built-with-4-7-hackathon)
+hackathon (April 21–28, 2026, Anthropic × Cerebral Valley).
 
-- **Claude Code** (latest) with **Pro / Max / Team / Enterprise** subscription. No separate API key needed.
-- **Node.js 20** LTS + **pnpm 9** (for scaffolded apps' build/test)
-- **Docker 24+** (optional, for scaffolded apps' compose up verification)
+It encodes a new software-development methodology — **3-DD** — as a 143-agent
+virtual engineering organization that runs entirely inside Claude Code, with
+only Anthropic-native dependencies (no Figma, no external CDN, no third-party
+SaaS). One line of idea in. One frozen full-stack app out. Two human clicks.
 
-## Install
+## The 3-DD Methodology
+
+| Cycle | Stages | Driven by | Locked artifact |
+|---|---|---|---|
+| ① **PreviewDD** <sub>(new)</sub> | 1–3 | 26 mockups diverge direction before any spec | `chosen_preview.json` + `mockups/chosen.html` |
+| 🔒 Gate H1 <sub>(human)</sub> | — | Claude Design (main) / built-in Studio (fallback) | `design-approved.json` |
+| ② **SpecDD** | 4–5 | OpenAPI spec drives implementation (nestia) | `specs/openapi.yaml` + SHA-256 `.lock` |
+| ③ **TestDD** | 6–7 | Tests + scoreboard drive freeze (≥499/500) | `score/report.json` + `.frozen-hash` |
+| 🚀 Gate H2 <sub>(human)</sub> | — | Deployment approval | Deployed URL or tarball |
+
+All three cycles follow the **diverge → aggregate → lock** shape.
+[Full specification (v8.0)](preview-forge-proposal.html) — 2,100+ lines,
+single HTML file, print-friendly.
+
+## Quick Install
 
 ```bash
 # 1. Add this marketplace
 /plugin marketplace add Two-Weeks-Team/PreviewForgeForClaudeCode
 
 # 2. Install the plugin
-/plugin install preview-forge@two-weeks-team
+/plugin install pf@two-weeks-team
 
 # 3. Reload
 /reload-plugins
 
-# 4. Initialize memory
+# 4. Initialize memory (first time only)
 /pf:bootstrap
 
 # 5. Run
 /pf:new "한 줄 아이디어"
 ```
 
-## The 3-DD Methodology
+## Slash Commands
 
-| Cycle | Stages | Driven by | Locked artifact |
-|---|---|---|---|
-| ① **PreviewDD** (new) | 1–3 | 26 mockups diverge direction before any spec | `chosen_preview.json` + `mockups/chosen.html` |
-| 🔒 Gate H1 (human) | — | Claude Design (main) / built-in Studio (fallback) | `design-approved.json` (OKLCH tokens) |
-| ② **SpecDD** | 4–5 | OpenAPI spec drives implementation (nestia) | `specs/openapi.yaml` + SHA-256 `.lock` |
-| ③ **TestDD** | 6–7 | Tests + scoreboard drive freeze (≥499/500) | `score/report.json` + `.frozen-hash` |
-| 🚀 Gate H2 (human) | — | Deployment approval | Deployed URL or tarball |
+Preview Forge ships **14 slash commands** under the `/pf:*` namespace:
 
-All three cycles follow the **diverge → aggregate → lock** shape, executed by disjoint agent teams in parallel.
+### 🚀 Run lifecycle
+| Command | Purpose |
+|---|---|
+| `/pf:bootstrap` | Initialize plugin memory (CLAUDE / PROGRESS / LESSONS) — first time only |
+| `/pf:new <idea>` | Start a new run (PreviewDD cycle begins) |
+| `/pf:status` | Current run state, agent progress, blackboard |
+| `/pf:retry <agent\|phase>` | Rerun a failed agent or stuck phase |
+| `/pf:freeze` | Force Judges + Auditors evaluation (TestDD Stage 7) |
 
-## Typical Flow
+### 🗳️ Decision gates
+| Command | Purpose |
+|---|---|
+| `/pf:design` | Gate H1 — Claude Design main / built-in Studio fallback |
+| `/pf:panel` | Manually trigger 4-Panel (TP/BP/UP/RP) vote |
 
-```bash
-/pf:new "공방 운영자가 수업·재고·정산을 한 곳에서"
-# → 26 Advocates generate mockups + pitches in parallel (PreviewDD)
-# → 4 Panels (40 experts) vote, 5 chairs do meta-tally
-# → Mitigation Designer converts dissent to action items
-# → Gate H1 opens in Claude Design (or built-in Studio)
+### 📚 Assets & history
+| Command | Purpose |
+|---|---|
+| `/pf:gallery` | Browse / fork past runs |
+| `/pf:replay <run>` | Deterministic replay from `trace.jsonl` |
+| `/pf:seed` | Pre-verified demo idea bank (10) |
+| `/pf:export <run>` | Package frozen run as tarball or Claude Code plugin |
 
-# User tweaks colors/density/layout, clicks "Send to Claude Code"
-# → SpecDD begins: 1 Author + 7 Critics converge on openapi.yaml
-# → 5 Engineering Teams build in parallel (Managed Agents session)
-# → nestia generates SDK + Swagger; diff locked by SHA-256
+### 📊 Observability
+| Command | Purpose |
+|---|---|
+| `/pf:budget` | Cost dashboard — per-run / per-cycle / per-agent |
+| `/pf:lessons` | Cross-run failure catalog (`LESSONS.md`) |
+| `/pf:help` | Full 14-command reference + FAQ |
 
-# → TestDD begins: 4 QA Teams generate visible + holdout tests
-# → Self-Correction Squad fixes code until score ≥ 499
-# → 5 Judges + 5 Auditors double-gate freeze
+## Agent Organization
 
-# Gate H2: user approves deploy
-/pf:status   # all green, frozen hash recorded
+Preview Forge's 143 agents live in a 6-tier hierarchy + SQLite blackboard:
+
+```
+                        M1 Run Supervisor (Meta)
+                               │
+              ┌────────────────┼────────────────┐
+              │                │                │
+      M2 Cost Monitor     M3 Chief Eng PM   Software-Factory
+       (tracking only)  (all dept leads)   Layer-0 Hooks
+                               │
+    ┌──────────┬───────────────┼────────────────┬─────────────┐
+    │          │               │                │             │
+ Ideation  4 Panels +       Spec Dept     5 Engineering     QA Dept +
+  Dept      Mitigation       (9)          Teams (25)        SCC + Judges +
+  (29)     Designer (45)                                    Auditors + Docs
+                                                                (32)
 ```
 
-## Configuration
+Count: **3 Meta + 29 Ideation + 45 Panels + 9 Spec + 25 Engineering + 14 QA + 5 SCC + 5 Judges + 5 Auditors + 3 Docs = 143**.
+All Opus 4.7, zero Sonnet/Haiku.
 
-The plugin respects Claude Code's native auth (Pro/Max). No `.env` file needed.
+## Requirements
 
-Optional environment variables:
+- **Claude Code** (latest) with **Pro / Max / Team / Enterprise** subscription.
+  *(No separate API key needed.)*
+- **Node.js 20** LTS + **pnpm 9** (for scaffolded apps' build/test)
+- **Docker 24+** (optional, for scaffolded apps' `docker compose up` verification)
 
-- `PF_EFFORT_DEFAULT` — default effort for non-critical agents (default: `high`)
-- `PF_BATCH_API_ENABLED` — use Batch API for non-realtime work (DOC Squad, LESSONS extraction) (default: `true`)
-- `PF_CACHE_TTL` — prompt cache TTL: `5m` or `1h` (default: `1h`)
-- `PF_MANAGED_AGENTS` — enable Managed Agents for Stage 5–6 (default: `true`)
+## What's inside the plugin
 
-## Memory & Learning
+| Area | Count | Summary |
+|---|---|---|
+| **Agents** | 143 | 10 departments, 6 tiers, all Opus 4.7 |
+| **Slash commands** | 14 | `/pf:*` namespace |
+| **Hooks** | 3 | `factory-policy.py`, `askuser-enforcement.py`, `auto-retro-trigger.py` |
+| **Memory seed** | 3 | `CLAUDE.md` + `PROGRESS.md` + `LESSONS.md` (with 3 bootstrap lessons) |
+| **Methodology** | 1 | Layer-0 7 non-negotiable rules |
+| **Asset templates** | 4 | Docker Compose, Caddyfile, nestia.config.ts, install.sh |
+| **JSON schemas** | 3 | PreviewCard, PanelVote, ScoreReport |
+| **Seed ideas** | 10 | Pre-verified demo scenarios |
+| **Slash commands** | 14 | `/pf:*` |
+| **CLI** | 1 | `bin/pf` |
+| **Verification** | 1 | `scripts/verify-plugin.sh` (34 checks) |
 
-Preview Forge maintains a **4-layer memory** that prevents repeating mistakes across runs:
+## Zero third-party dependencies
 
-1. **`memory/CLAUDE.md`** — plugin session rules (read first every run)
+Preview Forge uses **only Anthropic-native** features:
+
+- Claude Code (Pro/Max) · Claude Opus 4.7 · Adaptive thinking · `xhigh` effort
+- Claude Managed Agents · Anthropic Memory Tool · Batch API · Files API · Citations
+- Context editing (`context-management-2025-06-27`) · Compaction (`compact_20260112`)
+- Prompt caching (1-hour TTL) · Fine-grained tool streaming · Task budgets (`task-budgets-2026-03-13`)
+- Claude Design (Gate H1 main) · Built-in Design Studio (Gate H1 fallback)
+
+**Not used**: Figma, Google Fonts, external CDNs, analytics services.
+All 26 mockups are single-file HTML with inline styles only.
+
+## Memory & cross-run learning
+
+Preview Forge maintains a **4-layer memory** so mistakes don't repeat across runs:
+
+1. **`memory/CLAUDE.md`** — session rules (read first every run)
 2. **`memory/PROGRESS.md`** — run index (updated at run end)
 3. **`memory/LESSONS.md`** — failure catalog (auto-appended by Auto-retro critic)
 4. **Anthropic Memory Tool** (`memory_20250818`) — per-agent episodic memory (Reflexion pattern)
 
-M1 Run Supervisor reads all four before every new run and pre-loads relevant lessons to every Department Lead.
+M1 Run Supervisor reads all four before every new run and pre-loads relevant
+lessons to every Department Lead.
 
-## Zero Third-Party Dependencies
+## Documentation
 
-The plugin uses **only Anthropic-native** features:
+- 📘 **[Full v8.0 Specification](preview-forge-proposal.html)** — canonical, 2,100+ lines
+- 📝 **[CHANGELOG](CHANGELOG.md)** — phase-by-phase build log
+- 🛡️ **[Security Policy](SECURITY.md)** — reporting and scope
+- 🤝 **[Contributing](CONTRIBUTING.md)** — LESSONS, new advocates, etc.
+- 🪶 **[Layer-0 Rules](plugins/preview-forge/methodology/global.md)** — 7 non-negotiable
 
-- Claude Code (Pro/Max)
-- Claude Opus 4.7
-- Claude Design (Gate H1 main)
-- Claude Managed Agents
-- Anthropic Memory Tool
-- Batch API, Files API, Citations, Context editing, Compaction
+## Verify install
 
-**Not used**: Figma, external CDNs, Google Fonts, analytics services. All 26 mockups are self-contained HTML with inline styles only.
+```bash
+git clone https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode
+cd PreviewForgeForClaudeCode
+bash scripts/verify-plugin.sh   # 34/34 checks
+```
+
+## Hackathon
+
+Built for the Anthropic × Cerebral Valley
+[Built with Opus 4.7 hackathon](https://cerebralvalley.ai/events/~/e/built-with-4-7-hackathon)
+(April 21–28, 2026). Targeted prize categories:
+
+- 🏆 **Most Creative Opus 4.7** — 143 parallel personas + self-critic + self-scoring
+- 🏆 **Best Managed Agents** — hours-long build/test/correct cycles in a managed session
+- 🏆 **Keep Thinking** — "TDD + SpecDD didn't touch ideation. We put **PreviewDD** in front."
 
 ## License
 
 [Apache-2.0](LICENSE). See [NOTICE](NOTICE) for attribution.
 
-## Reference
-
-Full specification: [`preview-forge-proposal.html`](preview-forge-proposal.html) — v8.0 Final, 2136 lines, single-file, print-friendly.
-
 ---
 
-<sub>Built for the Anthropic × Cerebral Valley "Built with Opus 4.7" hackathon (April 21–28, 2026).</sub>
+<div align="center">
+
+<sub>Built with **Claude Opus 4.7** · Powered by **Claude Code Plugins** · **Zero third-party deps** · Apache-2.0</sub>
+
+<sub>[Preview Forge](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode) · [Two-Weeks-Team](https://github.com/Two-Weeks-Team)</sub>
+
+</div>

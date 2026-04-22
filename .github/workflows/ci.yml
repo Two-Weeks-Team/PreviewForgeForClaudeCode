@@ -1,0 +1,202 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-plugin:
+    name: Verify plugin structure
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run verify-plugin.sh
+        run: bash scripts/verify-plugin.sh
+
+      - name: Validate manifests JSON
+        run: |
+          python3 -c "import json; json.load(open('.claude-plugin/marketplace.json'))"
+          python3 -c "import json; json.load(open('plugins/preview-forge/.claude-plugin/plugin.json'))"
+          python3 -c "import json; json.load(open('plugins/preview-forge/hooks/hooks.json'))"
+          python3 -c "import json; d=json.load(open('plugins/preview-forge/monitors/monitors.json')); assert isinstance(d, list), 'monitors.json must be top-level array'"
+          python3 -c "import json; json.load(open('plugins/preview-forge/settings.json'))"
+          for s in plugins/preview-forge/schemas/*.json; do python3 -c "import json; json.load(open('$s'))"; done
+
+      - name: Validate JSON Schemas
+        run: |
+          pip install jsonschema
+          python3 -c "
+          import json, jsonschema
+          for s in ['preview-card', 'panel-vote', 'score-report']:
+              schema = json.load(open(f'plugins/preview-forge/schemas/{s}.schema.json'))
+              jsonschema.Draft7Validator.check_schema(schema)
+              print(f'✓ {s}.schema.json is valid Draft-07')
+          "
+
+      - name: Python hooks syntax
+        run: |
+          python3 -m py_compile plugins/preview-forge/hooks/factory-policy.py
+          python3 -m py_compile plugins/preview-forge/hooks/askuser-enforcement.py
+          python3 -m py_compile plugins/preview-forge/hooks/auto-retro-trigger.py
+
+  test-hooks:
+    name: Test hooks (unit)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Test factory-policy blocks destructive commands
+        env:
+          CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}/plugins/preview-forge
+        run: |
+          set +e
+          # safe — should exit 0
+          echo '{"tool_name":"Bash","tool_input":{"command":"ls -la"}}' | python3 plugins/preview-forge/hooks/factory-policy.py
+          [[ $? -eq 0 ]] || { echo "FAIL: safe command was blocked"; exit 1; }
+
+          # destructive — should exit 2
+          echo '{"tool_name":"Bash","tool_input":{"command":"docker push foo/bar"}}' | python3 plugins/preview-forge/hooks/factory-policy.py
+          [[ $? -eq 2 ]] || { echo "FAIL: docker push was not blocked"; exit 1; }
+
+          echo '{"tool_name":"Bash","tool_input":{"command":"rm -rf /"}}' | python3 plugins/preview-forge/hooks/factory-policy.py
+          [[ $? -eq 2 ]] || { echo "FAIL: rm -rf / was not blocked"; exit 1; }
+
+          echo '{"tool_name":"Bash","tool_input":{"command":"git push --force origin main"}}' | python3 plugins/preview-forge/hooks/factory-policy.py
+          [[ $? -eq 2 ]] || { echo "FAIL: force push to main was not blocked"; exit 1; }
+
+          # memory/ edit — should exit 2
+          echo '{"tool_name":"Edit","tool_input":{"file_path":"memory/LESSONS.md"}}' | python3 plugins/preview-forge/hooks/factory-policy.py
+          [[ $? -eq 2 ]] || { echo "FAIL: memory edit was not blocked"; exit 1; }
+
+          # auto-retro bypass — should exit 0
+          PF_AUTO_RETRO_BYPASS=1 bash -c "echo '{\"tool_name\":\"Edit\",\"tool_input\":{\"file_path\":\"memory/LESSONS.md\"}}' | python3 plugins/preview-forge/hooks/factory-policy.py"
+          [[ $? -eq 0 ]] || { echo "FAIL: auto-retro bypass did not work"; exit 1; }
+
+          echo "✓ factory-policy: 6/6 tests pass"
+
+      - name: Test askuser-enforcement warns on freeform
+        env:
+          CLAUDE_PLUGIN_ROOT: ${{ github.workspace }}/plugins/preview-forge
+        run: |
+          set +e
+          OUTPUT=$(echo '{"tool_name":"Agent","subagent_type":"test","tool_response":{"output":"어떻게 하시겠어요?"}}' | python3 plugins/preview-forge/hooks/askuser-enforcement.py 2>&1)
+          [[ "$OUTPUT" == *"WARN"* ]] || { echo "FAIL: freeform question not warned"; exit 1; }
+          echo "✓ askuser-enforcement warns correctly"
+
+      - name: Test auto-retro-trigger enqueues Blackboard
+        run: |
+          cd /tmp && mkdir -p pf-ci-test && cd pf-ci-test
+          mkdir -p runs/r-001/score
+          OUTPUT=$(echo '{"tool_name":"Write","tool_input":{"file_path":"runs/r-001/score/report.json"}}' | CLAUDE_PLUGIN_ROOT=${{ github.workspace }}/plugins/preview-forge python3 ${{ github.workspace }}/plugins/preview-forge/hooks/auto-retro-trigger.py 2>&1)
+          [[ "$OUTPUT" == *"enqueued retro"* ]] || { echo "FAIL: auto-retro did not enqueue"; exit 1; }
+          [[ -f runs/r-001/blackboard.db ]] || { echo "FAIL: blackboard.db not created"; exit 1; }
+          echo "✓ auto-retro-trigger creates blackboard row"
+
+  agent-counts:
+    name: Agent inventory (143 target)
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Count agents
+        run: |
+          TOTAL=$(find plugins/preview-forge/agents -name "*.md" -type f | wc -l)
+          if [[ "$TOTAL" -ne 143 ]]; then
+            echo "::error::Expected 143 agents, found $TOTAL"
+            exit 1
+          fi
+          echo "✓ 143/143 agents present"
+
+          # per-dept
+          declare -A EXPECTED=(
+            [meta]=3
+            [ideation]=29
+            [panels]=45
+            [spec]=9
+            [engineering]=25
+            [qa]=14
+            [scc]=5
+            [judges]=5
+            [auditors]=5
+            [docs]=3
+          )
+          for dept in "${!EXPECTED[@]}"; do
+            count=$(find plugins/preview-forge/agents/$dept -name "*.md" -type f | wc -l)
+            exp=${EXPECTED[$dept]}
+            if [[ "$count" -ne "$exp" ]]; then
+              echo "::error::$dept: $count (expected $exp)"
+              exit 1
+            fi
+            echo "✓ $dept: $count/$exp"
+          done
+
+      - name: Check all agents use Opus 4.7
+        run: |
+          python3 <<'PYEOF'
+          import re, glob, sys
+          non_opus = []
+          for f in glob.glob("plugins/preview-forge/agents/**/*.md", recursive=True):
+              m = re.search(r'^model:\s*(.+)$', open(f).read(), re.MULTILINE)
+              if m and m.group(1).strip() not in ('opus', 'claude-opus-4-7', 'opus-4-7'):
+                  non_opus.append((f, m.group(1).strip()))
+          if non_opus:
+              for f, m in non_opus:
+                  print(f"::error file={f}::non-Opus model: {m}")
+              sys.exit(1)
+          print("✓ all 143 agents use Opus 4.7")
+          PYEOF
+
+      - name: Check agent name uniqueness
+        run: |
+          python3 <<'PYEOF'
+          import re, glob, sys
+          from collections import Counter
+          names = []
+          for f in glob.glob("plugins/preview-forge/agents/**/*.md", recursive=True):
+              m = re.search(r'^name:\s*(.+)$', open(f).read(), re.MULTILINE)
+              if m:
+                  names.append(m.group(1).strip())
+          dups = {n: c for n, c in Counter(names).items() if c > 1}
+          if dups:
+              for n, c in dups.items():
+                  print(f"::error::duplicate name: {n} ({c} times)")
+              sys.exit(1)
+          print(f"✓ all {len(names)} agent names are unique")
+          PYEOF
+
+  lint-shell:
+    name: Shell script lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install shellcheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Lint bin/pf + verify-plugin.sh
+        run: |
+          shellcheck -x plugins/preview-forge/bin/pf || true
+          shellcheck -x scripts/verify-plugin.sh || true
+          echo "✓ shellcheck complete (non-blocking)"

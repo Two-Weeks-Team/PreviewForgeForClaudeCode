@@ -1,0 +1,66 @@
+name: Marketplace Validate
+
+on:
+  pull_request:
+    paths:
+      - ".claude-plugin/marketplace.json"
+      - "plugins/*/.claude-plugin/plugin.json"
+  push:
+    branches: [main]
+    paths:
+      - ".claude-plugin/marketplace.json"
+      - "plugins/*/.claude-plugin/plugin.json"
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate marketplace.json required fields
+        run: |
+          python3 <<'PYEOF'
+          import json, sys
+          d = json.load(open('.claude-plugin/marketplace.json'))
+          assert 'name' in d, 'missing: name'
+          assert 'owner' in d and 'name' in d['owner'], 'missing: owner.name'
+          assert 'metadata' in d and 'version' in d['metadata'], 'missing: metadata.version'
+          assert 'plugins' in d and len(d['plugins']) >= 1, 'missing: plugins[]'
+          for p in d['plugins']:
+              for req in ('name', 'description', 'version', 'source'):
+                  assert req in p, f'plugin missing: {req}'
+              assert p['source'].startswith('./plugins/'), f'invalid source path: {p["source"]}'
+          print(f"✓ marketplace.json has {len(d['plugins'])} plugin(s)")
+          PYEOF
+
+      - name: Validate each plugin.json
+        run: |
+          python3 <<'PYEOF'
+          import json, glob, sys
+          for f in glob.glob('plugins/*/.claude-plugin/plugin.json'):
+              d = json.load(open(f))
+              for req in ('name', 'description', 'version'):
+                  assert req in d, f'{f} missing: {req}'
+              print(f"✓ {f}: {d['name']} v{d['version']}")
+          PYEOF
+
+      - name: Version parity check (marketplace vs plugin)
+        run: |
+          python3 <<'PYEOF'
+          import json
+          mp = json.load(open('.claude-plugin/marketplace.json'))
+          for p in mp['plugins']:
+              source = p['source'].lstrip('./')
+              plugin_json = f"{source}/.claude-plugin/plugin.json"
+              pj = json.load(open(plugin_json))
+              if p['version'] != pj['version']:
+                  raise SystemExit(f"::error::{p['name']}: marketplace says {p['version']} but plugin.json says {pj['version']}")
+              print(f"✓ {p['name']}: marketplace {p['version']} == plugin.json {pj['version']}")
+          PYEOF

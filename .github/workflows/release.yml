@@ -1,0 +1,72 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract tag version
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VER="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VER" >> "$GITHUB_OUTPUT"
+
+      - name: Verify plugin.json version matches tag
+        run: |
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          MANIFEST_VERSION=$(python3 -c "import json; print(json.load(open('plugins/preview-forge/.claude-plugin/plugin.json'))['version'])")
+          MARKETPLACE_VERSION=$(python3 -c "import json; print(json.load(open('.claude-plugin/marketplace.json'))['metadata']['version'])")
+          if [[ "$TAG_VERSION" != "$MANIFEST_VERSION" ]]; then
+            echo "::error::tag=$TAG_VERSION but plugin.json version=$MANIFEST_VERSION"
+            exit 1
+          fi
+          if [[ "$TAG_VERSION" != "$MARKETPLACE_VERSION" ]]; then
+            echo "::error::tag=$TAG_VERSION but marketplace.json version=$MARKETPLACE_VERSION"
+            exit 1
+          fi
+          echo "✓ version alignment: $TAG_VERSION"
+
+      - name: Extract changelog section for this version
+        id: changelog
+        run: |
+          VERSION="${{ steps.version.outputs.version }}"
+          # Extract from CHANGELOG.md between ## [VERSION] and next ##
+          awk -v v="\\[$VERSION\\]" '
+            $0 ~ "^## "v {flag=1; next}
+            flag && /^## / {flag=0}
+            flag {print}
+          ' CHANGELOG.md > /tmp/release_notes.md
+          echo "---" >> /tmp/release_notes.md
+          echo "**Install**:" >> /tmp/release_notes.md
+          echo '```' >> /tmp/release_notes.md
+          echo "/plugin marketplace add Two-Weeks-Team/PreviewForgeForClaudeCode" >> /tmp/release_notes.md
+          echo "/plugin install pf@two-weeks-team" >> /tmp/release_notes.md
+          echo "/reload-plugins" >> /tmp/release_notes.md
+          echo "/pf:bootstrap" >> /tmp/release_notes.md
+          echo "/pf:new \"your idea\"" >> /tmp/release_notes.md
+          echo '```' >> /tmp/release_notes.md
+          cat /tmp/release_notes.md
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.version.outputs.tag }}" \
+            --title "Preview Forge ${{ steps.version.outputs.tag }}" \
+            --notes-file /tmp/release_notes.md \
+            --verify-tag

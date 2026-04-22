@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Hackathon Discord
+    url: https://anthropic.com/discord
+    about: Questions during the "Built with Opus 4.7" hackathon
+  - name: Full Specification (v8.0)
+    url: https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/blob/main/preview-forge-proposal.html
+    about: Complete 3-DD Methodology spec, 143-agent catalog, architecture
