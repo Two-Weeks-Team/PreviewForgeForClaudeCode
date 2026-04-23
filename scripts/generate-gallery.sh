@@ -34,9 +34,14 @@ if [ ! -f "$previews_file" ]; then
   echo "generate-gallery.sh: previews.json not found at $previews_file" >&2
   exit 1
 fi
-if [ ! -d "$mockups_dir" ]; then
-  echo "generate-gallery.sh: mockups/ not found at $mockups_dir" >&2
-  exit 2
+# Non-blocking: when mockups/ is missing or empty we skip silently. This
+# happens on PreviewDD cache hits where `preview-cache.sh cmd_put` only
+# persists previews.json, not the per-advocate HTML files. The H1 gate
+# then simply falls back to the text-card AskUserQuestion — the same
+# experience as v1.5.x — instead of crashing before the user can pick.
+if [ ! -d "$mockups_dir" ] || [ -z "$(find "$mockups_dir" -maxdepth 1 -type f -name 'P*.html' -print -quit 2>/dev/null)" ]; then
+  echo "generate-gallery.sh: no mockup HTMLs under $mockups_dir (likely cache hit) — skipping gallery" >&2
+  exit 0
 fi
 
 # Delegate card rendering to Python — robust JSON + HTML escaping and no

@@ -124,110 +124,18 @@ def load_chosen_preview(run_root: Path) -> str:
     return "\n".join(p for p in parts if p)
 
 
-_UNKNOWN_VALUES = frozenset({"unknown", "", None})
-
-
-def _spec_semantic_strings(data: dict) -> list[str]:
-    """Extract filled **technical** semantic string values from idea.spec.json.
-
-    Rule 9 protects technical artifacts (specs/SPEC.md, specs/openapi.yaml,
-    package READMEs). Purely commercial dimensions (monetization_model,
-    success_metric) are deliberately excluded from the anchor vocabulary:
-    they almost never appear in an OpenAPI document or technical README,
-    so including them would make containment drop mechanically and produce
-    false-positive drift warnings on valid SpecDD writes.
-
-    Included here:
-      idea_summary, target_persona.{profile, primary_pain},
-      primary_surface.{platform, sync_model}, jobs_to_be_done.*,
-      must_have_constraints[].value, killer_feature, non_goals[].
-
-    Excluded (tracked in idea.spec.json but not in drift anchor):
-      monetization_model, success_metric — business-model tokens that
-      correctly live in the chosen_preview pitch / PR description, not
-      in technical spec bodies.
-
-    Returns the text content of fields whose value is neither null nor the
-    sentinel "unknown" — every other semantic slot is skipped so that the
-    soft-anchor contract (`_filled_ratio < 0.5` is allowed) does not
-    penalize users for leaving dimensions unspecified at H1 time.
-    """
-    out: list[str] = []
-
-    def keep(v) -> bool:
-        if v is None:
-            return False
-        if isinstance(v, str) and v.strip().lower() in _UNKNOWN_VALUES:
-            return False
-        return True
-
-    if keep(data.get("idea_summary")):
-        out.append(str(data["idea_summary"]))
-
-    persona = data.get("target_persona") or {}
-    if isinstance(persona, dict):
-        for k in ("profile", "primary_pain"):
-            v = persona.get(k)
-            if keep(v):
-                out.append(str(v))
-
-    surface = data.get("primary_surface") or {}
-    if isinstance(surface, dict):
-        for k in ("platform", "sync_model"):
-            v = surface.get(k)
-            if keep(v):
-                out.append(str(v))
-
-    jtbd = data.get("jobs_to_be_done") or {}
-    if isinstance(jtbd, dict):
-        for k in ("functional", "emotional", "social"):
-            v = jtbd.get(k)
-            if keep(v):
-                out.append(str(v))
-
-    for c in data.get("must_have_constraints") or []:
-        if isinstance(c, dict):
-            v = c.get("value")
-            if keep(v):
-                out.append(str(v))
-
-    if keep(data.get("killer_feature")):
-        out.append(str(data["killer_feature"]))
-
-    for g in data.get("non_goals") or []:
-        if keep(g):
-            out.append(str(g))
-
-    # monetization_model and success_metric are intentionally NOT appended;
-    # see docstring — they are business vocabulary that would false-positive
-    # on technical protected-path writes (openapi.yaml, SPEC.md, READMEs).
-
-    return out
-
-
-def load_idea_spec(run_root: Path) -> str:
-    """Concat filled semantic fields from idea.spec.json (v1.6.0+).
-
-    v1.5.x runs have no idea.spec.json; returns "" for those so the
-    containment anchor falls back to chosen_preview alone.
-
-    Every field may be null or "unknown" under the soft-anchor contract —
-    those are intentionally excluded so drift detection does not punish
-    writes that touch dimensions the user never specified.
-    """
-    spec = run_root / "idea.spec.json"
-    if not spec.exists():
-        return ""
-    try:
-        data = json.load(spec.open())
-    except (OSError, json.JSONDecodeError):
-        return ""
-    return "\n".join(_spec_semantic_strings(data))
-
-
-def load_idea_anchor(run_root: Path) -> str:
-    """Full Rule 9 anchor = chosen_preview ∪ filled idea.spec fields."""
-    return "\n".join(p for p in (load_chosen_preview(run_root), load_idea_spec(run_root)) if p)
+#
+# NOTE (v1.6.0): an earlier draft of this file extended Rule 9's token
+# anchor to include filled fields from runs/<id>/idea.spec.json (produced
+# by I1's Socratic interview). Codex review flagged repeatedly that even
+# the "technical-only" subset (persona pain, JTBD functional/emotional,
+# non_goals, …) produces false-positive drift warnings on legitimate
+# openapi.yaml / SPEC.md writes, because those soft-copy terms rarely
+# appear in API schemas or technical READMEs. Per the "scope discipline"
+# rule (flag same area ≥2 rounds → take the conservative path), Rule 9's
+# anchor remains exactly chosen_preview (pre-v1.6.0 behavior). The spec
+# remains consumed by (a) advocate ground truth in I_LEAD dispatch and
+# (b) the PreviewDD cache key; drift detection just doesn't read it.
 
 
 def read_hook_input() -> dict:
@@ -281,7 +189,7 @@ def main() -> int:
     if not run_root:
         return 0
 
-    chosen_text = load_idea_anchor(run_root)
+    chosen_text = load_chosen_preview(run_root)
     if not chosen_text:
         # Gate H1 hasn't produced chosen_preview yet — nothing to compare against.
         return 0

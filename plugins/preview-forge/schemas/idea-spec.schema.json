@@ -18,7 +18,7 @@
         "primary_pain": { "type": ["string", "null"], "description": "One-sentence description of the user's current pain point." },
         "usage_frequency": {
           "type": ["string", "null"],
-          "enum": ["daily", "weekly", "monthly", "episodic", "unknown", null]
+          "description": "Canonical values: daily | weekly | monthly | episodic | unknown. Free-form text (e.g. 'twice a day') also allowed so the AskUserQuestion 'Other' path is never silently discarded."
         }
       },
       "additionalProperties": false
@@ -28,11 +28,11 @@
       "properties": {
         "platform": {
           "type": ["string", "null"],
-          "enum": ["web", "mobile", "desktop", "api", "hybrid", "unknown", null]
+          "description": "Canonical values: web | mobile | desktop | api | hybrid | unknown. Free-form text (e.g. 'Slack bot', 'Telegram') is preserved verbatim so Batch B 'Other' answers are never coerced into a lossy bucket."
         },
         "sync_model": {
           "type": ["string", "null"],
-          "enum": ["real-time", "eventual", "batch", "unknown", null]
+          "description": "Canonical values: real-time | eventual | batch | unknown. Free-form text allowed."
         },
         "offline_capable": { "type": ["boolean", "null"] }
       },
@@ -74,7 +74,7 @@
     },
     "monetization_model": {
       "type": ["string", "null"],
-      "enum": ["freemium", "subscription", "one-time", "b2b_saas", "open_source", "ads", "transaction_fee", "unknown", null]
+      "description": "Canonical values: freemium | subscription | one-time | b2b_saas | open_source | ads | transaction_fee | unknown. Free-form text allowed for Batch C 'Other' answers (e.g. 'sponsorship', 'grant-funded')."
     },
     "success_metric": {
       "type": ["string", "null"],
