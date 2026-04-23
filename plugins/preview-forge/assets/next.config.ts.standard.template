@@ -1,0 +1,46 @@
+// Preview Forge — standard profile Next.js config template.
+// Generated when profile=standard (Next.js 16 + typia AOT transform).
+//
+// CRITICAL — typia transform wiring (B1 fix, root cause of past 6×500 errors):
+// typia is a runtime validator that REQUIRES an AOT compile-time transform.
+// In Next.js 16 + Turbopack, this is wired via @ryoppippi/unplugin-typia/webpack
+// (Webpack-compatible) and the matching Vite plugin in vitest.config.ts.
+//
+// Symptom when this is missing: every POST route that does
+//   `typia.createValidate<T>()` returns 500 with body
+//   "Error on typia.createValidate(): no transform has been configured".
+// Affected routes in past runs: /api/auth/session, /api/me, /api/meals/voice,
+//   /api/glucose, /api/family/invite, /api/safety/flags/acknowledge.
+//
+// DO NOT remove this plugin even if no obvious typia call exists at scaffold
+// time — the spec author often introduces typia tags later in SCC iter.
+
+import type { NextConfig } from "next";
+import UnpluginTypia from "@ryoppippi/unplugin-typia/webpack";
+
+const nextConfig: NextConfig = {
+  reactStrictMode: true,
+  // Standard profile is local-first; no image domains by default.
+  // Engineering scaffold can extend this when chosen_preview requires remote images.
+  images: {
+    unoptimized: true,
+  },
+  webpack: (config) => {
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      UnpluginTypia({
+        strict: true,
+        // Cache transforms for faster rebuilds. Safe for hackathon-scale projects.
+        cache: true,
+      }),
+    );
+    return config;
+  },
+  // Next.js 16: stable Turbopack. unplugin-typia ships a Turbopack adapter via
+  // its webpack export, so the same wiring covers both `next dev` and `next build`.
+  experimental: {
+    typedRoutes: true,
+  },
+};
+
+export default nextConfig;

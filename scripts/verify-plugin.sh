@@ -123,8 +123,14 @@ seed_count=$(find "$PLUGIN_DIR/seed-ideas" -name "*.md" | wc -l | tr -d ' ')
 schema_count=$(find "$PLUGIN_DIR/schemas" -name "*.json" | wc -l | tr -d ' ')
 [[ "$schema_count" -eq 4 ]] && ok "4 JSON schemas (preview-card, panel-vote, score-report, pf-profile)" || bad "schemas: $schema_count (expected 4)"
 asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f | wc -l | tr -d ' ')
-# v1.4+ adds 4 standard-profile templates: prisma, gitignore, README, graduate.sh
-[[ "$asset_count" -eq 8 ]] && ok "8 asset templates (4 base + 4 standard-profile v1.4)" || bad "assets: $asset_count (expected 8)"
+# v1.4: 4 base + 4 standard-profile (prisma, gitignore, README, graduate.sh)
+# v1.5+: 4 base + 8 standard-profile (+ package.json, tsconfig.json, vitest.config.ts, next.config.ts)
+[[ "$asset_count" -eq 12 ]] && ok "12 asset templates (4 base + 8 standard-profile v1.5)" || bad "assets: $asset_count (expected 12)"
+
+# v1.5: B1+B2 fix — build-essentials standard templates required to prevent typia/vitest omission
+for tpl in package.json tsconfig.json vitest.config.ts next.config.ts; do
+  [[ -f "$PLUGIN_DIR/assets/${tpl}.standard.template" ]] && ok "assets/${tpl}.standard.template" || bad "missing assets/${tpl}.standard.template (B1+B2)"
+done
 [[ -f "$PLUGIN_DIR/monitors/monitors.json" ]] && ok "monitors/monitors.json" || bad "monitors missing"
 [[ -f "$PLUGIN_DIR/settings.json" ]] && ok "settings.json" || bad "settings.json missing"
 [[ -x "$PLUGIN_DIR/bin/pf" ]] && ok "bin/pf executable" || bad "bin/pf not executable"
