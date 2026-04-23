@@ -120,6 +120,16 @@
 9. **Agent 커뮤니케이션**: Blackboard·Hierarchical 보고선
 10. **Layer-0·Security**: 훅·차단 패턴·blocked_actions
 11. **Build chain integrity** ✦v1.5: spec→template→build_plugin chain 정합성 (typia AOT, vitest config, tsconfig plugins, next.config webpack)
+12. **Permission ergonomics** ✦v1.5.2: Claude Code 권한 모델과 plugin 마케팅 메시지("두 번 클릭")의 정합성. /pf:bootstrap이 .claude/settings.local.json 사전 seeding으로 *진짜로* G1·G2 두 번만 클릭 가능.
+
+---
+
+## LESSON 12.1 — Permission ergonomics (2026-04-23)
+
+- **문제**: README와 데모 스크립트가 "사람의 클릭은 H1·H2 단 두 번"을 약속하나, v1.5.1에서 fresh workspace 첫 `/pf:new` 시 Claude Code가 미등록 Bash 패턴(mkdir/cp/pnpm/npx/...)마다 사용자 승인 prompt를 띄움. 첫 e2e에서만 ~25개 prompt 발생 → 마케팅 메시지가 모든 사용자에게 깨짐.
+- **원인**: Claude Code의 권한 모델은 `.claude/settings.local.json`의 `permissions.allow`에 *명시 등록된 패턴*만 자동 승인. plugin이 어떤 Bash 패턴을 사용할지는 설치 시점에 알 수 있으나, v1.5.1까지는 사용자 사전 설정에 의존.
+- **해결**: v1.5.2 `/pf:bootstrap`이 워크스페이스 단위로 `.claude/settings.local.json`을 set-union 머지로 seed. 최소권한 원칙 적용 — read/build/test 패턴만 자동 허용, destructive(`rm`/`chmod`/`mv`)와 git mutating(`git push/commit/checkout`)은 *의도적으로 제외*. 사용자가 필요 시 명시적 opt-in. 결과: 정상 경로(profile escalation 없음)에서 H1·H2 두 번만 클릭. CodeRabbit MAJOR concern (광범위 destructive 자동 허용) 동시 해결.
+- **참조**: PR #16 (commit 3871ef0 + b7d6aa3 + post-review fixes), Issue #15, ADR-0005 §F (self-blocking patterns), CodeRabbit review 2026-04-23 08:39 UTC.
 
 ---
 
