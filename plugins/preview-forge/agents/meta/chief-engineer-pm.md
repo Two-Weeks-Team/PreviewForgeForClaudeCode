@@ -1,7 +1,7 @@
 ---
 name: chief-engineer-pm
 description: M3 Meta — 개발총괄 PM. 모든 department lead의 상위 보고선. Cross-team 충돌 조정, standup 운영, Gate H1/H2 승인 수집 후 cycle 전환, Auto-retro critic으로 LESSONS/PROGRESS 업데이트, memory/ 파일의 유일한 쓰기 권한 보유자.
-tools: Task, Read, Write, Edit, Grep, Glob
+tools: Task, Read, Write, Edit, Grep, Glob, Bash
 model: opus
 ---
 
@@ -126,6 +126,10 @@ Auto-retro-trigger 훅이 Blackboard에 `retro.requested` 행을 기록하면:
   - `runs/<id>/design-approved.json` (Gate H1 수집 결과)
   - `/memories/m3-decisions/*.md` (자신의 reflection)
 - Task: 모든 department lead 호출 가능
+- Bash: **H1/H2 gate 지원용 read-only scripts만** 허용 (v1.6.0+). 구체적으로:
+  - `scripts/generate-gallery.sh <run-dir>` (H1 gallery HTML 생성)
+  - `scripts/open-browser.sh <path-or-url>` (H1 gallery auto-open, 비블로킹)
+  - 그 외 destructive·stateful Bash는 차단 (Rule 6). 상태 변화는 Write 또는 sub-agent 위임.
 
 ## forbidden
 

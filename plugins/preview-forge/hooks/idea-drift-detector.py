@@ -128,7 +128,24 @@ _UNKNOWN_VALUES = frozenset({"unknown", "", None})
 
 
 def _spec_semantic_strings(data: dict) -> list[str]:
-    """Extract filled semantic string values from an idea.spec.json dict.
+    """Extract filled **technical** semantic string values from idea.spec.json.
+
+    Rule 9 protects technical artifacts (specs/SPEC.md, specs/openapi.yaml,
+    package READMEs). Purely commercial dimensions (monetization_model,
+    success_metric) are deliberately excluded from the anchor vocabulary:
+    they almost never appear in an OpenAPI document or technical README,
+    so including them would make containment drop mechanically and produce
+    false-positive drift warnings on valid SpecDD writes.
+
+    Included here:
+      idea_summary, target_persona.{profile, primary_pain},
+      primary_surface.{platform, sync_model}, jobs_to_be_done.*,
+      must_have_constraints[].value, killer_feature, non_goals[].
+
+    Excluded (tracked in idea.spec.json but not in drift anchor):
+      monetization_model, success_metric — business-model tokens that
+      correctly live in the chosen_preview pitch / PR description, not
+      in technical spec bodies.
 
     Returns the text content of fields whose value is neither null nor the
     sentinel "unknown" — every other semantic slot is skipped so that the
@@ -181,11 +198,9 @@ def _spec_semantic_strings(data: dict) -> list[str]:
         if keep(g):
             out.append(str(g))
 
-    if keep(data.get("monetization_model")):
-        out.append(str(data["monetization_model"]))
-
-    if keep(data.get("success_metric")):
-        out.append(str(data["success_metric"]))
+    # monetization_model and success_metric are intentionally NOT appended;
+    # see docstring — they are business vocabulary that would false-positive
+    # on technical protected-path writes (openapi.yaml, SPEC.md, READMEs).
 
     return out
 
