@@ -10,6 +10,7 @@
 // DO NOT delete this file even if test_count = 0 — the runner config is required.
 
 import { defineConfig } from "vitest/config";
+import { fileURLToPath } from "node:url";
 import UnpluginTypia from "@ryoppippi/unplugin-typia/vite";
 
 export default defineConfig({
@@ -38,7 +39,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      "@": new URL("./", import.meta.url).pathname,
+      // fileURLToPath is the cross-platform safe way (Windows-friendly)
+      // to convert import.meta.url to a filesystem path.
+      "@": fileURLToPath(new URL("./", import.meta.url)),
     },
   },
 });
