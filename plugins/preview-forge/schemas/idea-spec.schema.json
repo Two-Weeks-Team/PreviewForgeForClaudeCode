@@ -1,0 +1,96 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/schemas/idea-spec.schema.json",
+  "title": "IdeaSpec",
+  "description": "Structured idea specification produced by I1 Socratic Interviewer (3-batch × 3-4 Qs). Soft anchor — every semantic field may be 'unknown' or null so downstream advocates can still reason creatively while the filled subset anchors Rule 9 containment.",
+  "type": "object",
+  "required": ["idea_summary", "_filled_ratio", "_schema_version"],
+  "properties": {
+    "idea_summary": {
+      "type": "string",
+      "description": "Original one-liner from /pf:new, verbatim.",
+      "minLength": 1
+    },
+    "target_persona": {
+      "type": "object",
+      "properties": {
+        "profile": { "type": ["string", "null"], "description": "Concrete user — e.g. 'solo founder under time pressure', not 'small business'." },
+        "primary_pain": { "type": ["string", "null"], "description": "One-sentence description of the user's current pain point." },
+        "usage_frequency": {
+          "type": ["string", "null"],
+          "enum": ["daily", "weekly", "monthly", "episodic", "unknown", null]
+        }
+      },
+      "additionalProperties": false
+    },
+    "primary_surface": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": ["string", "null"],
+          "enum": ["web", "mobile", "desktop", "api", "hybrid", "unknown", null]
+        },
+        "sync_model": {
+          "type": ["string", "null"],
+          "enum": ["real-time", "eventual", "batch", "unknown", null]
+        },
+        "offline_capable": { "type": ["boolean", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "jobs_to_be_done": {
+      "type": "object",
+      "description": "Functional/emotional/social framing per jobs-to-be-done skill.",
+      "properties": {
+        "functional": { "type": ["string", "null"], "description": "What practical outcome does the user achieve?" },
+        "emotional": { "type": ["string", "null"], "description": "How does the user want to feel — calm, confident, in control?" },
+        "social": { "type": ["string", "null"], "description": "How does the user want to be perceived by others?" }
+      },
+      "additionalProperties": false
+    },
+    "must_have_constraints": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "value"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": ["regulatory", "budget", "latency", "team_size", "platform", "data_residency"]
+          },
+          "value": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "killer_feature": {
+      "type": ["string", "null"],
+      "description": "The 1 thing that differentiates this from existing solutions. 'unknown' or null if Socratic phase did not pin it down."
+    },
+    "non_goals": {
+      "type": "array",
+      "description": "Explicitly out-of-scope items. Empty array allowed (soft anchor).",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "monetization_model": {
+      "type": ["string", "null"],
+      "enum": ["freemium", "subscription", "one-time", "b2b_saas", "open_source", "ads", "transaction_fee", "unknown", null]
+    },
+    "success_metric": {
+      "type": ["string", "null"],
+      "description": "How would you measure if this succeeded — revenue, DAU, retention, task completion time, NPS?"
+    },
+    "_filled_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction of semantic fields (excluding _ meta) populated with a non-null/non-unknown value. If < 0.5, I_LEAD emits a soft warning but does not block advocate dispatch."
+    },
+    "_schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Schema version for forward-compat. v1.5.x runs have no idea.spec.json; v1.6.x introduced this schema."
+    }
+  },
+  "additionalProperties": false
+}
