@@ -42,10 +42,30 @@ fi
 
 : "${CLAUDE_PLUGIN_ROOT:=}"
 
+# Sentinel pattern (shared by watermark-using monitors; see issue #20):
+#   1. Initialize per-monitor watermark to epoch if missing (first run).
+#   2. Capture "now" in <watermark>.next BEFORE running find, so any file
+#      written between the capture and the find completion is still picked
+#      up next iteration (compared against the OLD watermark this round,
+#      the pre-find capture next round).
+#   3. Promote <watermark>.next to <watermark> AFTER find. This would
+#      otherwise be racey: a file written between find and touch would
+#      have mtime > post-find-touch time and be permanently skipped.
+#
+# Prior to this, blackboard-tail and cost-snapshot-watcher shared a single
+# runs/.last-check file — blackboard-tail never advanced it (repeat emits)
+# and cost-snapshot-watcher's advance starved blackboard-tail of events.
 case "$name" in
   blackboard-tail)
-    [ -e runs/.last-check ] || touch -t 197001010000 runs/.last-check
-    find runs -name 'blackboard.db' -newer runs/.last-check 2>/dev/null | head -1 || true
+    # Emit ALL updated blackboard.db paths (one per line = one notification
+    # each) before advancing the watermark. v1.5.2 used `| head -1` here but
+    # never advanced the watermark, so the dropped entries were re-emitted
+    # next iteration. Now that the watermark advances, truncating output
+    # would permanently lose events from concurrent runs — drop head -1.
+    [ -e runs/.last-check.blackboard ] || touch -t 197001010000 runs/.last-check.blackboard
+    touch runs/.last-check.blackboard.next
+    find runs -name 'blackboard.db' -newer runs/.last-check.blackboard 2>/dev/null || true
+    touch -r runs/.last-check.blackboard.next runs/.last-check.blackboard 2>/dev/null || true
     sleep 1
     ;;
   cost-regression)
@@ -55,13 +75,10 @@ case "$name" in
     sleep 30
     ;;
   cost-snapshot-watcher)
-    # Sentinel pattern: capture .last-check.next timestamp BEFORE find, then
-    # promote it to .last-check AFTER find. Prevents the race where a
-    # snapshot written between find and touch is permanently skipped.
-    [ -e runs/.last-check ] || touch -t 197001010000 runs/.last-check
-    touch runs/.last-check.next
-    find runs -name 'cost-snapshot.json' -newer runs/.last-check 2>/dev/null || true
-    touch -r runs/.last-check.next runs/.last-check 2>/dev/null || true
+    [ -e runs/.last-check.cost-snapshot ] || touch -t 197001010000 runs/.last-check.cost-snapshot
+    touch runs/.last-check.cost-snapshot.next
+    find runs -name 'cost-snapshot.json' -newer runs/.last-check.cost-snapshot 2>/dev/null || true
+    touch -r runs/.last-check.cost-snapshot.next runs/.last-check.cost-snapshot 2>/dev/null || true
     sleep 15
     ;;
   *)
