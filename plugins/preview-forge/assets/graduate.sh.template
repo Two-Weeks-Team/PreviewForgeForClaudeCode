@@ -56,15 +56,19 @@ if [[ ! -f Dockerfile ]]; then
 # Prisma postinstall — runtime image then ships without generated client).
 # Instead the builder stage installs ts-patch explicitly.
 
-# Stage 1: production deps only. Lifecycle scripts ARE allowed so Prisma
-# postinstall can generate the client into node_modules. ts-patch isn't
-# needed here (it's a devDep, omitted) and there's no `prepare` script
-# that would reference it.
+# Stage 1: production deps + Prisma client generation. Doing a FULL
+# `npm ci` first (incl. devDeps so the prisma CLI is available),
+# generating the client, then pruning devDeps. The standalone
+# `@prisma/client` postinstall would NOT generate the client when
+# devDeps are omitted (CodeRabbit Critical, PR #13 wave 6: prisma CLI
+# is a devDep, postinstall has nothing to invoke).
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
 COPY prisma ./prisma
-RUN npm ci --omit=dev
+RUN npm ci \
+ && npx --yes prisma generate \
+ && npm prune --omit=dev
 
 # Stage 2: full install + explicit ts-patch + build. ts-patch is a
 # devDependency so it's present here. We invoke it explicitly (not via
