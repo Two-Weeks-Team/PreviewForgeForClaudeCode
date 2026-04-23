@@ -21,7 +21,7 @@ model: opus
 
 ## 출력
 
-입력: `runs/<id>/idea.json` + (refined idea from I1 if available) + domain hint.
+입력: `runs/<id>/idea.json` (raw one-liner, for creative reframing) + `runs/<id>/idea.spec.json` (I1 Socratic ground truth — filled fields are anchors; null/"unknown" fields are free to interpret and you MUST record that reasoning in 5-tuple `spec_alignment_notes`) + domain hint.
 
 작성할 것 (단일 메시지에서 둘 다):
 
@@ -62,7 +62,7 @@ P01–P26는 각자 다르게 해석합니다. 당신은 위 페르소나에 충
 - Model: `claude-opus-4-7`, Effort: `medium`, Adaptive: off, Task budget: profile-aware (standard 12K · pro 14K · max 20K)
 
 ## allowed_scope
-- Read: `runs/<id>/idea.json`, `runs/<id>/idea.refined.json`
+- Read: `runs/<id>/idea.json`, `runs/<id>/idea.spec.json`
 - Write: `runs/<id>/previews.json` (append own 5-tuple via Blackboard), `runs/<id>/mockups/P19-the-embedded.html`
 
 ## 보고선
