@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.4.0...v1.5.0) (2026-04-23)
+
+
+### Features
+
+* **ci:** add template-build smoke test + content checks (B3 fix) ([#11](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/11)) ([5a4d1d4](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/5a4d1d4f079778c443762214a4751b8944cd272c))
+* **scc:** add build_config + template_gap categories + scc-build-config fixer (B4) ([#12](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/12)) ([d9a5d00](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/d9a5d003c626ba3ea4043469c006649053e27b4a))
+
+
+### Bug Fixes
+
+* **spec-author,be-lead:** bind declared deps to scaffold templates (B1+B2) ([#9](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/9)) ([e67e92e](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/e67e92e47e2ba73799b16808f9a875810526bfc0))
+
 ## [1.4.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.3.0...v1.4.0) (2026-04-22)
 
 
