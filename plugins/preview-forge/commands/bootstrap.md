@@ -109,6 +109,10 @@ PF_BASH = [
     # Git read-only — push/commit/checkout require user intent
     "Bash(git status*)", "Bash(git log*)", "Bash(git diff*)",
     "Bash(git rev-parse*)",
+    # v1.6.0 H1 gallery helpers (narrow — script-specific, not `bash:*`)
+    "Bash(bash *scripts/generate-gallery.sh*)",
+    "Bash(bash *scripts/open-browser.sh*)",
+    "Bash(open:*)", "Bash(xdg-open:*)", "Bash(start:*)",
 ]
 # Normalize allow entries before set conversion: skip non-strings (dicts,
 # lists, ints from manual edits / external tools) so set() can't TypeError.

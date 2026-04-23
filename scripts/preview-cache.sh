@@ -13,8 +13,13 @@
 #   ~/.claude/preview-forge/cache/preview-dd/<key>.json
 #
 # Operations (subcommand dispatch):
-#   key <idea_text> <profile_name> [<previews_override>] [<idea_spec_path>]
+#   key <idea_text> <profile_name> [<idea_spec_path>] [<previews_override>]
 #                                            — print cache key (stdout)
+#   (arg order: spec path is 3rd positional so the common 3-arg call with
+#    spec but no preview override works without positional padding. Legacy
+#    3-arg callers that passed previews_override as the 3rd arg are still
+#    supported: when the 3rd arg is a valid integer AND does not exist as
+#    a file, it is treated as previews_override for back-compat.)
 #   get <key>                                — print cached JSON if fresh; exit 1 if miss
 #   put <key> <json_path>                    — store JSON at key
 #   invalidate <key>                         — delete one key
@@ -47,15 +52,22 @@ print(hashlib.sha256(data).hexdigest()[:16])
 cmd_key() {
   local idea="$1"
   local profile="${2:-pro}"
-  # Optional 3rd arg: explicit preview count override (from /pf:new --previews=N).
-  # When set, the advocate set is distinct from the profile's default count —
-  # runs with different N must not collide in cache.
-  local previews_override="${3:-}"
-  # Optional 4th arg (v1.6.0+): path to runs/<id>/idea.spec.json.
-  # Same one-liner + different Socratic answers must NOT hit the same
-  # cache entry — this hash component discriminates them. Omit or pass
-  # empty for v1.5.x runs; the keyspace stays backward compatible.
-  local spec_path="${4:-}"
+  # v1.6.0 arg order: 3rd = idea_spec_path (common call in /pf:new),
+  # 4th = previews_override (used only with /pf:new --previews=N).
+  # Back-compat shim: if the 3rd arg is a pure integer and NOT a file
+  # path on disk, treat it as a legacy previews_override (v1.5.x callers).
+  local arg3="${3:-}"
+  local arg4="${4:-}"
+  local spec_path=""
+  local previews_override=""
+  if [[ -n "$arg3" ]]; then
+    if [[ "$arg3" =~ ^[0-9]+$ && ! -f "$arg3" ]]; then
+      previews_override="$arg3"  # legacy 3-arg call
+    else
+      spec_path="$arg3"          # v1.6.0 3-arg call
+      previews_override="$arg4"
+    fi
+  fi
 
   # Load profile's preview count to derive advocate set hash. If profile
   # file missing, fall back to the profile name as the set discriminator.
