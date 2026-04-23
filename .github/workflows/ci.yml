@@ -518,9 +518,10 @@ jobs:
         run: bash scripts/test-templates.sh
 
       - name: Install pnpm
+        # version is auto-detected from root package.json `packageManager` field
+        # (pnpm@9.15.0). Specifying `version:` here would conflict with that
+        # and fail with ERR_PNPM_BAD_PM_VERSION.
         uses: pnpm/action-setup@v4
-        with:
-          version: 9
 
       - uses: actions/setup-node@v4
         with:
