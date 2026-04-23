@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.3](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.2...v1.5.3) (2026-04-23)
+
+
+### Bug Fixes
+
+* **monitors:** gate on pf workspace, silent exit in unrelated cwds ([#18](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/18)) ([#19](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/19)) ([f33c41f](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/f33c41f0601acd642e29d746921214337bba1aea))
+
 ## [1.5.2](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.1...v1.5.2) (2026-04-23)
 
 
