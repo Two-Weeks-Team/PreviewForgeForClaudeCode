@@ -49,14 +49,34 @@ Bash(mv:*)            Bash(chmod:*)         Bash(prisma:*)
 - 파일 있고 `permissions.allow` 없음 → key 추가 + 위 list 적재
 - 사용자 작성 항목은 **건드리지 않음** (read/manual edit 우선)
 
-JSON merge 로직 (Python jq-style):
+JSON merge 로직 (Python, defensive — empty file / wrong types 모두 graceful):
 ```bash
 python3 - <<'PY'
 import json, pathlib
 p = pathlib.Path(".claude/settings.local.json")
 p.parent.mkdir(parents=True, exist_ok=True)
-data = json.loads(p.read_text()) if p.exists() else {}
-allow = data.setdefault("permissions", {}).setdefault("allow", [])
+
+# Read defensively — empty file, invalid JSON, or missing all parse to {}.
+content = p.read_text().strip() if p.exists() else ""
+try:
+    data = json.loads(content) if content else {}
+except json.JSONDecodeError:
+    data = {}
+if not isinstance(data, dict):
+    data = {}
+
+# permissions might exist but not be a dict (e.g. user typed `permissions: []`).
+perms = data.get("permissions")
+if not isinstance(perms, dict):
+    perms = {}
+    data["permissions"] = perms
+
+# allow might exist but not be a list.
+allow = perms.get("allow")
+if not isinstance(allow, list):
+    allow = []
+    perms["allow"] = allow
+
 PF_BASH = [
     "Bash(mkdir:*)", "Bash(cp:*)", "Bash(echo:*)", "Bash(ls:*)",
     "Bash(cat:*)", "Bash(find:*)", "Bash(grep:*)", "Bash(head:*)",
@@ -67,11 +87,14 @@ PF_BASH = [
     "Bash(chmod:*)", "Bash(prisma:*)",
 ]
 existing = set(allow)
+added = 0
 for item in PF_BASH:
     if item not in existing:
         allow.append(item)
+        added += 1
+
 p.write_text(json.dumps(data, indent=2) + "\n")
-print(f"✓ {p}: {len(allow)} entries (added {len(PF_BASH) - len(existing & set(PF_BASH))} new)")
+print(f"✓ {p}: {len(allow)} entries (added {added} new)")
 PY
 ```
 
