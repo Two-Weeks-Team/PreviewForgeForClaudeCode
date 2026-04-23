@@ -119,6 +119,16 @@
 8. **디자인 통합**: Claude Design 연동·fallback
 9. **Agent 커뮤니케이션**: Blackboard·Hierarchical 보고선
 10. **Layer-0·Security**: 훅·차단 패턴·blocked_actions
+11. **Build chain integrity** ✦v1.5: spec→template→build_plugin chain 정합성 (typia AOT, vitest config, tsconfig plugins, next.config webpack)
+
+---
+
+## LESSON 11.1 — Build chain integrity (2026-04-23)
+
+- **문제**: Run `r-20260423-093527` (당뇨환자 식단, standard profile)에서 6 POST 라우트가 *"Error on typia.createValidate(): no transform has been configured"*로 500 응답. 36 unit + 11 integration test 미실행. score 451/500 (J2: 67 FAIL), freeze 미달.
+- **원인**: spec-author가 typia tags 명시 + BE_LEAD가 `typia^12`을 deps에 추가. 그러나 `@ryoppippi/unplugin-typia` (Next.js plugin)이 `next.config.ts` webpack에 wired 안 됨. `vitest`도 spec 파일 import만 있고 devDeps 미등록. SCC가 `dep_missing`으로 *오분류* → 해결 못 함.
+- **해결**: (1) `assets/{package.json,tsconfig.json,vitest.config.ts,next.config.ts}.standard.template` 4개 추가, plugin chain pre-wired (PR #9, B1+B2). (2) spec-author "Dependency Binding" 섹션 + be-lead "Scaffold 직전 Checklist" (PR #9). (3) `scripts/test-templates.sh` + CI `template-build` job (PR #11, B3) — pnpm install + typecheck로 PR time 검증. (4) `agents/scc/scc-build-config.md` 신규 fixer + scc-lead 분류 카테고리 `build_config`/`template_gap` 추가 (PR #12, B4).
+- **참조**: ADR-0005 §"Plugin 본질 결함 분석" B1+B2+B3+B4. PR #9 e67e92e, PR #11 5a4d1d4, PR #12 (this).
 
 ---
 
