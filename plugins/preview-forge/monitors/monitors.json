@@ -11,7 +11,7 @@
   },
   {
     "name": "cost-snapshot-watcher",
-    "command": "if [ -d runs ]; then [ -e runs/.last-check ] || touch -t 197001010000 runs/.last-check; find runs -name 'cost-snapshot.json' -newer runs/.last-check 2>/dev/null; touch runs/.last-check; fi; sleep 15",
-    "description": "Cost Monitor threshold watcher — triggers cost-regression check on snapshot update"
+    "command": "if [ -d runs ]; then [ -e runs/.last-check ] || touch -t 197001010000 runs/.last-check; touch runs/.last-check.next; find runs -name 'cost-snapshot.json' -newer runs/.last-check 2>/dev/null; mv runs/.last-check.next runs/.last-check; fi; sleep 15",
+    "description": "Cost Monitor threshold watcher — triggers cost-regression check on snapshot update. Sentinel pattern (.last-check.next captured BEFORE find, atomic rename AFTER) avoids the race where a snapshot written between find and touch would be permanently skipped."
   }
 ]
