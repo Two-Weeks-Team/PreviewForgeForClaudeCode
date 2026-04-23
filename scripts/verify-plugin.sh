@@ -122,11 +122,12 @@ seed_count=$(find "$PLUGIN_DIR/seed-ideas" -name "*.md" | wc -l | tr -d ' ')
 [[ "$seed_count" -eq 10 ]] && ok "10 seed ideas" || bad "seed-ideas: $seed_count (expected 10)"
 schema_count=$(find "$PLUGIN_DIR/schemas" -name "*.json" | wc -l | tr -d ' ')
 [[ "$schema_count" -eq 4 ]] && ok "4 JSON schemas (preview-card, panel-vote, score-report, pf-profile)" || bad "schemas: $schema_count (expected 4)"
-asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f -name "*template*" | wc -l | tr -d ' ')
+asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f ! -name "*.md" ! -name ".*" | wc -l | tr -d ' ')
 # v1.4: 4 base + 4 standard-profile (prisma, gitignore, README, graduate.sh)
 # v1.5+: 4 base + 8 standard-profile (+ package.json, tsconfig.json, vitest.config.ts, next.config.ts)
-# Match `*template*` to cover both `*.template` and `docker-compose.template.yml`-style naming.
-# Excludes README .md siblings (no `template` substring) introduced in v1.5.1.
+# Explicit exclude of `.md` (template-sibling READMEs since v1.5.1) and dotfiles.
+# This is more robust than positive `*template*` matching, which would silently
+# drop a future template that lacked the substring (gemini-code-assist PR #13 review).
 [[ "$asset_count" -eq 12 ]] && ok "12 asset templates (4 base + 8 standard-profile v1.5)" || bad "assets: $asset_count templates (expected 12)"
 
 # v1.5: B1+B2 fix — build-essentials standard templates required to prevent typia/vitest omission

@@ -87,23 +87,24 @@ ok "tsconfig.json parses"
 echo
 
 echo "[4/4] Static content checks (B1+B2 fix verification)"
-# package.json: assert each dep is in dependencies OR devDependencies (JSON-aware,
-# not just raw grep — a dep name appearing in `scripts` shouldn't count).
-python3 - "$TMPDIR/package.json" <<'PY' || exit 2
+# package.json: assert each required dep is in dependencies OR devDependencies
+# (JSON-aware — raw grep would false-positive on `scripts:` containing dep names).
+# Iterate per-dep and use the shared ok/bad helpers so the summary stays accurate
+# even when this list grows or shrinks (gemini-code-assist PR #13 review).
+required_deps=(typia vitest "@ryoppippi/unplugin-typia" ts-patch "@prisma/client" next react)
+for dep in "${required_deps[@]}"; do
+  if python3 - "$TMPDIR/package.json" "$dep" <<'PY' >/dev/null 2>&1
 import json, sys
 pkg = json.load(open(sys.argv[1]))
 declared = set(pkg.get("dependencies", {}).keys()) | set(pkg.get("devDependencies", {}).keys())
-required = ["typia", "vitest", "@ryoppippi/unplugin-typia", "ts-patch",
-            "@prisma/client", "next", "react"]
-missing = [d for d in required if d not in declared]
-if missing:
-    for m in missing:
-        print(f"  ✗ package.json MISSING {m} (would re-introduce past failure)")
-    sys.exit(2)
-for d in required:
-    print(f"  ✓ package.json declares {d} (in deps or devDeps)")
+sys.exit(0 if sys.argv[2] in declared else 1)
 PY
-pass=$((pass+7))
+  then
+    ok "package.json declares $dep (in deps or devDeps)"
+  else
+    bad "package.json MISSING $dep (would re-introduce past failure)"
+  fi
+done
 
 # next.config.ts must IMPORT *and* CALL UnpluginTypia (not just import).
 if grep -q "import.*UnpluginTypia.*from" "$TMPDIR/next.config.ts" \
@@ -122,15 +123,17 @@ else
 fi
 
 # tsconfig.json must enable typia transform plugin (JSON-aware).
-python3 - "$TMPDIR/tsconfig.json" <<'PY' && pass=$((pass+1)) || { fail=$((fail+1)); echo "  ✗ tsconfig.json plugins missing typia/lib/transform"; }
+if python3 - "$TMPDIR/tsconfig.json" <<'PY' >/dev/null 2>&1
 import json, sys
 ts = json.load(open(sys.argv[1]))
 plugins = ts.get("compilerOptions", {}).get("plugins", [])
-if any(p.get("transform") == "typia/lib/transform" for p in plugins if isinstance(p, dict)):
-    print("  ✓ tsconfig.json declares typia/lib/transform plugin")
-    sys.exit(0)
-sys.exit(1)
+sys.exit(0 if any(p.get("transform") == "typia/lib/transform" for p in plugins if isinstance(p, dict)) else 1)
 PY
+then
+  ok "tsconfig.json declares typia/lib/transform plugin"
+else
+  bad "tsconfig.json plugins missing typia/lib/transform"
+fi
 echo
 
 echo "=== SUMMARY ==="
