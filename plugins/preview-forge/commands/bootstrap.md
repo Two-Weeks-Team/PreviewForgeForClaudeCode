@@ -37,10 +37,11 @@ Bash(ls:*)            Bash(cat:*)           Bash(find:*)
 Bash(grep:*)          Bash(head:*)          Bash(tail:*)
 Bash(wc:*)            Bash(sed:*)           Bash(awk:*)
 Bash(touch:*)         Bash(jq:*)            Bash(sqlite3:*)
-Bash(shasum:*)        Bash(pnpm:*)          Bash(npm:*)
-Bash(npx:*)           Bash(node:*)          Bash(tsc:*)
-Bash(prisma:*)        Bash(python3:*)       Bash(git status*)
-Bash(git log*)        Bash(git diff*)       Bash(git rev-parse*)
+Bash(shasum:*)        Bash(tee:*)           Bash(pnpm:*)
+Bash(npm:*)           Bash(npx:*)           Bash(node:*)
+Bash(tsc:*)           Bash(prisma:*)        Bash(python3:*)
+Bash(git status*)     Bash(git log*)        Bash(git diff*)
+Bash(git rev-parse*)
 ```
 
 **의도적으로 허용하지 않는 destructive 명령** (사용자가 필요 시 명시적 opt-in으로 직접 추가):
@@ -95,6 +96,7 @@ PF_BASH = [
     "Bash(tail:*)", "Bash(wc:*)", "Bash(sed:*)", "Bash(awk:*)",
     "Bash(touch:*)", "Bash(jq:*)", "Bash(sqlite3:*)",
     "Bash(shasum:*)",  # SpecDD lock verification (spec-lead.md uses shasum -a 256)
+    "Bash(tee:*)",     # piped-output capture (be-lead/fe-lead use `pnpm build | tee build.log`)
     # Build chain (typia AOT, prisma generate, vitest, next build)
     "Bash(pnpm:*)", "Bash(npm:*)", "Bash(npx:*)", "Bash(node:*)",
     "Bash(tsc:*)", "Bash(prisma:*)", "Bash(python3:*)",
