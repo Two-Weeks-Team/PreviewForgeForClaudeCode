@@ -45,10 +45,10 @@ echo
 
 echo "[2/5] Agents (143 target)"
 agent_count=$(find "$PLUGIN_DIR/agents" -name "*.md" -type f | wc -l | tr -d ' ')
-if [[ "$agent_count" -eq 143 ]]; then
-  ok "agent count: 143 (target met)"
+if [[ "$agent_count" -eq 144 ]]; then
+  ok "agent count: 144 (v1.5 target met — adds scc-build-config)"
 else
-  bad "agent count: $agent_count (expected 143)"
+  bad "agent count: $agent_count (expected 144)"
 fi
 python3 <<PYEOF && ok "all agents have valid frontmatter" || bad "some agents have invalid frontmatter"
 import re, glob

@@ -417,7 +417,7 @@ jobs:
           echo "✓ preview-cache: 4/4 tests pass"
 
   agent-counts:
-    name: Agent inventory (143 target)
+    name: Agent inventory (144 target)
     runs-on: ubuntu-latest
     timeout-minutes: 2
     steps:
@@ -425,13 +425,13 @@ jobs:
       - name: Count agents
         run: |
           TOTAL=$(find plugins/preview-forge/agents -name "*.md" -type f | wc -l)
-          if [[ "$TOTAL" -ne 143 ]]; then
-            echo "::error::Expected 143 agents, found $TOTAL"
+          if [[ "$TOTAL" -ne 144 ]]; then
+            echo "::error::Expected 144 agents, found $TOTAL"
             exit 1
           fi
-          echo "✓ 143/143 agents present"
+          echo "✓ 144/144 agents present"
 
-          # per-dept
+          # per-dept (v1.5: scc 5 → 6 with scc-build-config)
           declare -A EXPECTED=(
             [meta]=3
             [ideation]=29
@@ -439,7 +439,7 @@ jobs:
             [spec]=9
             [engineering]=25
             [qa]=14
-            [scc]=5
+            [scc]=6
             [judges]=5
             [auditors]=5
             [docs]=3
@@ -467,7 +467,7 @@ jobs:
               for f, m in non_opus:
                   print(f"::error file={f}::non-Opus model: {m}")
               sys.exit(1)
-          print("✓ all 143 agents use Opus 4.7")
+          print("✓ all 144 agents use Opus 4.7")
           PYEOF
 
       - name: Check agent name uniqueness
