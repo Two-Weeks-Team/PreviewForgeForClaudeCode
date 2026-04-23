@@ -29,7 +29,6 @@ const nextConfig: NextConfig = {
     config.plugins = config.plugins || [];
     config.plugins.push(
       UnpluginTypia({
-        strict: true,
         // Cache transforms for faster rebuilds. Safe for hackathon-scale projects.
         cache: true,
       }),

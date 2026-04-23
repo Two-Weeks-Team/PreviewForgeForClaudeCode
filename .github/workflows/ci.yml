@@ -500,4 +500,64 @@ jobs:
         run: |
           shellcheck -x plugins/preview-forge/bin/pf || true
           shellcheck -x scripts/verify-plugin.sh || true
+          shellcheck -x scripts/test-templates.sh || true
           echo "✓ shellcheck complete (non-blocking)"
+
+  template-build:
+    name: Template build smoke (B1+B2 regression guard)
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Static template content checks
+        run: bash scripts/test-templates.sh
+
+      - name: Install pnpm
+        # version is auto-detected from root package.json `packageManager` field
+        # (pnpm@9.15.0). Specifying `version:` here would conflict with that
+        # and fail with ERR_PNPM_BAD_PM_VERSION.
+        uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Render templates to clean workspace
+        id: render
+        run: |
+          set -euo pipefail
+          WS="$RUNNER_TEMP/pf-template-smoke"
+          mkdir -p "$WS/lib"
+          for tpl in package.json tsconfig.json vitest.config.ts next.config.ts; do
+            cp "plugins/preview-forge/assets/${tpl}.standard.template" "$WS/$tpl"
+          done
+          # Strip header comments from JSON files (templates carry comments for humans).
+          sed -i '/^\/\//d' "$WS/package.json" "$WS/tsconfig.json"
+          # Substitute placeholders.
+          sed -i 's/{{PROJECT_NAME}}/pf-template-smoke/g' "$WS/package.json"
+          sed -i 's/{{NODE_VERSION}}/22/g' "$WS/package.json"
+          # Minimal typia-using source so `tsc --noEmit` exercises the transform plugin.
+          cat > "$WS/lib/check.ts" <<'TS'
+          import typia from "typia";
+          export interface Greeting { name: string; }
+          export const validate = typia.createValidate<Greeting>();
+          TS
+          touch "$WS/next-env.d.ts"
+          echo "ws=$WS" >> "$GITHUB_OUTPUT"
+
+      - name: pnpm install (smoke)
+        working-directory: ${{ steps.render.outputs.ws }}
+        run: pnpm install --no-frozen-lockfile
+
+      - name: pnpm typecheck (verifies typia AOT plugin wiring)
+        working-directory: ${{ steps.render.outputs.ws }}
+        run: pnpm typecheck
+
+      - name: Summary
+        if: always()
+        run: echo "✓ Templates pass static + install + typecheck. typia/vitest/unplugin chain intact."

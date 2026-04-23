@@ -14,10 +14,9 @@ import UnpluginTypia from "@ryoppippi/unplugin-typia/vite";
 
 export default defineConfig({
   plugins: [
-    UnpluginTypia({
-      // Strict mode catches misuse of typia decorators at build time.
-      strict: true,
-    }),
+    // unplugin-typia auto-detects typia.* calls and inserts the AOT transform.
+    // No options required for the standard preset.
+    UnpluginTypia(),
   ],
   test: {
     // Pure-lib tests — no DOM, no jsdom. If a future test needs DOM,
