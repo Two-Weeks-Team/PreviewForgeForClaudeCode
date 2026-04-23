@@ -1,0 +1,60 @@
+// Preview Forge — standard profile package.json template.
+// Generated when profile=standard (Next.js 16 + SQLite + Prisma + typia + vitest).
+//
+// CRITICAL — spec-author Dependency Binding (B1 fix):
+// Every library mentioned in OpenAPI/Prisma spec MUST appear here.
+// Backend Engineering (BE_LEAD + BE01-BE05) MUST start from this template
+// — DO NOT hand-roll package.json from scratch. Common omissions that broke
+// past runs:
+//   - typia (runtime validators) without unplugin-typia (Next.js plugin) → 500s
+//   - vitest declared in unit/integration test files but missing from devDeps → tests un-runnable
+//   - @prisma/client without prisma CLI → migrate fails
+// See: LESSONS.md "Build chain integrity" category.
+//
+// Engineering scaffold MUST replace placeholders:
+//   {{PROJECT_NAME}}  → kebab-case from chosen_preview.title
+//   {{NODE_VERSION}}  → "22" (matches .nvmrc) or as agreed
+//
+// Versions are pinned to caret ranges. Dependabot keeps them current.
+
+{
+  "name": "{{PROJECT_NAME}}",
+  "version": "0.1.0-mvp",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:integration": "vitest run tests/integration",
+    "test:unit": "vitest run tests/unit",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "dependencies": {
+    "next": "^16.0.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "@prisma/client": "^5.20.0",
+    "typia": "^12.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.6.0",
+    "prisma": "^5.20.0",
+    "vitest": "^2.1.0",
+    "@vitest/ui": "^2.1.0",
+    "@ryoppippi/unplugin-typia": "^2.0.0",
+    "ts-patch": "^3.2.0"
+  },
+  "prisma": {
+    "schema": "prisma/schema.prisma"
+  }
+}

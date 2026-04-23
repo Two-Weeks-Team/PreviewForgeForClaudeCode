@@ -1,0 +1,44 @@
+// Preview Forge — standard profile tsconfig.json template.
+// Generated when profile=standard (Next.js 16 + typia + Prisma).
+//
+// CRITICAL — typia compatibility (B1+B4 fix):
+// `experimentalDecorators` and `emitDecoratorMetadata` are NOT enough for typia.
+// typia requires AOT transform via unplugin-typia (Next.js) — see
+// next.config.ts.standard.template. ts-patch is the dev-time fallback for
+// `tsc --noEmit` so editor + CI typecheck pass.
+//
+// strict: true is non-negotiable. SCC will reject scaffold output if strict=false.
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["dom", "dom.iterable", "ES2022"],
+    "allowJs": false,
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve",
+    "incremental": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "plugins": [
+      { "name": "next" },
+      { "transform": "typia/lib/transform" }
+    ],
+    "paths": {
+      "@/*": ["./*"]
+    }
+  },
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": ["node_modules"]
+}

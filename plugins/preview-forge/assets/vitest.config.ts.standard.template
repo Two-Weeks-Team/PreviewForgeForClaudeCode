@@ -1,0 +1,45 @@
+// Preview Forge — standard profile vitest config template.
+// Generated when profile=standard (pure-lib unit + integration tests, no jsdom).
+//
+// CRITICAL — typia in tests (B1 fix):
+// Tests that import code using `typia.createValidate(...)` need the unplugin-typia
+// transform here too, or they fail with "no transform has been configured".
+// We use the same Vite plugin as next.config.ts for consistency.
+//
+// QA team (qa-unit, qa-integration) generates spec files referencing this.
+// DO NOT delete this file even if test_count = 0 — the runner config is required.
+
+import { defineConfig } from "vitest/config";
+import UnpluginTypia from "@ryoppippi/unplugin-typia/vite";
+
+export default defineConfig({
+  plugins: [
+    UnpluginTypia({
+      // Strict mode catches misuse of typia decorators at build time.
+      strict: true,
+    }),
+  ],
+  test: {
+    // Pure-lib tests — no DOM, no jsdom. If a future test needs DOM,
+    // add `environment: "jsdom"` and install jsdom devDep.
+    environment: "node",
+    globals: false,
+    include: ["tests/**/*.{test,spec}.{ts,tsx}"],
+    exclude: ["node_modules", ".next", "dist"],
+    reporters: process.env.CI ? ["json", "default"] : ["default"],
+    outputFile: process.env.CI ? "tests/_results/vitest.json" : undefined,
+    // Holdout tests live in tests/holdout/ — runner config splits them
+    // so QA Tier 4 can compute overfit signal post-freeze.
+    coverage: {
+      enabled: false,
+      provider: "v8",
+      reporter: ["text", "json"],
+      exclude: ["**/*.config.*", "**/.next/**", "**/node_modules/**"],
+    },
+  },
+  resolve: {
+    alias: {
+      "@": new URL("./", import.meta.url).pathname,
+    },
+  },
+});

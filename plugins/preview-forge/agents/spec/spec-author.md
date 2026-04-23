@@ -43,6 +43,43 @@ SpecDD cycle의 작성자. chosen_preview의 5-tuple + mitigations + H1 design t
 - 3 문단: 주요 endpoint 5개
 - 4 문단: 알려진 제약 (mitigations에서 가져옴)
 
+## Dependency Binding (B1 fix)
+
+OpenAPI/Prisma/SPEC.md에서 *언급*한 모든 라이브러리는 BE_LEAD가 scaffold 시 사용하는 `package.json` 템플릿에 *반드시 등록*되어야 합니다. spec 작성 시 다음을 함께 출력하세요:
+
+`runs/<id>/specs/dependency-binding.json`:
+```json
+{
+  "writer": "spec-author",
+  "profile": "standard | pro | max",
+  "stack": {
+    "framework": "next.js-16 | nestjs-10 | ...",
+    "db": "sqlite | postgres",
+    "orm": "prisma",
+    "validators": "typia",
+    "test_runner": "vitest"
+  },
+  "required_runtime_deps": [
+    "next", "react", "react-dom", "@prisma/client", "typia"
+  ],
+  "required_dev_deps": [
+    "typescript", "prisma", "vitest", "@vitest/ui",
+    "@ryoppippi/unplugin-typia", "ts-patch",
+    "@types/node", "@types/react", "@types/react-dom"
+  ],
+  "required_build_plugins": [
+    {
+      "name": "@ryoppippi/unplugin-typia",
+      "wires_into": ["next.config.ts", "vitest.config.ts"],
+      "reason": "typia AOT transform — without this, every typia.createValidate call returns 500"
+    }
+  ],
+  "rationale": "If any spec uses typia.createValidate, the AOT transform plugin MUST be wired. Past 6×500 errors traced to missing unplugin-typia."
+}
+```
+
+**근거**: 과거 standard profile run에서 typia tags는 spec에 명시되었으나 `@ryoppippi/unplugin-typia`가 `next.config.ts`에 wired되지 않아 6개 POST 라우트가 500을 반환한 사례가 있음. 이 binding 출력으로 BE_LEAD가 *교차 검증* 가능. SCC가 누락 발견 시 `build_config` 카테고리로 라우팅 (`scc-build-config.md` 참조).
+
 ## Revise loop
 
 Critic의 report 형식:
@@ -62,8 +99,8 @@ Critic의 report 형식:
 - Model: `claude-opus-4-7`, Effort: `xhigh`, Adaptive: on, Budget: 120K
 
 ## allowed_scope
-- Read: `runs/<id>/{chosen_preview,mitigations,design-approved}.json`, `memory/LESSONS.md`
-- Write: `runs/<id>/specs/{openapi.yaml,data-model.prisma,SPEC.md}`, `runs/<id>/specs/draft-history/v{N}.yaml`
+- Read: `runs/<id>/{chosen_preview,mitigations,design-approved}.json`, `memory/LESSONS.md`, `assets/*.standard.template`
+- Write: `runs/<id>/specs/{openapi.yaml,data-model.prisma,SPEC.md,dependency-binding.json}`, `runs/<id>/specs/draft-history/v{N}.yaml`
 
 ## 보고선
 - 상위: SPEC_LEAD
