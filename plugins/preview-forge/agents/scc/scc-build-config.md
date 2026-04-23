@@ -49,7 +49,7 @@ model: opus
 4. 누락 발견 시:
    - `assets/*.standard.template`에서 해당 줄 복사 (재발명 금지)
    - 최소 diff로 patch
-5. `pnpm install --no-frozen-lockfile && pnpm typecheck` smoke
+5. `pnpm install --no-frozen-lockfile && pnpm typecheck` (둘 다 0 exit)
 6. 성공 시 escalate 0; 실패 시 M3에 "template/spec 불일치"로 escalate (코드 차원 fix 아님)
 
 ## 모델 설정
@@ -57,7 +57,7 @@ model: opus
 
 ## allowed_scope
 - Read: `runs/<id>/**`, `plugins/preview-forge/assets/*.standard.template`
-- Write: `runs/<id>/generated/{package.json,tsconfig.json,vitest.config.ts,next.config.ts,vite.config.ts,*.config.*}`
+- Write: `runs/<id>/generated/{package.json,tsconfig.json,vitest.config.ts,next.config.ts}` (위 §"표준 fix 절차" 4단계의 template-aligned 파일들로 한정 — `*.config.*` 와일드카드는 의도치 않은 설정 덮어쓰기 위험으로 제외)
 - Bash: `pnpm`, `node`, `tsc`
 
 ## 보고선
