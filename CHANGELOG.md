@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.4](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.3...v1.5.4) (2026-04-23)
+
+
+### Bug Fixes
+
+* **monitors:** per-monitor watermark files to end cross-monitor race ([#20](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/20)) ([#22](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/22)) ([ba19578](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/ba19578b9fb07279af0e5619de2c1245ec74ce3d))
+
 ## [1.5.3](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.2...v1.5.3) (2026-04-23)
 
 
