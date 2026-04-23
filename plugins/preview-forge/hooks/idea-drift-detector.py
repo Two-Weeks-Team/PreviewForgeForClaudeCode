@@ -181,6 +181,9 @@ def _spec_semantic_strings(data: dict) -> list[str]:
         if keep(g):
             out.append(str(g))
 
+    if keep(data.get("monetization_model")):
+        out.append(str(data["monetization_model"]))
+
     if keep(data.get("success_metric")):
         out.append(str(data["success_metric"]))
 

@@ -66,7 +66,14 @@ def esc(value):
 
 
 def card(p):
-    mockup_path = esc(p.get("mockup_path", ""))
+    # preview-card.schema.json stores mockup_path relative to run root
+    # (e.g. "mockups/P01-the-contrarian.html"). The gallery file is written
+    # INSIDE mockups/, so iframe/link src must be relative to mockups/ —
+    # strip the leading "mockups/" segment. This keeps the schema contract
+    # untouched while letting the gallery resolve siblings correctly.
+    raw_mockup = str(p.get("mockup_path", ""))
+    relative = raw_mockup[len("mockups/"):] if raw_mockup.startswith("mockups/") else raw_mockup
+    mockup_path = esc(relative)
     advocate = esc(p.get("advocate", ""))
     pid = esc(p.get("id", ""))
     persona = esc(p.get("target_persona", ""))
