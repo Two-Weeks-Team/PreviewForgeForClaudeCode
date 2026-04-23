@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.2](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.1...v1.5.2) (2026-04-23)
+
+
+### Bug Fixes
+
+* **bootstrap,monitors:** seed workspace permissions + guard runs/ glob (Issue [#15](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/15) + UX) ([#16](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/16)) ([e29b8b5](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/e29b8b52f9b22c4fd495c71a06959d1eafdfc54d))
+
 ## [1.5.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.0...v1.5.1) (2026-04-23)
 
 
