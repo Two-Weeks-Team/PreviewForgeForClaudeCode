@@ -50,27 +50,36 @@ fi
 if [[ ! -f Dockerfile ]]; then
   cat > Dockerfile <<'DOCKERFILE'
 # Preview Forge — generated on graduate to pro/max
-# NOTE: package.json declares `prepare: "ts-patch install -s"` (typia AOT
-# transform). ts-patch is a devDependency, so production-only stages MUST
-# use `--ignore-scripts` to avoid running prepare without ts-patch installed.
+# NOTE: ts-patch (typia AOT transform) is a build-time tool only. We do
+# NOT use a `prepare` lifecycle script for it (would break production
+# `npm ci --omit=dev` even with --ignore-scripts because that also skips
+# Prisma postinstall — runtime image then ships without generated client).
+# Instead the builder stage installs ts-patch explicitly.
 
-# Stage 1: production deps only (no devDeps, skip lifecycle scripts).
+# Stage 1: production deps only. Lifecycle scripts ARE allowed so Prisma
+# postinstall can generate the client into node_modules. ts-patch isn't
+# needed here (it's a devDep, omitted) and there's no `prepare` script
+# that would reference it.
 FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev --ignore-scripts
+COPY prisma ./prisma
+RUN npm ci --omit=dev
 
-# Stage 2: full install (devDeps included) — prepare runs here so ts-patch
-# is present, the typia transform is wired, and `next build` succeeds.
+# Stage 2: full install + explicit ts-patch + build. ts-patch is a
+# devDependency so it's present here. We invoke it explicitly (not via
+# prepare hook) so the production stage above stays clean.
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci
+COPY prisma ./prisma
+RUN npm ci \
+ && npx ts-patch install -s
 COPY . .
 RUN npm run build
 
-# Stage 3: minimal runtime image. Re-uses the slim production-only modules
-# from Stage 1, plus the build output from Stage 2.
+# Stage 3: minimal runtime image. Slim production node_modules from
+# Stage 1 (with Prisma client generated), build output from Stage 2.
 FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production

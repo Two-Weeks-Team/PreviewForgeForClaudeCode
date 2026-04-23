@@ -27,7 +27,10 @@ Past omissions that broke runs (LESSONS 11.1):
 - `typia: ^7.0.0` — current stable (was incorrectly `^12` in v1.5.0,
   fixed in PR #13).
 - `ts-patch: ^3.2.0` — required by typia for AOT transform during
-  `tsc --noEmit`. The `prepare` script auto-runs it on `pnpm install`.
+  `tsc --noEmit`. **Build-time only** — NOT a `prepare` lifecycle script
+  (would break `npm ci --omit=dev` in production Docker stages). Builder
+  must run `npx ts-patch install -s` explicitly before `npm run build`.
+  See `assets/graduate.sh.template` Stage 2 for the canonical pattern.
 - `@ryoppippi/unplugin-typia: ^2.0.0` — Next.js webpack plugin that
   wires the typia transform. Without this, every `typia.createValidate`
   call returns 500 at runtime even though the build succeeds.
