@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.5.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.0...v1.5.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* address PR [#9](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/9) + [#11](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/11) + [#12](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/12) post-merge review feedback (CRITICAL package.json) ([#13](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/13)) ([47ec9d5](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/47ec9d56cd2832096cf4828d7b03fd51077def89))
+
 ## [1.5.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.4.0...v1.5.0) (2026-04-23)
 
 
