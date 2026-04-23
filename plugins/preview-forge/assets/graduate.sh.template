@@ -50,23 +50,46 @@ fi
 if [[ ! -f Dockerfile ]]; then
   cat > Dockerfile <<'DOCKERFILE'
 # Preview Forge — generated on graduate to pro/max
-FROM node:20-alpine AS deps
+# NOTE: ts-patch (typia AOT transform) is a build-time tool only. We do
+# NOT use a `prepare` lifecycle script for it (would break production
+# `npm ci --omit=dev` even with --ignore-scripts because that also skips
+# Prisma postinstall — runtime image then ships without generated client).
+# Instead the builder stage installs ts-patch explicitly.
+
+# Stage 1: production deps + Prisma client generation. Doing a FULL
+# `npm ci` first (incl. devDeps so the prisma CLI is available),
+# generating the client, then pruning devDeps. The standalone
+# `@prisma/client` postinstall would NOT generate the client when
+# devDeps are omitted (CodeRabbit Critical, PR #13 wave 6: prisma CLI
+# is a devDep, postinstall has nothing to invoke).
+FROM node:22-alpine AS deps
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --omit=dev
+COPY prisma ./prisma
+RUN npm ci \
+ && npx --yes prisma generate \
+ && npm prune --omit=dev
 
-FROM node:20-alpine AS builder
+# Stage 2: full install + explicit ts-patch + build. ts-patch is a
+# devDependency so it's present here. We invoke it explicitly (not via
+# prepare hook) so the production stage above stays clean.
+FROM node:22-alpine AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY package*.json ./
+COPY prisma ./prisma
+RUN npm ci \
+ && npx ts-patch install -s
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine
+# Stage 3: minimal runtime image. Slim production node_modules from
+# Stage 1 (with Prisma client generated), build output from Stage 2.
+FROM node:22-alpine
 WORKDIR /app
 ENV NODE_ENV=production
+COPY --from=deps /app/node_modules ./node_modules
 COPY --from=builder /app/.next ./.next
 COPY --from=builder /app/public ./public
-COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package.json ./
 EXPOSE 3000
 CMD ["npm","run","start"]
@@ -131,7 +154,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
-        with: { node-version: '20' }
+        with: { node-version: '22' }
       - run: npm ci
       - run: npm run build
       - run: docker build -t $IMAGE .

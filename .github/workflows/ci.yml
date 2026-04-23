@@ -536,9 +536,9 @@ jobs:
           for tpl in package.json tsconfig.json vitest.config.ts next.config.ts; do
             cp "plugins/preview-forge/assets/${tpl}.standard.template" "$WS/$tpl"
           done
-          # Strip header comments from JSON files (templates carry comments for humans).
-          sed -i '/^\/\//d' "$WS/package.json" "$WS/tsconfig.json"
-          # Substitute placeholders.
+          # Substitute placeholders. (Since PR #13 the JSON templates are
+          # strict JSON — no `//` comment stripping needed; human guidance
+          # lives in package.json.standard.README.md.)
           sed -i 's/{{PROJECT_NAME}}/pf-template-smoke/g' "$WS/package.json"
           sed -i 's/{{NODE_VERSION}}/22/g' "$WS/package.json"
           # Minimal typia-using source so `tsc --noEmit` exercises the transform plugin.

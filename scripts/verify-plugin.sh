@@ -4,7 +4,7 @@
 #
 # Checks:
 #   1. Manifest JSON syntax (marketplace.json + plugin.json)
-#   2. All 143 agents present with valid frontmatter
+#   2. All 144 agents present with valid frontmatter
 #   3. 14 slash commands present
 #   4. 3 hooks + hooks.json valid
 #   5. Memory seed + methodology + assets + schemas + seeds present
@@ -43,7 +43,7 @@ print(d['version'])
   ok "plugin.json: name=pf v$(cat /tmp/pf_version)  (marketplace parity ✓)" || bad "plugin.json invalid"
 echo
 
-echo "[2/5] Agents (143 target)"
+echo "[2/5] Agents (144 target)"
 agent_count=$(find "$PLUGIN_DIR/agents" -name "*.md" -type f | wc -l | tr -d ' ')
 if [[ "$agent_count" -eq 144 ]]; then
   ok "agent count: 144 (v1.5 target met — adds scc-build-config)"
@@ -122,10 +122,13 @@ seed_count=$(find "$PLUGIN_DIR/seed-ideas" -name "*.md" | wc -l | tr -d ' ')
 [[ "$seed_count" -eq 10 ]] && ok "10 seed ideas" || bad "seed-ideas: $seed_count (expected 10)"
 schema_count=$(find "$PLUGIN_DIR/schemas" -name "*.json" | wc -l | tr -d ' ')
 [[ "$schema_count" -eq 4 ]] && ok "4 JSON schemas (preview-card, panel-vote, score-report, pf-profile)" || bad "schemas: $schema_count (expected 4)"
-asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f | wc -l | tr -d ' ')
+asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f ! -name "*.md" ! -name ".*" | wc -l | tr -d ' ')
 # v1.4: 4 base + 4 standard-profile (prisma, gitignore, README, graduate.sh)
 # v1.5+: 4 base + 8 standard-profile (+ package.json, tsconfig.json, vitest.config.ts, next.config.ts)
-[[ "$asset_count" -eq 12 ]] && ok "12 asset templates (4 base + 8 standard-profile v1.5)" || bad "assets: $asset_count (expected 12)"
+# Explicit exclude of `.md` (template-sibling READMEs since v1.5.1) and dotfiles.
+# This is more robust than positive `*template*` matching, which would silently
+# drop a future template that lacked the substring (gemini-code-assist PR #13 review).
+[[ "$asset_count" -eq 12 ]] && ok "12 asset templates (4 base + 8 standard-profile v1.5)" || bad "assets: $asset_count templates (expected 12)"
 
 # v1.5: B1+B2 fix — build-essentials standard templates required to prevent typia/vitest omission
 for tpl in package.json tsconfig.json vitest.config.ts next.config.ts; do
