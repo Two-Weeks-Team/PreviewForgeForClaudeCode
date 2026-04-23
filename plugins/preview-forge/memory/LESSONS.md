@@ -120,6 +120,7 @@
 9. **Agent 커뮤니케이션**: Blackboard·Hierarchical 보고선
 10. **Layer-0·Security**: 훅·차단 패턴·blocked_actions
 11. **Build chain integrity** ✦v1.5: spec→template→build_plugin chain 정합성 (typia AOT, vitest config, tsconfig plugins, next.config webpack)
+12. **Permission ergonomics** ✦v1.5.2: Claude Code 권한 모델과 plugin 마케팅 메시지("두 번 클릭")의 정합성. /pf:bootstrap이 .claude/settings.local.json 사전 seeding으로 *진짜로* G1·G2 두 번만 클릭 가능.
 
 ---
 

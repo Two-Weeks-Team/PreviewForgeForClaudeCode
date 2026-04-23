@@ -61,8 +61,11 @@ single HTML file, print-friendly.
 # 3. Reload
 /reload-plugins
 
-# 4. Initialize memory (first time only)
+# 4. Initialize memory + workspace permissions (first time per workspace)
 /pf:bootstrap
+# v1.5.2+: also seeds .claude/settings.local.json so /pf:new only asks
+# for the two human gates (G1 design select, G2 ship). Without this,
+# Claude Code prompts for every new Bash pattern (mkdir, pnpm, npx, ...).
 
 # 5. Run (profile defaults to `standard` as of v1.4.0)
 /pf:new "한 줄 아이디어"
