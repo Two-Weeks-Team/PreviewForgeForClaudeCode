@@ -1,17 +1,17 @@
 [
   {
     "name": "blackboard-tail",
-    "command": "if [ -d runs ]; then [ -e runs/.last-check ] || touch -t 197001010000 runs/.last-check; find runs -name 'blackboard.db' -newer runs/.last-check 2>/dev/null | head -1 || sleep 1; else sleep 5; fi",
-    "description": "Watch for new blackboard rows across all runs"
+    "command": "bash \"${CLAUDE_PLUGIN_ROOT}/monitors/dispatch.sh\" blackboard-tail",
+    "description": "Watch for new blackboard rows across all runs. No-op when cwd is not a pf workspace."
   },
   {
     "name": "cost-regression",
-    "command": "if [ -d runs ]; then find runs -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null | while IFS= read -r d; do python3 \"${CLAUDE_PLUGIN_ROOT}/hooks/cost-regression.py\" \"$d\" 2>&1 | grep -E '(WARN|ALERT)' || true; done; fi; sleep 30",
-    "description": "P0-B cost-regression sentinel — per-profile P95/hard ceiling breach detection. Writes blackboard row + emits to stderr. M1 supervisor reacts to alert severity."
+    "command": "bash \"${CLAUDE_PLUGIN_ROOT}/monitors/dispatch.sh\" cost-regression",
+    "description": "P0-B cost-regression sentinel — per-profile P95/hard ceiling breach detection. Writes blackboard row + emits to stderr. M1 supervisor reacts to alert severity. No-op when cwd is not a pf workspace."
   },
   {
     "name": "cost-snapshot-watcher",
-    "command": "if [ -d runs ]; then [ -e runs/.last-check ] || touch -t 197001010000 runs/.last-check; touch runs/.last-check.next; find runs -name 'cost-snapshot.json' -newer runs/.last-check 2>/dev/null; touch -r runs/.last-check.next runs/.last-check; fi; sleep 15",
-    "description": "Cost Monitor threshold watcher — triggers cost-regression check on snapshot update. Sentinel pattern (.last-check.next captured BEFORE find, then `touch -r` promotes its timestamp to .last-check AFTER find) avoids the race where a snapshot written between find and touch would be permanently skipped. Uses only `touch` so no extra Bash patterns are needed in /pf:bootstrap allow list."
+    "command": "bash \"${CLAUDE_PLUGIN_ROOT}/monitors/dispatch.sh\" cost-snapshot-watcher",
+    "description": "Cost Monitor threshold watcher — triggers cost-regression check on snapshot update. Sentinel pattern (.last-check.next captured BEFORE find, then `touch -r` promotes its timestamp to .last-check AFTER find) avoids the race where a snapshot written between find and touch would be permanently skipped. No-op when cwd is not a pf workspace."
   }
 ]

@@ -135,6 +135,13 @@ for tpl in package.json tsconfig.json vitest.config.ts next.config.ts; do
   [[ -f "$PLUGIN_DIR/assets/${tpl}.standard.template" ]] && ok "assets/${tpl}.standard.template" || bad "missing assets/${tpl}.standard.template (B1+B2)"
 done
 [[ -f "$PLUGIN_DIR/monitors/monitors.json" ]] && ok "monitors/monitors.json" || bad "monitors missing"
+[[ -x "$PLUGIN_DIR/monitors/dispatch.sh" ]] && ok "monitors/dispatch.sh executable" || bad "monitors/dispatch.sh not executable (issue #18 run-scope gate)"
+python3 <<PYEOF && ok "monitors.json: all commands route through dispatch.sh" || bad "monitors.json: commands bypass dispatch.sh (issue #18 regression)"
+import json, sys
+d = json.load(open("$PLUGIN_DIR/monitors/monitors.json"))
+bad_entries = [m["name"] for m in d if "monitors/dispatch.sh" not in m.get("command", "")]
+sys.exit(1 if bad_entries else 0)
+PYEOF
 [[ -f "$PLUGIN_DIR/settings.json" ]] && ok "settings.json" || bad "settings.json missing"
 [[ -x "$PLUGIN_DIR/bin/pf" ]] && ok "bin/pf executable" || bad "bin/pf not executable"
 echo
