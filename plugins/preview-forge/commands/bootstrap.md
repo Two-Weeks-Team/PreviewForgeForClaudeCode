@@ -42,7 +42,11 @@ Bash(pnpm:*)          Bash(npm:*)           Bash(npx:*)
 Bash(node:*)          Bash(tsc:*)           Bash(prisma:*)
 Bash(python3:*)       Bash(git status*)     Bash(git log*)
 Bash(git diff*)       Bash(git rev-parse*)
+Bash(bash:*)          Bash(open:*)          Bash(xdg-open:*)
+Bash(start:*)
 ```
+
+> `Bash(bash:*)` covers the `bash "${CLAUDE_PLUGIN_ROOT}/..."` invocation form used by M3 at Gate H1 to run `scripts/generate-gallery.sh` and `scripts/open-browser.sh` (v1.6.0+). The browser-opener prefixes (`open` · `xdg-open` · `start`) let the shell delegate to the host OS without prompting.
 
 **의도적으로 허용하지 않는 destructive 명령** (사용자가 필요 시 명시적 opt-in으로 직접 추가):
 

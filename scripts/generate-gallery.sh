@@ -34,13 +34,48 @@ if [ ! -f "$previews_file" ]; then
   echo "generate-gallery.sh: previews.json not found at $previews_file" >&2
   exit 1
 fi
-# Non-blocking: when mockups/ is missing or empty we skip silently. This
-# happens on PreviewDD cache hits where `preview-cache.sh cmd_put` only
-# persists previews.json, not the per-advocate HTML files. The H1 gate
-# then simply falls back to the text-card AskUserQuestion — the same
-# experience as v1.5.x — instead of crashing before the user can pick.
+# On PreviewDD cache hits, `preview-cache.sh cmd_put` only persists
+# previews.json, not the per-advocate HTML files. Rather than exit
+# silently and leave H1's subsequent `open runs/<id>/mockups/gallery.html`
+# pointing at a missing file, we write a small placeholder gallery.html
+# that explains the cache-hit situation and lists the previews as text.
+# That way the browser tab always opens with meaningful content and M3
+# never needs extra signaling.
 if [ ! -d "$mockups_dir" ] || [ -z "$(find "$mockups_dir" -maxdepth 1 -type f -name 'P*.html' -print -quit 2>/dev/null)" ]; then
-  echo "generate-gallery.sh: no mockup HTMLs under $mockups_dir (likely cache hit) — skipping gallery" >&2
+  echo "generate-gallery.sh: no mockup HTMLs under $mockups_dir (likely cache hit) — writing text-only placeholder" >&2
+  mkdir -p "$mockups_dir"
+  python3 - "$previews_file" "$out" <<'PLACEHOLDER_PY'
+import html
+import json
+import sys
+from pathlib import Path
+
+previews = json.load(open(sys.argv[1]))
+
+def row(p):
+    return (
+        '<li><strong>' + html.escape(str(p.get('id', ''))) + '</strong> '
+        + html.escape(str(p.get('advocate', ''))) + ' — '
+        + html.escape(str(p.get('one_liner_pitch', ''))) + '</li>'
+    )
+
+items = "\n      ".join(row(p) for p in previews)
+Path(sys.argv[2]).write_text(
+    f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Preview Forge — Cache Hit</title>
+<style>body{{font-family:-apple-system,system-ui,sans-serif;max-width:760px;margin:48px auto;padding:0 24px;color:#171717;line-height:1.55}}h1{{font-size:20px;margin-bottom:8px}}.note{{padding:12px 16px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;color:#78350f;font-size:13px}}ul{{padding-left:20px}}li{{margin:6px 0}}</style></head>
+<body>
+  <h1>Preview Forge — Cache-Hit Gallery</h1>
+  <p class="note">This run hit the PreviewDD cache. Only <code>previews.json</code> was restored; the per-advocate mockup HTML files are not on disk, so the full iframe gallery is not available here. Use the CLI AskUserQuestion modal to pick a preview.</p>
+  <h2>Candidates</h2>
+  <ul>
+      {items}
+  </ul>
+</body></html>
+""",
+    encoding="utf-8",
+)
+print(f"generate-gallery.sh: placeholder written to {sys.argv[2]} ({len(previews)} previews)")
+PLACEHOLDER_PY
   exit 0
 fi
 
