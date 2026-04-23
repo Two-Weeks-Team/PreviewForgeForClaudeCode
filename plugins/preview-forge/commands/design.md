@@ -12,12 +12,22 @@ Automatically after PreviewDD Stage 3 (4-Panel meta-tally) completes.
 Can also be invoked manually: `/pf:design` re-opens the selection UX on
 the current run.
 
-## v1.1.0 flow (unified: select + tweak)
+## v1.6.0 flow (auto-gallery + unified select)
 
 **Click 1 of 2** (the other is Gate H2 deploy approval).
 
-M3 Dev PM collects the 4-Panel output and runs a single AskUserQuestion
-with 4 options:
+### Step 1 — Gallery auto-open (new in v1.6.0)
+
+Before issuing AskUserQuestion, M3 Dev PM **automatically** opens the full mockup gallery in the user's default browser so the user can visually compare all advocates while answering the selection prompt:
+
+```
+bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/generate-gallery.sh" runs/<id>
+bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/open-browser.sh"     runs/<id>/mockups/gallery.html
+```
+
+Both scripts are non-blocking and resilient — if browser-open fails (headless / CI / no DISPLAY), the gallery file is still written to disk and the path is printed to stderr; the AskUserQuestion below still fires.
+
+### Step 2 — AskUserQuestion (4 options)
 
 - **① 🏆 Recommended**: composite 1위 advocate
   - `target_persona` · `primary_surface` · `one_line_pitch` · 4 panel 점수 표시
@@ -29,9 +39,8 @@ with 4 options:
 - **③ 🔬 Alternative B**: 특정 panel 단독 우승자 2
   - 예: RP 단독 우승자 (Privacy-focused · Offline-first angle)
 
-- **④ 🎨 Show me all 26 (gallery)**
-  - 26 mockup HTML을 로컬 `runs/<id>/mockups/gallery.html` 로 엮어 브라우저 오픈
-  - 사용자가 보고 나면 두 번째 AskUserQuestion으로 pick (4옵션: 3 카드 + "다시 fresh roll")
+- **④ 🎨 Pick from browser gallery**
+  - 이미 열려 있는 갤러리에서 보고 왔을 때. 두 번째 AskUserQuestion에 "방금 본 것 중 P번호 입력" free-form 옵션 포함.
 
 ## What happens after the click
 
@@ -39,7 +48,7 @@ with 4 options:
 |---|---|
 | Option 1 (Recommended) | `chosen_preview.json`에 P<NN> lock + Claude Design / Studio로 진입 |
 | Option 2 / 3 (Alternative) | chosen_preview에 반영 + **기존 mitigations는 다른 제품 context이므로 MD(Mitigation Designer) 재생성 요청** → Claude Design / Studio |
-| Option 4 (Gallery) | 27-mockup HTML grid 생성 → default browser 오픈 → 사용자가 본 후 두 번째 AskUserQuestion → chosen_preview 반영 |
+| Option 4 (Gallery pick) | 갤러리는 이미 Step 1에서 열려 있음 → 두 번째 AskUserQuestion으로 P번호 free-form 입력 → chosen_preview 반영 |
 | 모든 경우 | 2차 AskUserQuestion — "Claude Design에서 열까(Pro/Max) / 내장 Studio로 tweak" |
 
 ## Override semantics
