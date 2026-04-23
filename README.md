@@ -63,9 +63,12 @@ single HTML file, print-friendly.
 
 # 4. Initialize memory + workspace permissions (first time per workspace)
 /pf:bootstrap
-# v1.5.2+: also seeds .claude/settings.local.json so /pf:new only asks
-# for the two human gates (G1 design select, G2 ship). Without this,
-# Claude Code prompts for every new Bash pattern (mkdir, pnpm, npx, ...).
+# v1.5.2+: also seeds .claude/settings.local.json to suppress plugin Bash
+# permission prompts. In the normal non-escalation path, /pf:new then reaches
+# only the two human gates (H1 design select, H2 ship). Profile escalation
+# may add a third AskUserQuestion if a HARD_REQUIRE signal triggers.
+# Without this seed, Claude Code prompts for every new Bash pattern
+# (mkdir, pnpm, npx, ...).
 
 # 5. Run (profile defaults to `standard` as of v1.4.0)
 /pf:new "한 줄 아이디어"
@@ -152,7 +155,7 @@ Preview Forge ships **14 slash commands** under the `/pf:*` namespace:
 ### 🚀 Run lifecycle
 | Command | Purpose |
 |---|---|
-| `/pf:bootstrap` | Initialize plugin memory (CLAUDE / PROGRESS / LESSONS) — first time only |
+| `/pf:bootstrap` | Initialize plugin memory + seed workspace Bash permissions — first time per workspace |
 | `/pf:new <idea>` | Start a new run (PreviewDD cycle begins) |
 | `/pf:status` | Current run state, agent progress, blackboard |
 | `/pf:retry <agent\|phase>` | Rerun a failed agent or stuck phase |
