@@ -121,7 +121,8 @@ grep -q "cwd hygiene" "$PLUGIN_DIR/agents/meta/run-supervisor.md" && ok "M1 run-
 seed_count=$(find "$PLUGIN_DIR/seed-ideas" -name "*.md" | wc -l | tr -d ' ')
 [[ "$seed_count" -eq 10 ]] && ok "10 seed ideas" || bad "seed-ideas: $seed_count (expected 10)"
 schema_count=$(find "$PLUGIN_DIR/schemas" -name "*.json" | wc -l | tr -d ' ')
-[[ "$schema_count" -eq 4 ]] && ok "4 JSON schemas (preview-card, panel-vote, score-report, pf-profile)" || bad "schemas: $schema_count (expected 4)"
+# v1.6.0: 5 schemas (preview-card, panel-vote, score-report, pf-profile, idea-spec).
+[[ "$schema_count" -eq 5 ]] && ok "5 JSON schemas (preview-card, panel-vote, score-report, pf-profile, idea-spec)" || bad "schemas: $schema_count (expected 5)"
 asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f ! -name "*.md" ! -name ".*" | wc -l | tr -d ' ')
 # v1.4: 4 base + 4 standard-profile (prisma, gitignore, README, graduate.sh)
 # v1.5+: 4 base + 8 standard-profile (+ package.json, tsconfig.json, vitest.config.ts, next.config.ts)
@@ -144,6 +145,13 @@ sys.exit(1 if bad_entries else 0)
 PYEOF
 [[ -f "$PLUGIN_DIR/settings.json" ]] && ok "settings.json" || bad "settings.json missing"
 [[ -x "$PLUGIN_DIR/bin/pf" ]] && ok "bin/pf executable" || bad "bin/pf not executable"
+
+# v1.6.0 — Socratic spec + auto-gallery H1 (issue #18 follow-up)
+[[ -f "$PLUGIN_DIR/schemas/idea-spec.schema.json" ]] && ok "schemas/idea-spec.schema.json (v1.6.0)" || bad "missing schemas/idea-spec.schema.json (v1.6.0 Socratic phase)"
+[[ -x "$ROOT/scripts/generate-gallery.sh" ]] && ok "scripts/generate-gallery.sh executable (v1.6.0)" || bad "scripts/generate-gallery.sh not executable (v1.6.0 H1 gallery)"
+[[ -x "$ROOT/scripts/open-browser.sh" ]] && ok "scripts/open-browser.sh executable (v1.6.0)" || bad "scripts/open-browser.sh not executable (v1.6.0 H1 gallery)"
+adv_with_spec=$(grep -l 'idea.spec.json' "$PLUGIN_DIR/agents/ideation/advocates"/*.md 2>/dev/null | wc -l | tr -d ' ')
+[[ "$adv_with_spec" -eq 26 ]] && ok "all 26 advocates reference idea.spec.json (v1.6.0 ground truth)" || bad "only $adv_with_spec/26 advocates reference idea.spec.json (v1.6.0 regression)"
 echo
 
 echo "=== SUMMARY ==="
