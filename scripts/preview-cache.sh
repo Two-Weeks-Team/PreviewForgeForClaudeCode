@@ -2,13 +2,19 @@
 # Preview Forge — Proposal #11 PreviewDD-level cache
 #
 # Cache key:
-#   sha256(idea_text + advocate_set_hash + model_version + profile_name)
+#   sha256(idea_text + advocate_set_hash + model_version + profile_name + idea_spec_hash)
+#
+# `idea_spec_hash` is the sha256 of runs/<id>/idea.spec.json content when
+# available (v1.6.0+ runs post-I1 Socratic interview). When the spec path
+# is omitted or the file is missing, the hash component is the empty
+# string — v1.5.x callers without spec keep their original cache keys.
 #
 # Cache dir:
 #   ~/.claude/preview-forge/cache/preview-dd/<key>.json
 #
 # Operations (subcommand dispatch):
-#   key <idea_text> <profile_name>           — print cache key (stdout)
+#   key <idea_text> <profile_name> [<previews_override>] [<idea_spec_path>]
+#                                            — print cache key (stdout)
 #   get <key>                                — print cached JSON if fresh; exit 1 if miss
 #   put <key> <json_path>                    — store JSON at key
 #   invalidate <key>                         — delete one key
@@ -45,6 +51,11 @@ cmd_key() {
   # When set, the advocate set is distinct from the profile's default count —
   # runs with different N must not collide in cache.
   local previews_override="${3:-}"
+  # Optional 4th arg (v1.6.0+): path to runs/<id>/idea.spec.json.
+  # Same one-liner + different Socratic answers must NOT hit the same
+  # cache entry — this hash component discriminates them. Omit or pass
+  # empty for v1.5.x runs; the keyspace stays backward compatible.
+  local spec_path="${4:-}"
 
   # Load profile's preview count to derive advocate set hash. If profile
   # file missing, fall back to the profile name as the set discriminator.
@@ -65,7 +76,23 @@ except Exception:
   fi
   local advocate_set="${advocate_count:-unknown}-${profile}"
 
-  printf '%s\x1f%s\x1f%s\x1f%s' "$idea" "$advocate_set" "$MODEL_VERSION" "$profile" | hash
+  # Idea spec content hash: empty when absent (back-compat); sha256(file) otherwise.
+  # Back-compat: when no spec is involved, reuse the v1.5.x 4-field keyspace
+  # so pre-upgrade cache entries remain resolvable. v1.6.0+ runs that pass
+  # a real spec path get a distinct 5-field keyspace.
+  local spec_hash=""
+  if [[ -n "$spec_path" && -f "$spec_path" ]]; then
+    spec_hash=$(python3 -c "
+import hashlib, sys
+print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest()[:16])
+" "$spec_path")
+  fi
+
+  if [[ -n "$spec_hash" ]]; then
+    printf '%s\x1f%s\x1f%s\x1f%s\x1f%s' "$idea" "$advocate_set" "$MODEL_VERSION" "$profile" "$spec_hash" | hash
+  else
+    printf '%s\x1f%s\x1f%s\x1f%s' "$idea" "$advocate_set" "$MODEL_VERSION" "$profile" | hash
+  fi
 }
 
 cmd_get() {

@@ -124,6 +124,94 @@ def load_chosen_preview(run_root: Path) -> str:
     return "\n".join(p for p in parts if p)
 
 
+_UNKNOWN_VALUES = frozenset({"unknown", "", None})
+
+
+def _spec_semantic_strings(data: dict) -> list[str]:
+    """Extract filled semantic string values from an idea.spec.json dict.
+
+    Returns the text content of fields whose value is neither null nor the
+    sentinel "unknown" — every other semantic slot is skipped so that the
+    soft-anchor contract (`_filled_ratio < 0.5` is allowed) does not
+    penalize users for leaving dimensions unspecified at H1 time.
+    """
+    out: list[str] = []
+
+    def keep(v) -> bool:
+        if v is None:
+            return False
+        if isinstance(v, str) and v.strip().lower() in _UNKNOWN_VALUES:
+            return False
+        return True
+
+    if keep(data.get("idea_summary")):
+        out.append(str(data["idea_summary"]))
+
+    persona = data.get("target_persona") or {}
+    if isinstance(persona, dict):
+        for k in ("profile", "primary_pain"):
+            v = persona.get(k)
+            if keep(v):
+                out.append(str(v))
+
+    surface = data.get("primary_surface") or {}
+    if isinstance(surface, dict):
+        for k in ("platform", "sync_model"):
+            v = surface.get(k)
+            if keep(v):
+                out.append(str(v))
+
+    jtbd = data.get("jobs_to_be_done") or {}
+    if isinstance(jtbd, dict):
+        for k in ("functional", "emotional", "social"):
+            v = jtbd.get(k)
+            if keep(v):
+                out.append(str(v))
+
+    for c in data.get("must_have_constraints") or []:
+        if isinstance(c, dict):
+            v = c.get("value")
+            if keep(v):
+                out.append(str(v))
+
+    if keep(data.get("killer_feature")):
+        out.append(str(data["killer_feature"]))
+
+    for g in data.get("non_goals") or []:
+        if keep(g):
+            out.append(str(g))
+
+    if keep(data.get("success_metric")):
+        out.append(str(data["success_metric"]))
+
+    return out
+
+
+def load_idea_spec(run_root: Path) -> str:
+    """Concat filled semantic fields from idea.spec.json (v1.6.0+).
+
+    v1.5.x runs have no idea.spec.json; returns "" for those so the
+    containment anchor falls back to chosen_preview alone.
+
+    Every field may be null or "unknown" under the soft-anchor contract —
+    those are intentionally excluded so drift detection does not punish
+    writes that touch dimensions the user never specified.
+    """
+    spec = run_root / "idea.spec.json"
+    if not spec.exists():
+        return ""
+    try:
+        data = json.load(spec.open())
+    except (OSError, json.JSONDecodeError):
+        return ""
+    return "\n".join(_spec_semantic_strings(data))
+
+
+def load_idea_anchor(run_root: Path) -> str:
+    """Full Rule 9 anchor = chosen_preview ∪ filled idea.spec fields."""
+    return "\n".join(p for p in (load_chosen_preview(run_root), load_idea_spec(run_root)) if p)
+
+
 def read_hook_input() -> dict:
     try:
         raw = sys.stdin.read()
@@ -175,7 +263,7 @@ def main() -> int:
     if not run_root:
         return 0
 
-    chosen_text = load_chosen_preview(run_root)
+    chosen_text = load_idea_anchor(run_root)
     if not chosen_text:
         # Gate H1 hasn't produced chosen_preview yet — nothing to compare against.
         return 0
