@@ -143,7 +143,7 @@ Memory Tool (`memory_20250818`)은 beta 헤더 없이 사용.
 | Agent / gate | Max calls per run | Notes |
 |---|---|---|
 | I1 idea-clarifier (Socratic interview) | **3** | 3-batch × 3-4 questions per call = 10-12 total questions in 3 modals |
-| Gate H1 (`chief-engineer-pm` at `/pf:design`) | 2 | Primary pick + optional gallery P-number free-form pick |
+| Gate H1 (`chief-engineer-pm` at `/pf:design`) | **3** | (1) 4-way preview pick, (2) if gallery path → P-number free-form, (3) Claude Design vs internal Studio |
 | Gate H2 (`chief-engineer-pm` at `/pf:freeze`) | 1 | Deploy approval |
 | Every other agent | 0 | Only above agents may issue AskUserQuestion; others route through M1 escalation |
 

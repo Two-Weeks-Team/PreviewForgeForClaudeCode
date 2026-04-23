@@ -50,14 +50,12 @@
     },
     "must_have_constraints": {
       "type": "array",
+      "description": "Hard constraints captured by I1 Batch C. Canonical `type` buckets: regulatory | budget | latency | team_size | platform | data_residency. Free-form strings (e.g. 'air-gapped deployment', 'mandated vendor X') are also accepted so the Batch C 'Other' path is never silently dropped.",
       "items": {
         "type": "object",
         "required": ["type", "value"],
         "properties": {
-          "type": {
-            "type": "string",
-            "enum": ["regulatory", "budget", "latency", "team_size", "platform", "data_residency"]
-          },
+          "type": { "type": "string", "minLength": 1 },
           "value": { "type": "string", "minLength": 1 }
         },
         "additionalProperties": false

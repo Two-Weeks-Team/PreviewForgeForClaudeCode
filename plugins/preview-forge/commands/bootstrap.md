@@ -42,11 +42,12 @@ Bash(pnpm:*)          Bash(npm:*)           Bash(npx:*)
 Bash(node:*)          Bash(tsc:*)           Bash(prisma:*)
 Bash(python3:*)       Bash(git status*)     Bash(git log*)
 Bash(git diff*)       Bash(git rev-parse*)
-Bash(bash:*)          Bash(open:*)          Bash(xdg-open:*)
-Bash(start:*)
+Bash(bash *scripts/generate-gallery.sh*)
+Bash(bash *scripts/open-browser.sh*)
+Bash(open:*)          Bash(xdg-open:*)      Bash(start:*)
 ```
 
-> `Bash(bash:*)` covers the `bash "${CLAUDE_PLUGIN_ROOT}/..."` invocation form used by M3 at Gate H1 to run `scripts/generate-gallery.sh` and `scripts/open-browser.sh` (v1.6.0+). The browser-opener prefixes (`open` · `xdg-open` · `start`) let the shell delegate to the host OS without prompting.
+> The two `Bash(bash *scripts/…)` entries are narrow by design: they only match the H1 helper invocations (`bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/generate-gallery.sh …"` and the `open-browser.sh` counterpart) — NOT a broad `Bash(bash:*)` that would let `bash -c "rm -rf …"` slip through prompt-free. The browser-opener prefixes (`open` · `xdg-open` · `start`) let the shell delegate to the host OS without prompting.
 
 **의도적으로 허용하지 않는 destructive 명령** (사용자가 필요 시 명시적 opt-in으로 직접 추가):
 
