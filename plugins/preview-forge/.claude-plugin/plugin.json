@@ -1,7 +1,7 @@
 {
   "name": "pf",
   "description": "한 줄 아이디어 → 143명 Opus 4.7 가상 엔지니어링 조직이 PreviewDD → SpecDD → TestDD 3-DD 사이클로 풀스택 앱을 freeze까지. 내장 Design Studio(Claude Design fallback) + Memory Tool + Reflexion 자가학습. Built with Opus 4.7 hackathon.",
-  "version": "1.8.1",
+  "version": "1.9.0",
   "author": {
     "name": "Two-Weeks-Team",
     "email": "app.2weeks@gmail.com",
