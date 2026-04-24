@@ -209,6 +209,134 @@ else
   pass "preview-cache.sh key on Korean idea: $utf8_key (!= ASCII $ascii_key · !=2nd Korean $utf8_key_b)"
 fi
 
+# ----- T-5 / T-9.1 / T-9.3 / T-9.4 : preview-cache hardening (Phase 3 Part B) ---
+echo
+echo "[T-9.1] preview-cache reject empty idea"
+rc=0
+err=$(bash "$REPO_ROOT/scripts/preview-cache.sh" key "" pro 2>&1 >/dev/null) || rc=$?
+if [[ "$rc" -eq 2 && "$err" == *"empty"* ]]; then
+  pass "empty idea rejected with exit 2 + stderr message"
+else
+  fail "T-9.1: empty idea should exit 2, got rc=$rc stderr='$err'"
+fi
+
+echo
+echo "[T-9.3] preview-cache key via stdin (- sentinel)"
+k_stdin=$(printf 'stdin-delivered idea text that is reasonably long' \
+  | bash "$REPO_ROOT/scripts/preview-cache.sh" key - pro 2>/dev/null || true)
+k_argv=$(bash "$REPO_ROOT/scripts/preview-cache.sh" key "stdin-delivered idea text that is reasonably long" pro 2>/dev/null || true)
+if [[ "$k_stdin" =~ ^[0-9a-f]{16,}$ && "$k_stdin" == "$k_argv" ]]; then
+  pass "- sentinel reads stdin and hashes identically to argv ($k_stdin)"
+else
+  fail "T-9.3: stdin hash '$k_stdin' != argv hash '$k_argv'"
+fi
+# PR #45 codex R1: trailing-newline preservation — distinct inputs
+# (same semantic text, different trailing newlines) MUST yield distinct
+# hashes, AND must match argv byte-for-byte.
+k_nn=$(printf 'idea'     | bash "$REPO_ROOT/scripts/preview-cache.sh" key - pro 2>/dev/null || true)
+k_1n=$(printf 'idea\n'   | bash "$REPO_ROOT/scripts/preview-cache.sh" key - pro 2>/dev/null || true)
+k_3n=$(printf 'idea\n\n\n' | bash "$REPO_ROOT/scripts/preview-cache.sh" key - pro 2>/dev/null || true)
+if [[ "$k_nn" == "$k_1n" || "$k_1n" == "$k_3n" || "$k_nn" == "$k_3n" ]]; then
+  fail "T-9.3 stdin trailing-newline collision — 0/1/3 newlines hashed the same"
+else
+  pass "T-9.3 stdin preserves trailing newlines (0/1/3 → distinct hashes)"
+fi
+
+echo
+echo "[T-5] preview-cache 3rd-arg routing"
+tmp_rt="$(mktemp -d -t pf-t5-routing-XXXXXX)"
+# Create a fake spec file to test the file-path branch.
+spec_file="$tmp_rt/idea.spec.json"
+printf '{"_schema_version":"1.0.0","_filled_ratio":0.5,"idea_summary":"x"}' > "$spec_file"
+cd "$tmp_rt"
+# Also create a numeric-named sibling (R6 edge case).
+touch 26
+# Baseline — no 3rd arg.
+k_none=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro 2>/dev/null)
+# Integer override (legacy 3-arg) — must match for both with/without ./26 trap.
+k_int=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro 26 2>/dev/null)
+# Spec-path 3-arg — must differ from integer + baseline.
+k_spec=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro "$spec_file" 2>/dev/null)
+# Unknown 3-arg (non-integer, non-existent file) — documented behaviour
+# at preview-cache.sh:~110: emit a stderr warning and fall back to the
+# 4-field baseline key (no spec hash). Captured both streams so we can
+# assert the warning is present.
+k_unknown_combined=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro "not-an-existing-file" 2>&1)
+k_unknown=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro "not-an-existing-file" 2>/dev/null)
+cd - >/dev/null
+# Repeat integer case in a clean dir without the ./26 trap for R6.
+tmp_clean=$(mktemp -d -t pf-t5-clean-XXXXXX); cd "$tmp_clean"
+k_int_clean=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro 26 2>/dev/null)
+cd - >/dev/null
+
+route_fails=0
+[[ "$k_none" =~ ^[0-9a-f]{16,}$ ]] || { fail "T-5 baseline (no 3rd arg) not hex"; route_fails=$((route_fails+1)); }
+[[ "$k_int" =~ ^[0-9a-f]{16,}$ && "$k_int" != "$k_none" ]] || { fail "T-5 integer branch: key same as baseline (override didn't fire)"; route_fails=$((route_fails+1)); }
+[[ "$k_spec" =~ ^[0-9a-f]{16,}$ && "$k_spec" != "$k_int" && "$k_spec" != "$k_none" ]] || { fail "T-5 spec-path branch: didn't produce distinct key"; route_fails=$((route_fails+1)); }
+[[ "$k_unknown" == "$k_none" ]] || { fail "T-5 unknown-token: did NOT fall back to baseline (spec_hash leaked?)"; route_fails=$((route_fails+1)); }
+[[ "$k_unknown_combined" == *"does not exist"* ]] || { fail "T-5 unknown-token: expected stderr warning, got '$k_unknown_combined'"; route_fails=$((route_fails+1)); }
+[[ "$k_int" == "$k_int_clean" ]] || { fail "T-5 / R6: integer key changed when ./26 trap file existed"; route_fails=$((route_fails+1)); }
+[[ "$route_fails" -eq 0 ]] && pass "T-5 routing: baseline=$k_none integer=$k_int spec=$k_spec unknown=$k_unknown; R6 trap safe"
+rm -rf "$tmp_rt" "$tmp_clean"
+
+echo
+echo "[T-9.4] preview-cache atomic cmd_put (concurrent writers)"
+tmp_put=$(mktemp -d -t pf-t9-4-XXXXXX)
+export PF_CACHE_DIR="$tmp_put/cache"
+mkdir -p "$PF_CACHE_DIR"
+# Build 5 distinct payloads with UNIQUE per-source content + pre-
+# computed SHAs so we can prove the final file equals EXACTLY one of
+# the sources (not a partial-write byte salad that happens to pass a
+# size range check).
+for i in 1 2 3 4 5; do
+  printf '{"run":%d,"padding":"%s"}\n' "$i" \
+    "$(head -c 40000 /dev/urandom | base64 | tr -d '\n' | head -c 40000)" \
+    > "$tmp_put/src-$i.json"
+done
+# Canonical source SHAs.
+declare -a src_shas=()
+for i in 1 2 3 4 5; do
+  src_shas+=("$(shasum -a 256 "$tmp_put/src-$i.json" | awk '{print $1}')")
+done
+# Fire 5 concurrent cmd_put to the SAME key.
+for i in 1 2 3 4 5; do
+  ( bash "$REPO_ROOT/scripts/preview-cache.sh" put concurrent-key "$tmp_put/src-$i.json" >/dev/null 2>&1 ) &
+done
+wait
+final="$PF_CACHE_DIR/concurrent-key.json"
+if ! python3 -c "import json; json.load(open('$final'))" 2>/dev/null; then
+  fail "T-9.4: concurrent cmd_put produced corrupt JSON at $final"
+else
+  final_sha=$(shasum -a 256 "$final" | awk '{print $1}')
+  matched=0
+  for sha in "${src_shas[@]}"; do
+    [[ "$final_sha" == "$sha" ]] && matched=1
+  done
+  if [[ "$matched" -eq 1 ]]; then
+    # Also size-sanity to make sure the SHA match isn't a 0-byte
+    # coincidence (mktemp empty file hashed to itself).
+    size=$(wc -c < "$final" | tr -d ' ')
+    pass "T-9.4: 5 concurrent puts → final SHA matches exactly one source (size $size, sha ${final_sha:0:12})"
+  else
+    fail "T-9.4: final SHA $final_sha matches NONE of the 5 source SHAs — atomic write broken (cross-writer byte mix)"
+  fi
+fi
+# Verify no leftover .tmp.XXXXXX files (PR #45 review: template now
+# uses the BSD-portable `.tmp.XXXXXX` form with X-at-end, so the infix
+# `.tmp.` is the orphan detector).
+leftover=$(find "$PF_CACHE_DIR" -maxdepth 1 -name '*.tmp.*' 2>/dev/null | wc -l | tr -d ' ')
+if [[ "$leftover" -ne 0 ]]; then
+  fail "T-9.4: $leftover .tmp.* orphans under $PF_CACHE_DIR"
+fi
+unset PF_CACHE_DIR
+rm -rf "$tmp_put"
+
 # ----- S-5 : ledger symlink refusal --------------------------------------
 echo
 echo "[S-5] escalation-ledger _lockfile O_NOFOLLOW"
