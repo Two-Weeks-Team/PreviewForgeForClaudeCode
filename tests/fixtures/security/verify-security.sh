@@ -279,13 +279,21 @@ echo "[T-9.4] preview-cache atomic cmd_put (concurrent writers)"
 tmp_put=$(mktemp -d -t pf-t9-4-XXXXXX)
 export PF_CACHE_DIR="$tmp_put/cache"
 mkdir -p "$PF_CACHE_DIR"
-# Build 5 distinct payloads so we can spot partial writes.
+# Build 5 distinct payloads with UNIQUE per-source content + pre-
+# computed SHAs so we can prove the final file equals EXACTLY one of
+# the sources (not a partial-write byte salad that happens to pass a
+# size range check).
 for i in 1 2 3 4 5; do
-  printf '{"run":%d,"padding":"%s"}\n' "$i" "$(head -c 40000 /dev/urandom | base64 | tr -d '\n' | head -c 40000)" \
+  printf '{"run":%d,"padding":"%s"}\n' "$i" \
+    "$(head -c 40000 /dev/urandom | base64 | tr -d '\n' | head -c 40000)" \
     > "$tmp_put/src-$i.json"
 done
-# Fire 5 concurrent cmd_put to the SAME key, then verify the resulting
-# file is exactly one of the sources (not a half-written mix).
+# Canonical source SHAs.
+declare -a src_shas=()
+for i in 1 2 3 4 5; do
+  src_shas+=("$(shasum -a 256 "$tmp_put/src-$i.json" | awk '{print $1}')")
+done
+# Fire 5 concurrent cmd_put to the SAME key.
 for i in 1 2 3 4 5; do
   ( bash "$REPO_ROOT/scripts/preview-cache.sh" put concurrent-key "$tmp_put/src-$i.json" >/dev/null 2>&1 ) &
 done
@@ -294,15 +302,22 @@ final="$PF_CACHE_DIR/concurrent-key.json"
 if ! python3 -c "import json; json.load(open('$final'))" 2>/dev/null; then
   fail "T-9.4: concurrent cmd_put produced corrupt JSON at $final"
 else
-  size=$(wc -c < "$final")
-  if [[ "$size" -lt 39990 || "$size" -gt 40100 ]]; then
-    fail "T-9.4: final file size $size is not close to a source (40k) — partial?"
+  final_sha=$(shasum -a 256 "$final" | awk '{print $1}')
+  matched=0
+  for sha in "${src_shas[@]}"; do
+    [[ "$final_sha" == "$sha" ]] && matched=1
+  done
+  if [[ "$matched" -eq 1 ]]; then
+    # Also size-sanity to make sure the SHA match isn't a 0-byte
+    # coincidence (mktemp empty file hashed to itself).
+    size=$(wc -c < "$final" | tr -d ' ')
+    pass "T-9.4: 5 concurrent puts → final SHA matches exactly one source (size $size, sha ${final_sha:0:12})"
   else
-    pass "T-9.4: 5 concurrent puts → single valid JSON (size $size) + no leftover .tmp"
+    fail "T-9.4: final SHA $final_sha matches NONE of the 5 source SHAs — atomic write broken (cross-writer byte mix)"
   fi
 fi
 # Verify no leftover .tmp files.
-leftover=$(find "$PF_CACHE_DIR" -name '*.tmp' -maxdepth 1 2>/dev/null | wc -l | tr -d ' ')
+leftover=$(find "$PF_CACHE_DIR" -maxdepth 1 -name '*.tmp' 2>/dev/null | wc -l | tr -d ' ')
 if [[ "$leftover" -ne 0 ]]; then
   fail "T-9.4: $leftover .tmp orphans under $PF_CACHE_DIR"
 fi
