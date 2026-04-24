@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.8.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.7.0...v1.8.0) (2026-04-24)
+
+
+### Features
+
+* **v1.7.0:** Phase 2 Flow & Architecture — A-1.followup / A-2 / A-3 / A-5 / A-6 / A-7 ([#42](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/42)) ([9cfb969](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/9cfb969c3de11de6ca7d953941a789634226c1ed))
+
 ## [1.7.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.6.1...v1.7.0) (2026-04-24)
 
 
