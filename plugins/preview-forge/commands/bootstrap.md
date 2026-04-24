@@ -139,7 +139,7 @@ PY
 
 ```text
 ✓ Memory seeded: ~/.claude/preview-forge/memory/{CLAUDE,PROGRESS,LESSONS}.md (3 files)
-✓ Workspace permissions: .claude/settings.local.json (29 plugin Bash patterns ready)
+✓ Workspace permissions: .claude/settings.local.json (30+ plugin Bash patterns ready)
 ✓ Bootstrap complete. /pf:new now respects the "two human gates" promise.
 ```
 
