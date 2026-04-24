@@ -260,14 +260,13 @@ k_int=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
 # Spec-path 3-arg — must differ from integer + baseline.
 k_spec=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
   bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro "$spec_file" 2>/dev/null)
-# Unknown 3-arg (non-integer, non-existent file) — documented behaviour
-# at preview-cache.sh:~110: emit a stderr warning and fall back to the
-# 4-field baseline key (no spec hash). Captured both streams so we can
-# assert the warning is present.
+# Unknown 3-arg (non-integer, non-existent file) — R-3 Phase 7 fail-fast:
+# exit 2 + stderr "does not exist", no stdout key. Previously warn+
+# fallback; ComBba independent verification proved the 4-field
+# collapse risk → reverted to CodeRabbit's original fail-fast recipe.
+k_unknown_rc=0
 k_unknown_combined=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
-  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro "not-an-existing-file" 2>&1)
-k_unknown=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
-  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro "not-an-existing-file" 2>/dev/null)
+  bash "$REPO_ROOT/scripts/preview-cache.sh" key "test" pro "not-an-existing-file" 2>&1) || k_unknown_rc=$?
 cd - >/dev/null
 # Repeat integer case in a clean dir without the ./26 trap for R6.
 tmp_clean=$(mktemp -d -t pf-t5-clean-XXXXXX); cd "$tmp_clean"
@@ -279,10 +278,10 @@ route_fails=0
 [[ "$k_none" =~ ^[0-9a-f]{16,}$ ]] || { fail "T-5 baseline (no 3rd arg) not hex"; route_fails=$((route_fails+1)); }
 [[ "$k_int" =~ ^[0-9a-f]{16,}$ && "$k_int" != "$k_none" ]] || { fail "T-5 integer branch: key same as baseline (override didn't fire)"; route_fails=$((route_fails+1)); }
 [[ "$k_spec" =~ ^[0-9a-f]{16,}$ && "$k_spec" != "$k_int" && "$k_spec" != "$k_none" ]] || { fail "T-5 spec-path branch: didn't produce distinct key"; route_fails=$((route_fails+1)); }
-[[ "$k_unknown" == "$k_none" ]] || { fail "T-5 unknown-token: did NOT fall back to baseline (spec_hash leaked?)"; route_fails=$((route_fails+1)); }
-[[ "$k_unknown_combined" == *"does not exist"* ]] || { fail "T-5 unknown-token: expected stderr warning, got '$k_unknown_combined'"; route_fails=$((route_fails+1)); }
+[[ "$k_unknown_rc" -eq 2 ]] || { fail "T-5 / R-3 unknown-token: expected exit 2, got rc=$k_unknown_rc"; route_fails=$((route_fails+1)); }
+[[ "$k_unknown_combined" == *"does not exist"* ]] || { fail "T-5 / R-3 unknown-token: expected stderr 'does not exist', got '$k_unknown_combined'"; route_fails=$((route_fails+1)); }
 [[ "$k_int" == "$k_int_clean" ]] || { fail "T-5 / R6: integer key changed when ./26 trap file existed"; route_fails=$((route_fails+1)); }
-[[ "$route_fails" -eq 0 ]] && pass "T-5 routing: baseline=$k_none integer=$k_int spec=$k_spec unknown=$k_unknown; R6 trap safe"
+[[ "$route_fails" -eq 0 ]] && pass "T-5 routing: baseline=$k_none integer=$k_int spec=$k_spec (unknown-token R-3 exit 2); R6 trap safe"
 rm -rf "$tmp_rt" "$tmp_clean"
 
 echo

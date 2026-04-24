@@ -56,6 +56,45 @@ print(hashlib.sha256(data).hexdigest()[:16])
 "
 }
 
+# R-1 (v1.7.0+): Python heredoc helpers consolidate the 8+ inline blocks
+# that used to repeat the same mtime / TTL / JSON-key / sha256 patterns
+# across cmd_key / cmd_get / cmd_prune. Each helper encapsulates one
+# concern + the encoding="utf-8" requirement from T-10 in a single
+# choke point. Security note: expr arguments for py_read_json are
+# interpolated into the python source (same constraint the pre-v1.7.0
+# inline blocks had), so CALLERS MUST pass a string literal controlled
+# by this script — never user input.
+
+py_sha256_file() {
+  # Short (16-hex) sha256 of a file, used for idea_spec_hash.
+  python3 -c "
+import hashlib, sys
+print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest()[:16])
+" "$1"
+}
+
+py_file_age() {
+  # Integer seconds since the file's mtime (for TTL comparison).
+  python3 -c "import os, sys, time; print(int(time.time() - os.path.getmtime(sys.argv[1])))" "$1"
+}
+
+py_read_json() {
+  # Read JSON file $1 and print `d<expr>` where <expr> is a hardcoded
+  # python subscript / method chain (e.g. "['caching']['ttl_seconds']"
+  # or ".get('profile', 'pro')"). On any exception, print $3 (fallback).
+  local file="$1"
+  local expr="$2"
+  local fallback="${3:-}"
+  python3 -c "
+import json, sys
+try:
+    d = json.load(open(sys.argv[1], encoding='utf-8'))
+    print(d${expr})
+except Exception:
+    print(sys.argv[2])
+" "$file" "$fallback"
+}
+
 cmd_key() {
   local idea="$1"
   local profile="${2:-pro}"
@@ -119,14 +158,7 @@ cmd_key() {
   # file missing, fall back to the profile name as the set discriminator.
   local advocate_count=""
   if [[ -n "$PLUGIN_ROOT" && -f "$PLUGIN_ROOT/profiles/$profile.json" ]]; then
-    advocate_count=$(python3 -c "
-import json, sys
-try:
-    p = json.load(open(sys.argv[1]))
-    print(p['previews']['count'])
-except Exception:
-    print('')
-" "$PLUGIN_ROOT/profiles/$profile.json")
+    advocate_count=$(py_read_json "$PLUGIN_ROOT/profiles/$profile.json" "['previews']['count']" "")
   fi
   # Override takes precedence if provided.
   if [[ -n "$previews_override" ]]; then
@@ -145,16 +177,25 @@ except Exception:
   # that meant to include spec would be poisonous — repeat runs with
   # different Socratic answers could share the same (pre-upgrade) cache
   # entry. The warning surfaces the mistake so the caller can fix the path.
+  # R-3 (v1.7.0+): spec-missing is now fail-fast (exit 2). ComBba
+  # independent verification proved that warn+silent-fallback collapsed
+  # three distinct 3-arg invocation shapes (spec-missing, unknown-token,
+  # legacy-2-arg) onto the same 4-field cache key, creating v1.5.x
+  # legacy-entry poisoning potential. The original CodeRabbit
+  # fail-fast recommendation is restored. Back-compat:
+  # - Legacy v1.5.x callers never passed spec_path, so this branch
+  #   never entered; they keep the 4-field keyspace.
+  # - v1.6.0+ callers that pass spec_path are required to guarantee
+  #   the file exists before calling — caller responsibility.
+  # - A-1 weak-key probe explicitly MUST NOT pass spec_path (see
+  #   ideation-lead.md §1 and commands/new.md §4).
   local spec_hash=""
   if [[ -n "$spec_path" ]]; then
-    if [[ -f "$spec_path" ]]; then
-      spec_hash=$(python3 -c "
-import hashlib, sys
-print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest()[:16])
-" "$spec_path")
-    else
-      echo "preview-cache.sh: spec_path='$spec_path' does not exist — key will not include spec hash (cache may hit stale v1.5.x entry)" >&2
+    if [[ ! -f "$spec_path" ]]; then
+      echo "preview-cache.sh: spec_path='$spec_path' does not exist — refusing to emit a 4-field key that could collide with a legacy v1.5.x entry" >&2
+      return 2
     fi
+    spec_hash=$(py_sha256_file "$spec_path")
   fi
 
   if [[ -n "$spec_hash" ]]; then
@@ -177,26 +218,14 @@ cmd_get() {
   # stay safe even if PLUGIN_ROOT or cache keys ever contain odd chars.
   local ttl=0
   local profile_name
-  profile_name=$(python3 -c "
-import json, sys
-try:
-    print(json.load(open(sys.argv[1])).get('profile', 'pro'))
-except Exception:
-    print('pro')
-" "$file")
+  profile_name=$(py_read_json "$file" ".get('profile', 'pro')" "pro")
   if [[ -n "$PLUGIN_ROOT" && -f "$PLUGIN_ROOT/profiles/$profile_name.json" ]]; then
-    ttl=$(python3 -c "
-import json, sys
-try:
-    print(json.load(open(sys.argv[1]))['caching']['ttl_seconds'])
-except Exception:
-    print(0)
-" "$PLUGIN_ROOT/profiles/$profile_name.json")
+    ttl=$(py_read_json "$PLUGIN_ROOT/profiles/$profile_name.json" "['caching']['ttl_seconds']" "0")
   fi
 
   if [[ "$ttl" -gt 0 ]]; then
     local age
-    age=$(python3 -c "import os,sys,time; print(int(time.time() - os.path.getmtime(sys.argv[1])))" "$file")
+    age=$(py_file_age "$file")
     if [[ "$age" -gt "$ttl" ]]; then
       return 1
     fi
@@ -294,22 +323,10 @@ cmd_prune() {
   for f in "$CACHE_DIR"/*.json; do
     [[ -f "$f" ]] || continue
     local profile_name
-    profile_name=$(python3 -c "
-import json, sys
-try:
-    print(json.load(open(sys.argv[1])).get('profile', 'pro'))
-except Exception:
-    print('pro')
-" "$f")
+    profile_name=$(py_read_json "$f" ".get('profile', 'pro')" "pro")
     local ttl=0
     if [[ -f "$PLUGIN_ROOT/profiles/$profile_name.json" ]]; then
-      ttl=$(python3 -c "
-import json, sys
-try:
-    print(json.load(open(sys.argv[1]))['caching']['ttl_seconds'])
-except Exception:
-    print(0)
-" "$PLUGIN_ROOT/profiles/$profile_name.json")
+      ttl=$(py_read_json "$PLUGIN_ROOT/profiles/$profile_name.json" "['caching']['ttl_seconds']" "0")
     fi
     if [[ "$ttl" -eq 0 ]]; then
       rm -f "$f"
@@ -317,7 +334,7 @@ except Exception:
       continue
     fi
     local age
-    age=$(python3 -c "import os,sys,time; print(int(time.time() - os.path.getmtime(sys.argv[1])))" "$f")
+    age=$(py_file_age "$f")
     if [[ "$age" -gt "$ttl" ]]; then
       rm -f "$f"
       removed=$((removed + 1))
