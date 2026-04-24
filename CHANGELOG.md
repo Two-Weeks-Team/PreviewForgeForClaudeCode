@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.7.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.6.1...v1.7.0) (2026-04-24)
+
+
+### Features
+
+* **v1.7.0:** Phase 4 DevOps — cygpath/python-guard/trace-log (D-1/D-2/D-4) ([#39](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/39)) ([47b4144](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/47b4144a9982c425f5461e90b31a87165b2a1fb5))
+
 ## [1.6.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.6.0...v1.6.1) (2026-04-24)
 
 
