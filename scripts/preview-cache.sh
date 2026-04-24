@@ -189,8 +189,20 @@ cmd_put() {
   local alias_key="${3:-}"
   cp "$src" "$CACHE_DIR/$key.json"
   if [[ -n "$alias_key" && "$alias_key" != "$key" ]]; then
-    cp "$src" "$CACHE_DIR/$alias_key.json"
-    echo "cached: $CACHE_DIR/$key.json (+weak-alias $alias_key.json)"
+    # Alias write is best-effort — the strong key above is the source
+    # of truth. Under `set -euo pipefail`, a bare `cp` failure would
+    # abort cmd_put and surface as a non-zero exit to the caller, even
+    # though the primary cache entry is already safely on disk.
+    # Wrapping the alias write in an `if` keeps the exit status
+    # caller-visible-success; we log the degradation to stderr so a
+    # missed alias doesn't look like a silent feature regression. The
+    # next successful put recreates the alias (self-healing).
+    if cp "$src" "$CACHE_DIR/$alias_key.json" 2>/dev/null; then
+      echo "cached: $CACHE_DIR/$key.json (+weak-alias $alias_key.json)"
+    else
+      echo "preview-cache.sh: weak-alias write failed for $alias_key.json (primary $key.json intact; next put will retry)" >&2
+      echo "cached: $CACHE_DIR/$key.json"
+    fi
   else
     echo "cached: $CACHE_DIR/$key.json"
   fi
