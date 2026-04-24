@@ -64,8 +64,16 @@ cmd_key() {
   # hosts (macOS ARG_MAX ~256KB for the whole argv+env, Linux 2MB+ but
   # still bounded). A caller that doesn't want to trust the host
   # ARG_MAX can do `bash preview-cache.sh key - pro < idea.txt`.
+  #
+  # Trailing-newline preservation (codex R1 on PR #45): bash command
+  # substitution strips trailing newlines, which would make two
+  # semantically-distinct stdin inputs collide on the same hash (e.g.
+  # "idea\n\n" and "idea" both canonicalize to "idea"). We append a
+  # sentinel `_` after cat and strip exactly one, so any number of
+  # trailing newlines in the real input survives into the hasher.
   if [[ "$idea" == "-" ]]; then
-    idea=$(cat)
+    idea=$(cat; echo _)
+    idea="${idea%_}"
   fi
   # T-9.1 (v1.7.0+): empty idea text is never a legitimate cache key —
   # it would collide across every empty-idea run at the 4-field-hash
@@ -216,10 +224,35 @@ cmd_put() {
   # entries where an in-flight get() sees a truncated JSON. `mktemp`
   # gives each writer a unique dotfile inside CACHE_DIR, and `mv -f`
   # (which is rename(2) on same-FS) swaps the entry atomically.
+  #
+  # PR #45 review (gemini HIGH, codex R1): two portability/hardening
+  # fixes folded in here:
+  # 1. BSD / macOS mktemp requires the `XXXXXX` placeholders to be at
+  #    the END of the template (see mktemp(1) on macOS). The previous
+  #    `.${key}.XXXXXX.tmp` form silently failed to substitute on
+  #    macOS — mktemp accepted it as a literal filename, making every
+  #    concurrent writer race on the same literal tmp path. New form
+  #    `.${key}.tmp.XXXXXX` keeps the `.tmp` infix as a cleanup marker
+  #    while honouring the BSD end-placement rule.
+  # 2. key / alias_key are defence-in-depth sanitised to
+  #    `[:alnum:]._-` so a malformed caller can't inject path separators
+  #    into the tmp path. Our own callers emit 16-hex keys only, but
+  #    the third-party weak-alias write path now has the same guarantee.
+  local safe_key safe_alias
+  safe_key=$(printf '%s' "$key" | tr -dc '[:alnum:]._-')
+  if [[ -z "$safe_key" ]]; then
+    echo "preview-cache.sh: refusing put with empty/unsafe key: '$key'" >&2
+    return 2
+  fi
   local primary_tmp
-  primary_tmp=$(mktemp "$CACHE_DIR/.${key}.XXXXXX.tmp")
-  cp "$src" "$primary_tmp"
-  mv -f "$primary_tmp" "$CACHE_DIR/$key.json"
+  primary_tmp=$(mktemp "$CACHE_DIR/.${safe_key}.tmp.XXXXXX")
+  # gemini HIGH: explicit cleanup so `set -euo pipefail` can't leave a
+  # tmp orphan if cp fails.
+  if ! cp "$src" "$primary_tmp" 2>/dev/null || ! mv -f "$primary_tmp" "$CACHE_DIR/$safe_key.json" 2>/dev/null; then
+    [[ -f "$primary_tmp" ]] && rm -f "$primary_tmp"
+    echo "preview-cache.sh: primary put failed for key '$safe_key'" >&2
+    return 1
+  fi
   if [[ -n "$alias_key" && "$alias_key" != "$key" ]]; then
     # Alias write is best-effort — the strong key above is the source
     # of truth. Under `set -euo pipefail`, a bare `cp` failure would
@@ -229,19 +262,21 @@ cmd_put() {
     # caller-visible-success; we log the degradation to stderr so a
     # missed alias doesn't look like a silent feature regression. The
     # next successful put recreates the alias (self-healing).
+    safe_alias=$(printf '%s' "$alias_key" | tr -dc '[:alnum:]._-')
     local alias_tmp
-    if alias_tmp=$(mktemp "$CACHE_DIR/.${alias_key}.XXXXXX.tmp" 2>/dev/null) \
+    if [[ -n "$safe_alias" ]] \
+       && alias_tmp=$(mktemp "$CACHE_DIR/.${safe_alias}.tmp.XXXXXX" 2>/dev/null) \
        && cp "$src" "$alias_tmp" 2>/dev/null \
-       && mv -f "$alias_tmp" "$CACHE_DIR/$alias_key.json" 2>/dev/null; then
-      echo "cached: $CACHE_DIR/$key.json (+weak-alias $alias_key.json)"
+       && mv -f "$alias_tmp" "$CACHE_DIR/$safe_alias.json" 2>/dev/null; then
+      echo "cached: $CACHE_DIR/$safe_key.json (+weak-alias $safe_alias.json)"
     else
       # Clean up any leftover alias tmp from a failed cp.
       [[ -n "${alias_tmp:-}" && -f "$alias_tmp" ]] && rm -f "$alias_tmp"
-      echo "preview-cache.sh: weak-alias write failed for $alias_key.json (primary $key.json intact; next put will retry)" >&2
-      echo "cached: $CACHE_DIR/$key.json"
+      echo "preview-cache.sh: weak-alias write failed for '$alias_key' (primary $safe_key.json intact; next put will retry)" >&2
+      echo "cached: $CACHE_DIR/$safe_key.json"
     fi
   else
-    echo "cached: $CACHE_DIR/$key.json"
+    echo "cached: $CACHE_DIR/$safe_key.json"
   fi
 }
 

@@ -230,6 +230,17 @@ if [[ "$k_stdin" =~ ^[0-9a-f]{16,}$ && "$k_stdin" == "$k_argv" ]]; then
 else
   fail "T-9.3: stdin hash '$k_stdin' != argv hash '$k_argv'"
 fi
+# PR #45 codex R1: trailing-newline preservation — distinct inputs
+# (same semantic text, different trailing newlines) MUST yield distinct
+# hashes, AND must match argv byte-for-byte.
+k_nn=$(printf 'idea'     | bash "$REPO_ROOT/scripts/preview-cache.sh" key - pro 2>/dev/null || true)
+k_1n=$(printf 'idea\n'   | bash "$REPO_ROOT/scripts/preview-cache.sh" key - pro 2>/dev/null || true)
+k_3n=$(printf 'idea\n\n\n' | bash "$REPO_ROOT/scripts/preview-cache.sh" key - pro 2>/dev/null || true)
+if [[ "$k_nn" == "$k_1n" || "$k_1n" == "$k_3n" || "$k_nn" == "$k_3n" ]]; then
+  fail "T-9.3 stdin trailing-newline collision — 0/1/3 newlines hashed the same"
+else
+  pass "T-9.3 stdin preserves trailing newlines (0/1/3 → distinct hashes)"
+fi
 
 echo
 echo "[T-5] preview-cache 3rd-arg routing"
@@ -316,10 +327,12 @@ else
     fail "T-9.4: final SHA $final_sha matches NONE of the 5 source SHAs — atomic write broken (cross-writer byte mix)"
   fi
 fi
-# Verify no leftover .tmp files.
-leftover=$(find "$PF_CACHE_DIR" -maxdepth 1 -name '*.tmp' 2>/dev/null | wc -l | tr -d ' ')
+# Verify no leftover .tmp.XXXXXX files (PR #45 review: template now
+# uses the BSD-portable `.tmp.XXXXXX` form with X-at-end, so the infix
+# `.tmp.` is the orphan detector).
+leftover=$(find "$PF_CACHE_DIR" -maxdepth 1 -name '*.tmp.*' 2>/dev/null | wc -l | tr -d ' ')
 if [[ "$leftover" -ne 0 ]]; then
-  fail "T-9.4: $leftover .tmp orphans under $PF_CACHE_DIR"
+  fail "T-9.4: $leftover .tmp.* orphans under $PF_CACHE_DIR"
 fi
 unset PF_CACHE_DIR
 rm -rf "$tmp_put"
