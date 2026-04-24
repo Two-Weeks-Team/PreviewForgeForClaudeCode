@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.8.1...v1.9.0) (2026-04-24)
+
+
+### Features
+
+* **v1.7.0:** Phase 6 Frontend UX — Gallery polish (F-1 through F-9) ([#48](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/48)) ([7589570](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/758957064f1aaf9a1a89739c973a369986f83747))
+
 ## [1.8.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.8.0...v1.8.1) (2026-04-24)
 
 
