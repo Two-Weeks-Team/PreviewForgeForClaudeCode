@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.6.0...v1.6.1) (2026-04-24)
+
+
+### Bug Fixes
+
+* **cache:** pre-Socratic weak-key probe + dual-store for one-click replay (A-1, v1.6.1) ([#28](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/28)) ([8186455](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/8186455de97921c2ea95c46a6ef3bfabc6ba9280))
+* **security:** reject traversal mockup_path + URL injection in browser opener (S-1/S-2, v1.6.1 hotfix) ([#27](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/27)) ([13b83b4](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/13b83b40db17bdaaf942312e93d2d304f3dd5761))
+
 ## [1.6.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.4...v1.6.0) (2026-04-24)
 
 
