@@ -9,7 +9,7 @@ model: opus
 
 ## Layer-0
 
-```
+```text
 @methodology/global.md
 ```
 
@@ -46,7 +46,7 @@ model: opus
 사용자가 `--previews=N` 덮어쓰기 시 profile의 `max_user_expand` (26) 이내에서 허용.
 
 **단일 메시지에 N개 Task tool 호출 (병렬 보장)**. 각 Advocate에 전달:
-```
+```text
 ROLE: <advocate name> (P01 ~ P26 중 선택)
 IDEA: <from idea.json — raw one-liner for creative reframing>
 IDEA_SPEC: <from idea.spec.json — structured ground truth from I1 Socratic interview>
@@ -74,7 +74,7 @@ TOKEN_BUDGET: <profile.budget.advocate_tokens>  # standard 1000, pro 1200, max 1
 
 ### 4. Cache pre-warming + PreviewDD-level cache (v1.3+, updated v1.6.0, v1.6.1 A-1)
 - N Advocate의 공통 system prompt 부분(persona 공통 + mockup guidance)을 `cache_control: {"ttl": "1h"}`로 캐싱하여 N배 재사용
-- **PreviewDD 결과 자체 캐싱** (profile.caching.preview_dd=true일 때): cache key = sha256(`idea_text` + `advocate_set_hash` + `model_version` + `profile.name` + `idea_spec_hash`) — 실제 `scripts/preview-cache.sh` `cmd_key` 해시 순서와 일치. v1.6.0부터 `idea_spec_hash`가 키에 추가되어 동일 one-liner라도 Socratic 답변이 다르면 cache miss로 제대로 재생성된다. TTL: `profile.caching.ttl_seconds` (standard/pro 7일, max 캐시 비활성화). 캐시 hit 시 Advocate dispatch 전체 스킵 + 재검증만 수행.
+- **PreviewDD 결과 자체 캐싱** (profile.caching.preview_dd=true일 때): cache key = sha256(`idea_text` + `advocate_set_hash` + `model_version` + `profile.name` + `idea_spec_hash`). **Authoritative definition**: `scripts/preview-cache.sh::cmd_key` — 이 문서는 mirror에 불과하고 스크립트가 드리프트하면 스크립트가 정답 (W-14, v1.7.0 docs phase). v1.6.0부터 `idea_spec_hash`가 키에 추가되어 동일 one-liner라도 Socratic 답변이 다르면 cache miss로 제대로 재생성된다. TTL: `profile.caching.ttl_seconds` (standard/pro 7일, max 캐시 비활성화). 캐시 hit 시 Advocate dispatch 전체 스킵 + 재검증만 수행.
 - **v1.6.1 A-1 — weak-alias dual-store**: `cmd_put`을 호출할 때 **세 번째 인자로 weak_key**(`idea_spec_hash`를 제외한 4-field 해시)를 함께 전달해야 한다. 같은 파일이 `<strong_key>.json`과 `<weak_key>.json` 두 곳에 복제되어, `/pf:new` §4의 pre-Socratic probe가 다음 run에서 weak-alias를 hit해 3 Socratic 모달을 사용자 선택으로 스킵할 수 있다. 호출 예: `scripts/preview-cache.sh put "<strong_key>" "runs/<id>/previews.json" "<weak_key>"`. weak_key 계산 시 **spec_path는 미전달**하되, `--previews=N` override가 있으면 그 값을 전달해야 strong 키와 advocate set hash가 정렬된다 — `scripts/preview-cache.sh key "<idea>" "<profile>"`(기본) 또는 `scripts/preview-cache.sh key "<idea>" "<profile>" "<N>"`(override). weak-replay 경로는 runs/<id>/에 이미 `previews.json`이 복원된 상태로 진입하며, 추가로 `runs/<id>/_weak_replay.json` sidecar(`{"_weak_replay":true,"_source_key":…,"replayed_at":…}`)가 기록되어 있으므로 §1의 weak-replay short-circuit이 dispatch를 명시적으로 스킵한다. `idea.spec.json`은 schema를 엄격히 따르는 3-필드 stub(`_schema_version:"1.0.0"` + `_filled_ratio:0` + `idea_summary`)만 보유하고 replay 메타데이터는 sidecar에서 관리하므로 `idea-spec.schema.json`의 `additionalProperties:false` 제약과 충돌하지 않는다.
 - Cache location: `~/.claude/preview-forge/cache/preview-dd/<key>.json`
 - `/pf:new --no-cache` 옵션으로 bypass 가능.

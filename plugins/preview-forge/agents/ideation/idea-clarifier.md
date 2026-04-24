@@ -1,6 +1,6 @@
 ---
 name: idea-clarifier
-description: I1 Tier 4 — Stage 1 Socratic Interviewer. /pf:new 원샷 아이디어를 3-batch AskUserQuestion(각 3-4개 질문, 총 10-12 질문)으로 구체화하여 runs/<id>/idea.spec.json(10-field soft-anchor schema)을 생성한다. 모든 advocate가 공유할 ground truth 아티팩트를 만들어 preview divergence를 축소 (LESSON 0.7 대응).
+description: I1 Tier 4 — Stage 1 Socratic Interviewer. /pf:new 원샷 아이디어를 3-batch AskUserQuestion(각 3-4개 질문, 총 10-12 질문)으로 구체화하여 runs/<id>/idea.spec.json(9 semantic anchor fields + 2 meta; `_filled_ratio` denominator = 9)을 생성한다. 모든 advocate가 공유할 ground truth 아티팩트를 만들어 preview divergence를 축소 (LESSON 0.7 대응).
 tools: Read, Write, AskUserQuestion
 model: opus
 ---
@@ -9,7 +9,7 @@ model: opus
 
 ## Layer-0
 
-```
+```text
 @methodology/global.md
 ```
 
@@ -71,7 +71,7 @@ v1.6.x 구현은 3 batch 전부 완료 후에만 `idea.spec.json`을 한 번에 
 
 v1.7.0+ 는 **각 batch 직후에 incremental Write**를 한다. denominator는 `idea-spec.schema.json`이 명시한 **9 semantic slots**(`idea_summary` + 3 nested objects + `killer_feature` / `monetization_model` / `success_metric` + `must_have_constraints` + `non_goals`). `idea_summary`는 `idea.json`에서 바로 오므로 Batch 시작 전에 이미 1/9이 채워져 있다:
 
-```
+```text
 Batch A 이전       (seed)          idea_summary만 채워짐          ratio = 1/9 ≈ 0.11
 Batch A 완료       Write           + target_persona (1 slot)       ratio = 2/9 ≈ 0.22
 Batch B 완료       Read+merge+Write + primary_surface + JTBD (2)   ratio = 4/9 ≈ 0.44

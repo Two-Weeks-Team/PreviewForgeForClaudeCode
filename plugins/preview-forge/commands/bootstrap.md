@@ -8,7 +8,7 @@ description: Initialize the plugin memory (CLAUDE/PROGRESS/LESSONS) AND seed wor
 
 ## Usage
 
-```
+```text
 /pf:bootstrap
 ```
 
@@ -31,7 +31,7 @@ v1.5.2부터 `/pf:bootstrap`은 현재 워크스페이스의 `.claude/settings.l
 
 **등록되는 allow list** (최소권한 원칙 — plugin이 실제 사용하는 read/build/test만):
 
-```
+```text
 Bash(mkdir:*)         Bash(cp:*)            Bash(echo:*)
 Bash(ls:*)            Bash(cat:*)           Bash(find:*)
 Bash(grep:*)          Bash(head:*)          Bash(tail:*)
@@ -137,9 +137,9 @@ PY
 
 ## 출력
 
-```
+```text
 ✓ Memory seeded: ~/.claude/preview-forge/memory/{CLAUDE,PROGRESS,LESSONS}.md (3 files)
-✓ Workspace permissions: .claude/settings.local.json (29 plugin Bash patterns ready)
+✓ Workspace permissions: .claude/settings.local.json (30+ plugin Bash patterns ready)
 ✓ Bootstrap complete. /pf:new now respects the "two human gates" promise.
 ```
 
