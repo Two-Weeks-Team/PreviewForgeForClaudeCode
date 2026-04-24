@@ -37,7 +37,7 @@ def load_profile(name: str) -> dict | None:
     if not p.exists():
         return None
     try:
-        return json.load(p.open())
+        return json.load(p.open(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
 
@@ -46,12 +46,12 @@ def load_active_profile(run_dir: Path) -> dict | None:
     """Priority: run_dir/.profile → env PF_PROFILE → settings.defaultProfile → 'pro'."""
     marker = run_dir / ".profile"
     if marker.exists():
-        name = marker.read_text().strip()
+        name = marker.read_text(encoding="utf-8").strip()
     else:
         name = os.environ.get("PF_PROFILE")
         if not name and SETTINGS_PATH.exists():
             try:
-                s = json.load(SETTINGS_PATH.open())
+                s = json.load(SETTINGS_PATH.open(encoding="utf-8"))
                 name = s.get("pf", {}).get("defaultProfile", "pro")
             except (OSError, json.JSONDecodeError):
                 name = "pro"
@@ -65,7 +65,7 @@ def load_snapshot(run_dir: Path) -> dict | None:
     if not snap.exists():
         return None
     try:
-        return json.load(snap.open())
+        return json.load(snap.open(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return None
 

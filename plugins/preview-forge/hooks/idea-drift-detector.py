@@ -110,7 +110,7 @@ def containment(reference: set[str], candidate: set[str]) -> float:
 
 def load_settings() -> dict:
     try:
-        return json.load(SETTINGS.open())
+        return json.load(SETTINGS.open(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return {}
 
@@ -130,7 +130,7 @@ def load_chosen_preview(run_root: Path) -> str:
     if not chosen.exists():
         return ""
     try:
-        data = json.load(chosen.open())
+        data = json.load(chosen.open(encoding="utf-8"))
     except (OSError, json.JSONDecodeError):
         return ""
     parts = [
@@ -148,7 +148,7 @@ def load_idea_spec(run_root: Path) -> dict:
     if not spec.exists():
         return {}
     try:
-        with spec.open() as f:
+        with spec.open(encoding="utf-8") as f:
             data = json.load(f)
         return data if isinstance(data, dict) else {}
     except (OSError, json.JSONDecodeError):
