@@ -279,11 +279,15 @@ def main() -> int:
     abs_target = os.path.abspath(target)
     is_technical = any(p.search(abs_target) for p in TECHNICAL_PROTECTED)
     threshold = threshold_technical if is_technical else threshold_narrative
-    # get_anchor returned a recommended threshold based on class; the
-    # caller-supplied (settings.json) threshold wins. The class threshold
-    # from get_anchor is kept as the minimum floor — prevents a user who
-    # raises narrative to 0.6 from accidentally raising technical above
-    # what codex-R1/R2/R3 calibrated as safe.
+    # get_anchor returned a recommended threshold for this artifact
+    # class; here we take the MAX of the settings-supplied threshold and
+    # that class floor. Effect: settings.json can only TIGHTEN (raise)
+    # the threshold vs. the A-7 class baseline, never LOOSEN it.
+    # Rationale: codex R1/R2/R3 calibrated 0.3/0.4 as the safe minima
+    # for technical/narrative anchors; letting a user drop to 0.2 would
+    # re-open the FP surface the split was meant to close. Users who
+    # want a stricter gate (e.g. 0.5 for technical) get that raise
+    # honored; users who try to loosen below the floor get the floor.
     threshold = max(threshold, class_threshold)
 
     chosen_tokens = tokenize(anchor_text)

@@ -68,7 +68,7 @@ Standup 결과를 Blackboard에 `standup.<cycle>.<ts>` key로 기록.
    - **② 💡 Alternative A**: 특정 panel 단독 우승자 (예: TP winner = API-first)
    - **③ 🔬 Alternative B**: 다른 panel 단독 우승자 (예: RP winner = Privacy-focused)
    - **④ 🎨 Pick from gallery** (OPEN_RC == 0): 브라우저에서 본 것 중 P번호 free-form 입력 (두 번째 AskUserQuestion으로 수집)
-   - **④ 📜 Pick from full inline list** (OPEN_RC == 3, v1.7.0+ A-5 headless fallback): 브라우저가 열리지 않았으므로 두 번째 AskUserQuestion modal에서 **26 P-entry 전체 + 1줄 pitch**를 options로 제시 (multiSelect=false, 4-option 묶음 × 7 묶음). Description에는 `runs/<id>/mockups/gallery-text.md`를 cat해서 읽으라는 안내도 포함 — 텍스트 내용은 `P01-the-contrarian — <persona> / <surface> — <pitch>` 포맷의 줄 단위 리스트.
+   - **④ 📜 Pick from full inline list** (OPEN_RC == 3, v1.7.0+ A-5 headless fallback): 브라우저가 열리지 않았으므로 두 번째 AskUserQuestion modal에서 **26 P-entry 전체 + 1줄 pitch**를 options로 제시 (multiSelect=false, 4-option 묶음 × 7 묶음). Description에는 `runs/<id>/mockups/gallery-text.md`를 cat해서 읽으라는 안내도 포함 — 해당 파일의 각 줄은 `generate-gallery.sh` TEXT_PY 블록이 emit하는 markdown list 포맷, 즉 `- **P01** · \`the-contrarian\` — <persona> / <surface> — <pitch>` (`id` 볼드 + advocate name 백틱).
 5. 사용자 선택 반영:
    - ①/②/③: 해당 P<NN>을 `chosen_preview.json`에 lock (기존 panel 추천은 `chosen_preview.panel-recommended.json`으로 백업)
    - ④: 두 번째 AskUserQuestion에 P번호 입력 → 해당 5-tuple을 `chosen_preview.json`으로 lock
