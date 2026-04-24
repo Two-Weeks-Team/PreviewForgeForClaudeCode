@@ -174,7 +174,7 @@ if command -v powershell.exe >/dev/null 2>&1; then
     "& { param(\$u) Start-Process -FilePath \$u } '$win_url'" >/dev/null 2>&1 && exit 0
 fi
 if command -v pwsh >/dev/null 2>&1; then
-  pwsh -NoProfile -Command \
+  MSYS_NO_PATHCONV=1 pwsh -NoProfile -Command \
     "& { param(\$u) Start-Process -FilePath \$u } '$win_url'" >/dev/null 2>&1 && exit 0
 fi
 
