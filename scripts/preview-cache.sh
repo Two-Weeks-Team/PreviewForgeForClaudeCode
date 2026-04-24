@@ -59,6 +59,23 @@ print(hashlib.sha256(data).hexdigest()[:16])
 cmd_key() {
   local idea="$1"
   local profile="${2:-pro}"
+  # T-9.3 (v1.7.0+): `-` sentinel pulls the idea text from stdin. Large
+  # ideas (>200KB) would blow past ARG_MAX if passed on argv on some
+  # hosts (macOS ARG_MAX ~256KB for the whole argv+env, Linux 2MB+ but
+  # still bounded). A caller that doesn't want to trust the host
+  # ARG_MAX can do `bash preview-cache.sh key - pro < idea.txt`.
+  if [[ "$idea" == "-" ]]; then
+    idea=$(cat)
+  fi
+  # T-9.1 (v1.7.0+): empty idea text is never a legitimate cache key —
+  # it would collide across every empty-idea run at the 4-field-hash
+  # level. Callers who accidentally feed `""` (unset JSON field, empty
+  # clipboard paste, etc.) get a hard exit instead of a silent cache
+  # poison.
+  if [[ -z "$idea" ]]; then
+    echo "preview-cache.sh: idea text is empty — refusing to compute cache key" >&2
+    return 2
+  fi
   # v1.6.0 arg order: 3rd = idea_spec_path (common call in /pf:new),
   # 4th = previews_override (used only with /pf:new --previews=N).
   # Back-compat shim: legacy 3-arg callers passed a bare integer as the
@@ -72,11 +89,18 @@ cmd_key() {
   local spec_path=""
   local previews_override=""
   if [[ -n "$arg3" ]]; then
-    if [[ "$arg3" == *.json || -f "$arg3" ]]; then
+    # T-5 / R6 edge case (v1.7.0+): pure integer wins over file-exists
+    # so a cwd with an incidental `./26` file can't mis-route a legacy
+    # caller's `preview-cache.sh key "<idea>" pro 26` into spec-path
+    # land. Integer form is the older call convention; surviving this
+    # trap keeps cache keys identical to pre-v1.6.0 runs that relied on
+    # previews_override, regardless of what happens to sit in the caller's
+    # cwd. The coderabbit-flagged ordering was previously the reverse.
+    if [[ "$arg3" =~ ^[0-9]+$ ]]; then
+      previews_override="$arg3"  # legacy 3-arg call (integer only)
+    elif [[ "$arg3" == *.json || -f "$arg3" ]]; then
       spec_path="$arg3"          # v1.6.0 3-arg call
       previews_override="$arg4"
-    elif [[ "$arg3" =~ ^[0-9]+$ ]]; then
-      previews_override="$arg3"  # legacy 3-arg call (integer only)
     else
       spec_path="$arg3"          # unknown token — treat as spec path, warn below
       previews_override="$arg4"
@@ -187,7 +211,15 @@ cmd_put() {
   # Duplicated content (not a symlink) keeps TTL pruning independent
   # per key and sidesteps dangling-link edge cases on Windows.
   local alias_key="${3:-}"
-  cp "$src" "$CACHE_DIR/$key.json"
+  # T-9.4 (v1.7.0+): atomic write via unique tmp-file + rename. `cp
+  # src dst` is NOT atomic — concurrent writers can produce half-written
+  # entries where an in-flight get() sees a truncated JSON. `mktemp`
+  # gives each writer a unique dotfile inside CACHE_DIR, and `mv -f`
+  # (which is rename(2) on same-FS) swaps the entry atomically.
+  local primary_tmp
+  primary_tmp=$(mktemp "$CACHE_DIR/.${key}.XXXXXX.tmp")
+  cp "$src" "$primary_tmp"
+  mv -f "$primary_tmp" "$CACHE_DIR/$key.json"
   if [[ -n "$alias_key" && "$alias_key" != "$key" ]]; then
     # Alias write is best-effort — the strong key above is the source
     # of truth. Under `set -euo pipefail`, a bare `cp` failure would
@@ -197,9 +229,14 @@ cmd_put() {
     # caller-visible-success; we log the degradation to stderr so a
     # missed alias doesn't look like a silent feature regression. The
     # next successful put recreates the alias (self-healing).
-    if cp "$src" "$CACHE_DIR/$alias_key.json" 2>/dev/null; then
+    local alias_tmp
+    if alias_tmp=$(mktemp "$CACHE_DIR/.${alias_key}.XXXXXX.tmp" 2>/dev/null) \
+       && cp "$src" "$alias_tmp" 2>/dev/null \
+       && mv -f "$alias_tmp" "$CACHE_DIR/$alias_key.json" 2>/dev/null; then
       echo "cached: $CACHE_DIR/$key.json (+weak-alias $alias_key.json)"
     else
+      # Clean up any leftover alias tmp from a failed cp.
+      [[ -n "${alias_tmp:-}" && -f "$alias_tmp" ]] && rm -f "$alias_tmp"
       echo "preview-cache.sh: weak-alias write failed for $alias_key.json (primary $key.json intact; next put will retry)" >&2
       echo "cached: $CACHE_DIR/$key.json"
     fi
