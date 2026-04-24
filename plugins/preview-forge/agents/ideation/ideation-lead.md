@@ -63,9 +63,10 @@ TOKEN_BUDGET: <profile.budget.advocate_tokens>  # standard 1000, pro 1200, max 1
 - (target_persona, primary_surface) 중복 발견 시 해당 Advocate 2명에게 재작성 요청 (1회)
 - 3회 실패 시 skip + M3에 보고
 
-### 4. Cache pre-warming + PreviewDD-level cache (v1.3+, updated v1.6.0)
+### 4. Cache pre-warming + PreviewDD-level cache (v1.3+, updated v1.6.0, v1.6.1 A-1)
 - N Advocate의 공통 system prompt 부분(persona 공통 + mockup guidance)을 `cache_control: {"ttl": "1h"}`로 캐싱하여 N배 재사용
 - **PreviewDD 결과 자체 캐싱** (profile.caching.preview_dd=true일 때): cache key = sha256(`idea_text` + `advocate_set_hash` + `model_version` + `profile.name` + `idea_spec_hash`) — 실제 `scripts/preview-cache.sh` `cmd_key` 해시 순서와 일치. v1.6.0부터 `idea_spec_hash`가 키에 추가되어 동일 one-liner라도 Socratic 답변이 다르면 cache miss로 제대로 재생성된다. TTL: `profile.caching.ttl_seconds` (standard/pro 7일, max 캐시 비활성화). 캐시 hit 시 Advocate dispatch 전체 스킵 + 재검증만 수행.
+- **v1.6.1 A-1 — weak-alias dual-store**: `cmd_put`을 호출할 때 **세 번째 인자로 weak_key**(`idea_spec_hash`를 제외한 4-field 해시)를 함께 전달해야 한다. 같은 파일이 `<strong_key>.json`과 `<weak_key>.json` 두 곳에 복제되어, `/pf:new` §4의 pre-Socratic probe가 다음 run에서 weak-alias를 hit해 3 Socratic 모달을 사용자 선택으로 스킵할 수 있다. 호출 예: `scripts/preview-cache.sh put "<strong_key>" "runs/<id>/previews.json" "<weak_key>"`. weak_key 계산 시 **spec_path는 미전달**하되, `--previews=N` override가 있으면 그 값을 전달해야 strong 키와 advocate set hash가 정렬된다 — `scripts/preview-cache.sh key "<idea>" "<profile>"`(기본) 또는 `scripts/preview-cache.sh key "<idea>" "<profile>" "<N>"`(override). weak-replay 경로는 runs/<id>/에 이미 `previews.json`이 복원된 상태로 진입하므로 I_LEAD는 기존 "캐시 hit → Advocate dispatch 전체 스킵 + 재검증만 수행" 경로를 그대로 따르면 된다. 추가로 `runs/<id>/idea.spec.json`에는 `_weak_replay: true` 마커가 포함된 schema-compliant stub이 있으므로 `_filled_ratio=0` warn만 출력하고 계속 진행한다.
 - Cache location: `~/.claude/preview-forge/cache/preview-dd/<key>.json`
 - `/pf:new --no-cache` 옵션으로 bypass 가능.
 
