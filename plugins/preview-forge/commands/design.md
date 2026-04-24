@@ -20,12 +20,12 @@ the current run.
 
 Before issuing AskUserQuestion, M3 Dev PM **automatically** opens the full mockup gallery in the user's default browser so the user can visually compare all advocates while answering the selection prompt:
 
-```
+```bash
 bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/generate-gallery.sh" runs/<id>
 bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/open-browser.sh"     runs/<id>/mockups/gallery.html
 ```
 
-Both scripts are non-blocking and resilient — if browser-open fails (headless / CI / no DISPLAY), the gallery file is still written to disk and the path is printed to stderr; the AskUserQuestion below still fires.
+**Non-blocking behavior is scoped to browser availability, not all system deps.** `open-browser.sh` always exits 0 even when no browser opener exists (headless / CI / no DISPLAY). `generate-gallery.sh` requires `python3` (a hard plugin dependency also used by hooks and `verify-plugin.sh`); if python3 is missing the plugin is already unusable earlier in the pipeline. On PreviewDD cache hits (no mockup HTMLs on disk), `generate-gallery.sh` writes a text-only placeholder gallery.html instead of failing — the AskUserQuestion below always fires.
 
 ### Step 2 — AskUserQuestion (4 options)
 

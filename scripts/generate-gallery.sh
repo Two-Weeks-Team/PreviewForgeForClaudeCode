@@ -132,6 +132,12 @@ def card(p):
       <p class="pitch">{pitch}</p>
       {f'<p class="notes" title="spec_alignment_notes">{notes}</p>' if notes else ''}
       <div class="frame-wrap">
+        <!-- sandbox="allow-same-origin" is intentional: mockups are vetted
+             inline-HTML artifacts per ideation-lead.md ("inline CSS only,
+             max 500 lines"). Keeps scripts/forms disabled by default. If
+             an advocate ever needs executable demo code, switch to
+             sandbox="allow-scripts" and review the file:// origin quirk
+             (some browsers treat file:// iframe parents as same-origin). -->
         <iframe class="mockup"
                 src="{mockup_path}"
                 loading="lazy"

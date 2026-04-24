@@ -55,6 +55,17 @@ fi
 if command -v xdg-open >/dev/null 2>&1; then
   xdg-open "$url" >/dev/null 2>&1 && exit 0
 fi
+# Windows: `start` is a cmd.exe builtin, not a standalone binary, so
+# `command -v start` is typically missing in Git Bash / MSYS / WSL shells.
+# Invoke cmd.exe explicitly (works in Git Bash on Windows and under WSL),
+# and fall back to PowerShell's Start-Process if cmd.exe is unavailable.
+if command -v cmd.exe >/dev/null 2>&1; then
+  cmd.exe //c start "" "$url" >/dev/null 2>&1 && exit 0
+fi
+if command -v powershell.exe >/dev/null 2>&1; then
+  powershell.exe -NoProfile -Command "Start-Process '$url'" >/dev/null 2>&1 && exit 0
+fi
+# Legacy bare `start` — only takes this path on genuine DOS/cmd shells.
 if command -v start >/dev/null 2>&1; then
   start "" "$url" >/dev/null 2>&1 && exit 0
 fi

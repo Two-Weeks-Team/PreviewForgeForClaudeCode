@@ -82,7 +82,7 @@
       "type": "number",
       "minimum": 0,
       "maximum": 1,
-      "description": "Fraction of semantic fields (excluding _ meta) populated with a non-null/non-unknown value. If < 0.5, I_LEAD emits a soft warning but does not block advocate dispatch."
+      "description": "Fraction of the 9 semantic field slots populated with a non-null / non-\"unknown\" value. Computation rule for I1 (to keep the ratio deterministic across implementations): (1) `idea_summary` is ALWAYS filled (it is `minLength: 1` required) and counts as 1 of 9. (2) Each of the 3 nested objects — `target_persona`, `primary_surface`, `jobs_to_be_done` — counts as filled iff AT LEAST ONE of its sub-fields is non-null/non-unknown (binary, not proportional). (3) `killer_feature`, `monetization_model`, `success_metric` each count as 1 slot, filled iff non-null and non-\"unknown\". (4) `must_have_constraints` and `non_goals` arrays count as filled iff length >= 1 (empty array is treated as `unfilled` — the user did not answer, not an affirmative \"no constraints\"). Denominator is 9. If < 0.5, I_LEAD logs `ideation.low_spec_quality` to the Blackboard but does not block advocate dispatch."
     },
     "_schema_version": {
       "type": "string",

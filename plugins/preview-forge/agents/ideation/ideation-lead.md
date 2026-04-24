@@ -24,7 +24,7 @@ model: opus
 - I1은 **항상** 3-batch AskUserQuestion을 수행하여 `runs/<id>/idea.spec.json`을 산출 (이미 존재하면 스킵)
 - 산출된 `idea.spec.json._filled_ratio`를 확인:
   - `≥ 0.5` → 정상 dispatch
-  - `< 0.5` → stderr에 `"I_LEAD: spec 완성도 낮음 (_filled_ratio=X) — advocate divergence 가능"` warn 한 줄 출력 후 **여전히 dispatch** (hard gate 아님, 해커톤 데모 UX 우선)
+  - `< 0.5` → Blackboard에 `ideation.low_spec_quality` 이벤트 기록(`{_filled_ratio, reason: "advocate divergence 가능"}`) 후 **여전히 dispatch** (hard gate 아님, 해커톤 데모 UX 우선). I_LEAD는 Bash 도구를 갖지 않으므로 stderr 대신 Blackboard를 쓴다.
 - I1 호출 자체가 실패(user abort 등)하면 Blackboard에 `ideation.spec_missing` 기록하고 M3에 escalate
 
 ### 2. Profile-aware Advocate 병렬 dispatch
@@ -65,7 +65,7 @@ TOKEN_BUDGET: <profile.budget.advocate_tokens>  # standard 1000, pro 1200, max 1
 
 ### 4. Cache pre-warming + PreviewDD-level cache (v1.3+, updated v1.6.0)
 - N Advocate의 공통 system prompt 부분(persona 공통 + mockup guidance)을 `cache_control: {"ttl": "1h"}`로 캐싱하여 N배 재사용
-- **PreviewDD 결과 자체 캐싱** (profile.caching.preview_dd=true일 때): cache key = sha256(`idea_text` + `idea_spec_hash` + `advocate_set_hash` + `model_version` + `profile.name`). v1.6.0부터 `idea_spec_hash`가 키에 추가되어 동일 one-liner라도 Socratic 답변이 다르면 cache miss로 제대로 재생성된다. TTL: `profile.caching.ttl_seconds` (standard/pro 7일, max 캐시 비활성화). 캐시 hit 시 Advocate dispatch 전체 스킵 + 재검증만 수행.
+- **PreviewDD 결과 자체 캐싱** (profile.caching.preview_dd=true일 때): cache key = sha256(`idea_text` + `advocate_set_hash` + `model_version` + `profile.name` + `idea_spec_hash`) — 실제 `scripts/preview-cache.sh` `cmd_key` 해시 순서와 일치. v1.6.0부터 `idea_spec_hash`가 키에 추가되어 동일 one-liner라도 Socratic 답변이 다르면 cache miss로 제대로 재생성된다. TTL: `profile.caching.ttl_seconds` (standard/pro 7일, max 캐시 비활성화). 캐시 hit 시 Advocate dispatch 전체 스킵 + 재검증만 수행.
 - Cache location: `~/.claude/preview-forge/cache/preview-dd/<key>.json`
 - `/pf:new --no-cache` 옵션으로 bypass 가능.
 

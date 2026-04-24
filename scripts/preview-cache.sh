@@ -54,17 +54,24 @@ cmd_key() {
   local profile="${2:-pro}"
   # v1.6.0 arg order: 3rd = idea_spec_path (common call in /pf:new),
   # 4th = previews_override (used only with /pf:new --previews=N).
-  # Back-compat shim: if the 3rd arg is a pure integer and NOT a file
-  # path on disk, treat it as a legacy previews_override (v1.5.x callers).
+  # Back-compat shim: legacy 3-arg callers passed a bare integer as the
+  # previews_override. We disambiguate with two checks:
+  #   - ends in .json OR exists as a file → treat as v1.6.0 spec path
+  #   - pure integer (no .json)           → treat as legacy previews_override
+  # Both guards together prevent the coderabbit-flagged edge case where a
+  # numeric-named sibling file (e.g. `./26`) in cwd would mis-route.
   local arg3="${3:-}"
   local arg4="${4:-}"
   local spec_path=""
   local previews_override=""
   if [[ -n "$arg3" ]]; then
-    if [[ "$arg3" =~ ^[0-9]+$ && ! -f "$arg3" ]]; then
-      previews_override="$arg3"  # legacy 3-arg call
-    else
+    if [[ "$arg3" == *.json || -f "$arg3" ]]; then
       spec_path="$arg3"          # v1.6.0 3-arg call
+      previews_override="$arg4"
+    elif [[ "$arg3" =~ ^[0-9]+$ ]]; then
+      previews_override="$arg3"  # legacy 3-arg call (integer only)
+    else
+      spec_path="$arg3"          # unknown token — treat as spec path, warn below
       previews_override="$arg4"
     fi
   fi
@@ -92,12 +99,23 @@ except Exception:
   # Back-compat: when no spec is involved, reuse the v1.5.x 4-field keyspace
   # so pre-upgrade cache entries remain resolvable. v1.6.0+ runs that pass
   # a real spec path get a distinct 5-field keyspace.
+  #
+  # Safety: if caller explicitly passed a spec_path but it does not resolve
+  # to a readable file, emit a stderr warning and skip silent fallback to
+  # the 4-field keyspace. A cache entry keyed as "v1.5.x-shaped" for a run
+  # that meant to include spec would be poisonous — repeat runs with
+  # different Socratic answers could share the same (pre-upgrade) cache
+  # entry. The warning surfaces the mistake so the caller can fix the path.
   local spec_hash=""
-  if [[ -n "$spec_path" && -f "$spec_path" ]]; then
-    spec_hash=$(python3 -c "
+  if [[ -n "$spec_path" ]]; then
+    if [[ -f "$spec_path" ]]; then
+      spec_hash=$(python3 -c "
 import hashlib, sys
 print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest()[:16])
 " "$spec_path")
+    else
+      echo "preview-cache.sh: spec_path='$spec_path' does not exist — key will not include spec hash (cache may hit stale v1.5.x entry)" >&2
+    fi
   fi
 
   if [[ -n "$spec_hash" ]]; then
