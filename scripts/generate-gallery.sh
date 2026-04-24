@@ -148,8 +148,8 @@ def row(p):
 
 items = "\n      ".join(row(p) for p in previews)
 Path(sys.argv[2]).write_text(
-    f"""<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Preview Forge — Cache Hit</title>
-<style>body{{font-family:-apple-system,system-ui,sans-serif;max-width:760px;margin:48px auto;padding:0 24px;color:#171717;line-height:1.55}}h1{{font-size:20px;margin-bottom:8px}}.note{{padding:12px 16px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;color:#78350f;font-size:13px}}ul{{padding-left:20px}}li{{margin:6px 0}}</style></head>
+    f"""<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Preview Forge — Cache Hit</title>
+<style>body{{font-family:-apple-system,system-ui,sans-serif;max-width:760px;margin:48px auto;padding:0 24px;color:#171717;line-height:1.55;word-break:keep-all;overflow-wrap:anywhere}}h1{{font-size:20px;margin-bottom:8px}}.note{{padding:12px 16px;background:#fef3c7;border-left:4px solid #f59e0b;border-radius:4px;color:#78350f;font-size:13px}}ul{{padding-left:20px}}li{{margin:6px 0}}@media (prefers-reduced-motion:reduce){{*{{animation:none!important;transition:none!important}}}}</style></head>
 <body>
   <h1>Preview Forge — Cache-Hit Gallery</h1>
   <p class="note">This run hit the PreviewDD cache. Only <code>previews.json</code> was restored; the per-advocate mockup HTML files are not on disk, so the full iframe gallery is not available here. Use the CLI AskUserQuestion modal to pick a preview.</p>
@@ -237,7 +237,16 @@ def card(p):
     surface = esc(p.get("primary_surface", ""))
     pitch = esc(p.get("one_liner_pitch", ""))
     notes = esc(p.get("spec_alignment_notes", ""))
-    return f"""    <article class="card">
+    # F-5 (v1.7.0+): iframe title now includes advocate + truncated pitch so
+    #   screen-reader / hover users get meaningful context, not just "P01
+    #   mockup". html.escape already ran on pitch; the truncate keeps the
+    #   tooltip readable in narrow viewports.
+    pitch_for_title = (p.get("one_liner_pitch", "") or "")
+    pitch_for_title = pitch_for_title.replace("\n", " ")
+    if len(pitch_for_title) > 96:
+        pitch_for_title = pitch_for_title[:93].rstrip() + "…"
+    iframe_title = esc(f"{p.get('id', '')} — {p.get('advocate', '')}: {pitch_for_title}")
+    return f"""    <article class="card" role="listitem">
       <header class="card-head">
         <span class="pid">{pid}</span>
         <h2 class="advocate">{advocate}</h2>
@@ -246,7 +255,7 @@ def card(p):
         <span class="chip persona" title="target_persona">{persona}</span>
         <span class="chip surface" title="primary_surface">{surface}</span>
       </div>
-      <p class="pitch">{pitch}</p>
+      <p class="pitch" title="{pitch}">{pitch}</p>
       {f'<p class="notes" title="spec_alignment_notes">{notes}</p>' if notes else ''}
       <div class="frame-wrap">
         <!-- sandbox="allow-same-origin" is intentional and SUFFICIENT for
@@ -267,7 +276,7 @@ def card(p):
                 src="{mockup_path}"
                 loading="lazy"
                 sandbox="allow-same-origin"
-                title="{pid} mockup"></iframe>
+                title="{iframe_title}"></iframe>
       </div>
       <footer class="card-foot">
         <a class="open" href="{mockup_path}" target="_blank" rel="noopener">Open in new tab</a>
@@ -280,7 +289,7 @@ cards = "\n".join(rendered)
 count = len(rendered)
 
 doc = f"""<!doctype html>
-<html lang="en">
+<html lang="ko">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -337,6 +346,13 @@ doc = f"""<!doctype html>
       display: flex;
       flex-direction: column;
       min-height: 540px;
+      /* F-6 (v1.7.0+): defer off-screen iframe rendering past what
+         `loading="lazy"` alone covers — especially helps the 26-card
+         stress test on slower machines. `contain-intrinsic-size`
+         preserves the card's reserved height so scroll-jumping
+         doesn't happen when cards become visible. */
+      content-visibility: auto;
+      contain-intrinsic-size: 0 540px;
     }}
     .card-head {{
       display: flex;
@@ -380,12 +396,32 @@ doc = f"""<!doctype html>
       margin: 10px 16px 0;
       font-size: 13px;
       color: var(--ink);
+      /* F-1 (v1.7.0+): Korean word-break — prefer whitespace, then
+         break anywhere inside long tokens so narrow columns don't
+         overflow. */
+      word-break: keep-all;
+      overflow-wrap: anywhere;
+      /* F-2 (v1.7.0+): 3-line clamp with hover-expand. `title` attr
+         also set on the element so non-hover (mobile, assistive tech)
+         still sees the full pitch. */
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      cursor: help;
+    }}
+    .pitch:hover, .pitch:focus-within {{
+      -webkit-line-clamp: unset;
+      overflow: visible;
     }}
     .notes {{
       margin: 6px 16px 0;
       font-size: 11px;
       color: var(--muted);
       font-style: italic;
+      /* F-1 (v1.7.0+): same Korean word-break as .pitch. */
+      word-break: keep-all;
+      overflow-wrap: anywhere;
     }}
     .frame-wrap {{
       margin: 12px 16px 0;
@@ -416,6 +452,42 @@ doc = f"""<!doctype html>
       border-radius: 6px;
     }}
     a.open:hover {{ background: var(--accent); color: #fff; }}
+    /* F-3 (v1.7.0+): visible focus ring for keyboard users across
+       interactive elements in the gallery. `outline-offset` keeps
+       the ring clear of the button border. */
+    a.open:focus-visible,
+    button:focus-visible,
+    .pitch:focus-visible {{
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }}
+    /* F-7 (v1.7.0+): on narrow viewports the sticky header eats ~60px
+       of vertical space on every scroll — fine on desktop, wasteful
+       on mobile where the 26-card grid already needs all the real
+       estate. Drop back to static flow on ≤640px. */
+    /* F-8 (v1.7.0+): .card min-height: 540px reserves desktop-grid
+       space; on mobile where cards stack single-column, the iframe
+       aspect-ratio already handles sizing — min-height there only
+       leaves an empty gap below the footer. */
+    @media (max-width: 640px) {{
+      header.top {{ position: static; }}
+      .card {{
+        min-height: auto;
+        contain-intrinsic-size: 0 360px;
+      }}
+      main {{ padding: 16px; gap: 14px; }}
+    }}
+    /* F-9 (v1.7.0+): respect user's OS-level reduced-motion preference;
+       the gallery doesn't currently animate anything beyond CSS
+       transitions, but this keeps the contract forward-compatible. */
+    @media (prefers-reduced-motion: reduce) {{
+      *, *::before, *::after {{
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }}
+    }}
     @media (prefers-color-scheme: dark) {{
       :root {{
         color-scheme: dark;
@@ -439,7 +511,7 @@ doc = f"""<!doctype html>
     <h1>Preview Forge — Gallery</h1>
     <p>{count} preview{'' if count == 1 else 's'} generated by advocates. Browse here, then answer the CLI prompt to pick one.</p>
   </header>
-  <main>
+  <main role="list" aria-label="Preview gallery">
 {cards}
   </main>
 </body>
