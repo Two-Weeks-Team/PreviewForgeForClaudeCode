@@ -57,15 +57,30 @@ LEDGER_FILE = LEDGER_DIR / "escalation-history.json"
 SUPPRESSION_WINDOW_SECONDS = 24 * 3600
 
 
-def signal_hash(categories: list[str]) -> str:
+def signal_hash(categories: list[str], stage: str | None = None) -> str:
     """Full sha256 hex over normalised category set.
 
     Normalisation: lowercase + dedup + sorted — ensures case variance
     and duplicate submissions produce identical hash (CodeRabbit: replay
     suppression must not be bypassable via casing/duplication).
     Full 64-hex output matches PR body claim of "sha256 signal_hash".
+
+    A-2 (v1.7.0+): the optional ``stage`` parameter namespaces the hash so
+    the same category set fired at different stages of /pf:new (e.g.
+    ``preflight`` from the one-liner vs. ``post-socratic`` from Batch C
+    constraints) produce DIFFERENT hashes. Rationale: a user who
+    declined a pre-flight upgrade should still see the post-Socratic
+    prompt if HIPAA/Stripe surface for the first time in Batch C — the
+    24h suppression window was too wide when cross-stage hashes
+    collided and let real compliance signals slip past.
+
+    Stage is prepended to the sorted set as a sentinel token
+    ``__stage:<name>__``; omitting the argument reproduces the legacy
+    hash exactly so existing ledger entries keep matching.
     """
     normalised = sorted({c.lower() for c in categories if c})
+    if stage:
+        normalised = [f"__stage:{stage.lower()}__"] + normalised
     payload = "\x1f".join(normalised).encode("utf-8")
     return hashlib.sha256(payload).hexdigest()
 
@@ -200,12 +215,26 @@ def cmd_replay_safe(args: list[str]) -> int:
 
 
 def cmd_hash(args: list[str]) -> int:
-    """Utility: compute signal_hash from comma-separated categories."""
-    if len(args) < 1:
-        print("usage: hash <cat1,cat2,...>", file=sys.stderr)
+    """Utility: compute signal_hash from comma-separated categories.
+
+    A-2 (v1.7.0+): supports ``--stage=<name>`` to namespace the hash
+    (see signal_hash docstring). Call sites:
+      escalation-ledger.py hash "pii,stripe"
+      escalation-ledger.py hash --stage=preflight "pii,stripe"
+      escalation-ledger.py hash --stage=post-socratic "pii,hipaa,stripe"
+    """
+    stage: str | None = None
+    positional: list[str] = []
+    for a in args:
+        if a.startswith("--stage="):
+            stage = a.split("=", 1)[1] or None
+        else:
+            positional.append(a)
+    if len(positional) < 1:
+        print("usage: hash [--stage=<name>] <cat1,cat2,...>", file=sys.stderr)
         return 64
-    cats = [c.strip() for c in args[0].split(",") if c.strip()]
-    print(signal_hash(cats))
+    cats = [c.strip() for c in positional[0].split(",") if c.strip()]
+    print(signal_hash(cats, stage=stage))
     return 0
 
 

@@ -22,10 +22,11 @@ Before issuing AskUserQuestion, M3 Dev PM **automatically** opens the full mocku
 
 ```bash
 bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/generate-gallery.sh" runs/<id>
-bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/open-browser.sh"     runs/<id>/mockups/gallery.html
+OPEN_RC=0
+bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/open-browser.sh"     runs/<id>/mockups/gallery.html || OPEN_RC=$?
 ```
 
-**Non-blocking behavior is scoped to browser availability, not all system deps.** `open-browser.sh` always exits 0 even when no browser opener exists (headless / CI / no DISPLAY). `generate-gallery.sh` requires `python3` (a hard plugin dependency also used by hooks and `verify-plugin.sh`); if python3 is missing the plugin is already unusable earlier in the pipeline. On PreviewDD cache hits (no mockup HTMLs on disk), `generate-gallery.sh` writes a text-only placeholder gallery.html instead of failing — the AskUserQuestion below always fires.
+**Non-blocking behavior is scoped to browser availability, not all system deps.** `open-browser.sh` exit codes (v1.7.0+ A-5): `0` = opener invoked, `3` = no opener available (headless / CI / SSH-without-DISPLAY), `1` = bad args / S-2 URL reject. Exit 3 is **non-fatal** — capture it into `OPEN_RC` (as above) so a `set -e` caller does not abort; H1 option ④ then swaps to the full-inline list based on that value. `generate-gallery.sh` requires `python3` (a hard plugin dependency also used by hooks and `verify-plugin.sh`); if python3 is missing the plugin is already unusable earlier in the pipeline. On PreviewDD cache hits (no mockup HTMLs on disk), `generate-gallery.sh` writes a text-only placeholder gallery.html **and** still emits the `mockups/gallery-text.md` companion — the AskUserQuestion below always fires.
 
 ### Step 2 — AskUserQuestion (4 options)
 

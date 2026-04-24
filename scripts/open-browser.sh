@@ -31,9 +31,14 @@
 #   scripts/open-browser.sh <file-or-url>
 #
 # Exit codes:
-#   0  opener invoked OR no opener available (non-blocking — check stderr
-#      for "manually open" to know whether the browser actually launched)
+#   0  opener invoked successfully (browser launched)
 #   1  bad args / URL rejected by the S-2 security gate
+#   3  no opener available (headless container, CI, SSH without DISPLAY,
+#      …). A-5 (v1.7.0+): previously this was conflated with 0 so the
+#      caller could not tell "actually launched" from "no way to
+#      launch", leaving H1's gallery option ④ stranded. Exit 3 now
+#      signals that chief-engineer-pm must swap to the inline-list
+#      fallback (see chief-engineer-pm.md §Gate H1).
 
 set -u
 
@@ -179,4 +184,7 @@ if command -v pwsh >/dev/null 2>&1; then
 fi
 
 echo "open-browser.sh: no browser opener available — manually open $url" >&2
-exit 0
+# A-5 (v1.7.0+): exit 3 signals "no opener" distinctly from exit 0
+# ("opener launched"). Callers — notably the H1 gate — use this to
+# decide whether to fall back to the inline-list preview selection.
+exit 3

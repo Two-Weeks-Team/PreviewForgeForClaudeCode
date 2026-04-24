@@ -39,13 +39,31 @@ from pathlib import Path
 PLUGIN_ROOT = Path(os.environ.get("CLAUDE_PLUGIN_ROOT", ""))
 SETTINGS = PLUGIN_ROOT / "settings.json"
 
-# Paths that carry product-intent. Drift on these breaks idea fidelity.
-PROTECTED_PATHS = [
+# A-7 (v1.7.0+): artifact-class-aware protected paths. The old flat
+# PROTECTED_PATHS list treated SPEC.md and apps/*/README.md as the same
+# kind of write, which meant the Rule 9 anchor (chosen_preview tokens)
+# could not account for the different writing style each file invites:
+# SPEC.md is a technical contract and should repeat idea vocabulary
+# densely, whereas README.md is marketing-leaning narrative that may
+# paraphrase and add build/run instructions that have no equivalent in
+# chosen_preview. Splitting lets us use a tighter token anchor + lower
+# threshold for technical files, and a spec-augmented anchor + slightly
+# higher threshold for narrative files.
+TECHNICAL_PROTECTED = [
     re.compile(r"runs/[^/]+/specs/SPEC\.md$"),
     re.compile(r"runs/[^/]+/specs/openapi\.yaml(\.lock)?$"),
+    re.compile(r"runs/[^/]+/apps/[^/]+/package\.json$"),
+]
+NARRATIVE_PROTECTED = [
     re.compile(r"runs/[^/]+/apps/[^/]+/README\.md$"),
     re.compile(r"runs/[^/]+/packages/[^/]+/README\.md$"),
 ]
+# Thresholds per class (ComBba P2 audit acceptance — A-7). Settings
+# override: pf.driftDetection.minSimilarityTechnical /
+# pf.driftDetection.minSimilarityNarrative. Legacy single-knob
+# minSimilarity still honoured as a fallback for narrative.
+DEFAULT_THRESHOLD_TECHNICAL = 0.3
+DEFAULT_THRESHOLD_NARRATIVE = 0.4
 
 STOPWORDS = frozenset({
     "the", "a", "an", "and", "or", "but", "is", "are", "was", "were",
@@ -124,18 +142,59 @@ def load_chosen_preview(run_root: Path) -> str:
     return "\n".join(p for p in parts if p)
 
 
-#
-# NOTE (v1.6.0): an earlier draft of this file extended Rule 9's token
-# anchor to include filled fields from runs/<id>/idea.spec.json (produced
-# by I1's Socratic interview). Codex review flagged repeatedly that even
-# the "technical-only" subset (persona pain, JTBD functional/emotional,
-# non_goals, …) produces false-positive drift warnings on legitimate
-# openapi.yaml / SPEC.md writes, because those soft-copy terms rarely
-# appear in API schemas or technical READMEs. Per the "scope discipline"
-# rule (flag same area ≥2 rounds → take the conservative path), Rule 9's
-# anchor remains exactly chosen_preview (pre-v1.6.0 behavior). The spec
-# remains consumed by (a) advocate ground truth in I_LEAD dispatch and
-# (b) the PreviewDD cache key; drift detection just doesn't read it.
+def load_idea_spec(run_root: Path) -> dict:
+    """Read runs/<id>/idea.spec.json. Empty dict on absence/parse error."""
+    spec = run_root / "idea.spec.json"
+    if not spec.exists():
+        return {}
+    try:
+        with spec.open() as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (OSError, json.JSONDecodeError):
+        return {}
+
+
+def get_anchor(target_path: str, chosen_text: str, spec: dict) -> tuple[str, float]:
+    """Return (anchor_text, threshold) for this write.
+
+    A-7 (v1.7.0+) — artifact-class split:
+    - Technical files (SPEC.md, openapi.yaml(.lock)?, apps/*/package.json):
+      anchor = chosen_text + "\n" + "\n".join(must_have_constraints[].value).
+      Rationale: these files describe the contract; hard constraints
+      are the MINIMUM product-intent vocabulary that must appear. Soft
+      spec fields (persona pain, JTBD emotional) were the v1.6.0 source
+      of false-positives — codex R1-R3 repeatedly flagged writes that
+      were clearly on-idea but happened not to echo emotional framing.
+    - Narrative files (apps/*/README.md, packages/*/README.md):
+      anchor = chosen_text + "\n" + json.dumps(spec).
+      Rationale: READMEs are marketing-leaning; they are ALLOWED to
+      paraphrase technical terms but SHOULD touch the full product
+      intent (persona, JTBD, non_goals). Spec-JSON as a raw string gives
+      all those terms a presence without requiring advocate-style
+      rephrasing.
+    - Any path outside both lists returns the legacy (chosen_text,
+      minSimilarity default) — preserves pre-A-7 behavior for paths
+      that may be added to the lists later.
+    """
+    abs_path = os.path.abspath(target_path)
+    if any(p.search(abs_path) for p in TECHNICAL_PROTECTED):
+        constraints = spec.get("must_have_constraints") if isinstance(spec, dict) else None
+        values: list[str] = []
+        if isinstance(constraints, list):
+            for c in constraints:
+                if isinstance(c, dict):
+                    v = c.get("value")
+                    if isinstance(v, str):
+                        values.append(v)
+        extra = "\n".join(values)
+        return (chosen_text + ("\n" + extra if extra else ""), DEFAULT_THRESHOLD_TECHNICAL)
+    if any(p.search(abs_path) for p in NARRATIVE_PROTECTED):
+        spec_dump = json.dumps(spec, ensure_ascii=False) if spec else ""
+        return (chosen_text + ("\n" + spec_dump if spec_dump else ""), DEFAULT_THRESHOLD_NARRATIVE)
+    # Should not happen — is_protected() is the gate — but return the
+    # conservative (chosen only, default threshold) just in case.
+    return (chosen_text, DEFAULT_THRESHOLD_NARRATIVE)
 
 
 def read_hook_input() -> dict:
@@ -160,7 +219,10 @@ def extract_incoming_text(tool_name: str, tool_input: dict) -> str:
 
 def is_protected(path: str) -> bool:
     abs_path = os.path.abspath(path)
-    return any(p.search(abs_path) for p in PROTECTED_PATHS)
+    return (
+        any(p.search(abs_path) for p in TECHNICAL_PROTECTED)
+        or any(p.search(abs_path) for p in NARRATIVE_PROTECTED)
+    )
 
 
 def main() -> int:
@@ -172,7 +234,17 @@ def main() -> int:
     drift_cfg = pf.get("driftDetection", {})
     if not drift_cfg.get("enabled", True):
         return 0
-    threshold = float(drift_cfg.get("minSimilarity", 0.4))
+    # A-7 (v1.7.0+): per-class thresholds override the class defaults,
+    # legacy minSimilarity still consumed as a narrative-side fallback.
+    threshold_technical = float(
+        drift_cfg.get("minSimilarityTechnical", DEFAULT_THRESHOLD_TECHNICAL)
+    )
+    threshold_narrative = float(
+        drift_cfg.get(
+            "minSimilarityNarrative",
+            drift_cfg.get("minSimilarity", DEFAULT_THRESHOLD_NARRATIVE),
+        )
+    )
 
     payload = read_hook_input()
     tool = payload.get("tool_name", "")
@@ -200,9 +272,27 @@ def main() -> int:
         # on tiny edits like typo fixes).
         return 0
 
-    chosen_tokens = tokenize(chosen_text)
+    # A-7: build the anchor for this artifact class (technical vs
+    # narrative) and pick the matching threshold.
+    spec = load_idea_spec(run_root)
+    anchor_text, class_threshold = get_anchor(target, chosen_text, spec)
+    abs_target = os.path.abspath(target)
+    is_technical = any(p.search(abs_target) for p in TECHNICAL_PROTECTED)
+    threshold = threshold_technical if is_technical else threshold_narrative
+    # get_anchor returned a recommended threshold for this artifact
+    # class; here we take the MAX of the settings-supplied threshold and
+    # that class floor. Effect: settings.json can only TIGHTEN (raise)
+    # the threshold vs. the A-7 class baseline, never LOOSEN it.
+    # Rationale: codex R1/R2/R3 calibrated 0.3/0.4 as the safe minima
+    # for technical/narrative anchors; letting a user drop to 0.2 would
+    # re-open the FP surface the split was meant to close. Users who
+    # want a stricter gate (e.g. 0.5 for technical) get that raise
+    # honored; users who try to loosen below the floor get the floor.
+    threshold = max(threshold, class_threshold)
+
+    chosen_tokens = tokenize(anchor_text)
     incoming_tokens = tokenize(incoming_text)
-    # Need at least 5 significant tokens in chosen_preview to give a
+    # Need at least 5 significant tokens in the anchor to give a
     # meaningful signal. Otherwise every write would false-positive.
     if len(chosen_tokens) < 5:
         return 0

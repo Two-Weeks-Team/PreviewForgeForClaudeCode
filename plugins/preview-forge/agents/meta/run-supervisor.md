@@ -51,6 +51,23 @@ model: opus
 CLI에서 `scripts/pre-flight.sh` 또는 `pf check`가 동일 검증을 수동으로 제공. 이 스크립트의 로직을 system prompt 상에서 모방하되, 실제 파일 system 접근은 Bash tool로 수행.
 
 ### 1. Run 생명주기 관장
+- **Post-Socratic escalation re-check** (v1.7.0+ A-2): I1 idea-clarifier가 `runs/<id>/idea.spec.json` Write를 끝낸 **직후**, pre-flight §0.9와 동일한 `scripts/recommend-profile.sh`를 한 번 더 호출한다. 호출 형태 (§0.9과 대칭):
+  ```bash
+  # stdin 페이로드: idea.json의 idea 필드 + Batch C must_have_constraints[].value
+  # 줄바꿈 join. recommend-profile.sh의 stdin 파서는 JSON 파싱 실패 시 입력을
+  # raw 텍스트로 소문자화해 signal bank와 word-boundary match하도록 설계되어
+  # 있어(scripts/recommend-profile.sh:40-48), 이 경우 JSON이 아닌 평문도
+  # 문제없이 받아들인다. 즉 "one_liner\nconstraint 1\nconstraint 2\n…" 형태.
+  cat runs/<id>/idea.json | jq -r '.idea // ""' > /tmp/ps_stdin
+  jq -r '.must_have_constraints[]?.value // empty' runs/<id>/idea.spec.json >> /tmp/ps_stdin
+  scripts/recommend-profile.sh /dev/stdin "$(cat runs/<id>/.profile)" < /tmp/ps_stdin \
+    > runs/<id>/profile-recommendation.post-socratic.json
+  ```
+  그 다음 pre-flight §0.9의 action 분기를 그대로 재사용하되, 해시·억제·기록 모두 **post-socratic stage namespace**에서 돈다:
+    - `action == "hard-require"`: AskUserQuestion (upgrade-only, dismiss 불가) → 응답 후 `escalation-ledger.py record "<post_socratic_hash>" <current> <recommended> forced <run_id>` (dual-stage ledger 누적).
+    - `action == "ask"`: `escalation-ledger.py replay_safe "<post_socratic_hash>"` 먼저. exit 0 → AskUserQuestion (standard/pro/max) → 응답을 `record`로 동일 stage namespace에 기록. exit 1 → 같은 stage에서 24h 내 거부 이력 있으므로 suppress (pre-flight 쪽 거부 이력은 무관 — hash가 다르므로).
+    - `action == "hint" | "none"`: AskUserQuestion 없지만 Blackboard 한 줄은 여전히 남김.
+  `<post_socratic_hash>`는 `escalation-ledger.py hash --stage=post-socratic "<categories>"`로 계산한다 — pre-flight 쪽 hash와 다른 namespace를 쓰므로 동일 category set이라도 ledger에서 독립적으로 추적된다. Pre-flight에서 이미 거부했던 signal set이라도 Batch C에서 처음 나타났으면 prompt가 뜬다 (서로 다른 정보 origin). Blackboard key: `run.escalation.post_socratic.{action,recommended,response}` — `action == "none" | "hint"`인 경우에도 한 줄 남겨 감사 추적을 확보.
 - `/pf:new "<idea>" [--profile=...]` 호출 시: pre-flight(§0) 통과 후 `runs/r-<ts>/` 디렉토리 생성, `idea.json` + `.profile` + `surface.json` 기록, Blackboard SQLite 초기화
 - **Trace log tee** (v1.7.0+ D-4): `runs/r-<ts>/` 생성 직후, 이 orchestration 세션에서 이후 실행하는 Bash 블록 **최상단**에 다음을 적용하여 stderr을 `runs/<id>/trace.log`에 raw 텍스트로 축적한다. 구조화된 `trace.jsonl`(Blackboard 이벤트)과 별개로 보존되어, 데모 실패 시 judge/debug가 `blackboard.db` SQLite grep 없이 단일 파일로 diagnosis 가능:
   ```bash

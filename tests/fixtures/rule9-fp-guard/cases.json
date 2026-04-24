@@ -1,0 +1,88 @@
+[
+  {
+    "id": "tech-fp-rest-schema",
+    "class": "technical",
+    "target_subpath": "specs/openapi.yaml",
+    "rationale": "openapi.yaml is mostly HTTP/REST vocabulary. Under the v1.6.0 full-spec anchor, soft-spec fields like target_persona.primary_pain ('deadline-panic') would NEVER appear here and would blow the threshold. Under A-7 technical anchor (chosen + must_have_constraints.value only), the anchor stays narrow and the write's product-intent overlap is high enough to pass at 0.3.",
+    "chosen_preview": {
+      "id": "P10",
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "title": "Reconciliation API",
+      "pitch": "Automate invoice reconciliation across multiple banking providers with audit-ready diffs",
+      "one_liner": "Invoice reconciliation API for freelance accountants"
+    },
+    "idea_spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.8,
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "target_persona": {
+        "profile": "freelance accountant",
+        "primary_pain": "deadline-panic during tax season",
+        "usage_frequency": "daily"
+      },
+      "primary_surface": {"platform": "api", "sync_model": "real-time"},
+      "jobs_to_be_done": {
+        "functional": "reconcile invoices across bank feeds in under 5 minutes",
+        "emotional": "feel in control, not panicked",
+        "social": "look meticulous to clients"
+      },
+      "must_have_constraints": [
+        {"type": "regulatory", "value": "SOC2 audit-ready logging"},
+        {"type": "latency", "value": "<500ms p95 reconciliation endpoint"}
+      ],
+      "non_goals": ["general accounting UI", "tax filing"]
+    },
+    "incoming_content": "openapi: 3.1.0\ninfo:\n  title: Invoice Reconciliation API\n  version: 1.0.0\n  description: Reconciliation endpoints for freelance accountant clients with SOC2 audit logging\npaths:\n  /reconcile/invoices:\n    post:\n      summary: Reconcile a batch of invoices against bank feeds\n      description: Accepts a list of invoice records and matches against connected bank feed transactions. Returns audit-ready diffs with latency under 500ms p95.\n      requestBody:\n        content:\n          application/json:\n            schema:\n              type: object\n              properties:\n                invoices:\n                  type: array\n                  items:\n                    $ref: '#/components/schemas/Invoice'\n      responses:\n        '200':\n          description: Reconciliation result with audit diffs\n          content:\n            application/json:\n              schema:\n                $ref: '#/components/schemas/ReconciliationResult'\n  /reconcile/status:\n    get:\n      summary: Poll reconciliation job status\n      responses:\n        '200':\n          description: Job status\ncomponents:\n  schemas:\n    Invoice:\n      type: object\n      required: [id, amount, currency, vendor]\n      properties:\n        id: {type: string}\n        amount: {type: number}\n        currency: {type: string}\n        vendor: {type: string}\n        issued_date: {type: string, format: date}\n        paid_date: {type: string, format: date}\n    ReconciliationResult:\n      type: object\n      properties:\n        matched: {type: array, items: {$ref: '#/components/schemas/Invoice'}}\n        diffs: {type: array}\n        audit_log_id: {type: string}\n",
+    "expected_exit": 0
+  },
+  {
+    "id": "narrative-fp-readme-buildinstr",
+    "class": "narrative",
+    "target_subpath": "apps/api/README.md",
+    "rationale": "apps/api/README.md is build-instruction narrative. It paraphrases the product (reconciliation for freelance accountants) but also has lots of infra-only text (pnpm install, docker-compose up, port 3000) that under a chosen-only anchor would pass but could FP if the anchor got padded with every soft-spec field as a raw string. With A-7 narrative anchor (chosen + json.dumps(spec)), the full product vocabulary IS in the anchor but written as markdown narrative still beats threshold 0.4 because persona/pain/constraint terms are touched.",
+    "chosen_preview": {
+      "id": "P10",
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "title": "Reconciliation API",
+      "pitch": "Automate invoice reconciliation across multiple banking providers with audit-ready diffs",
+      "one_liner": "Invoice reconciliation API for freelance accountants"
+    },
+    "idea_spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.8,
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "target_persona": {"profile": "freelance accountant", "primary_pain": "deadline-panic", "usage_frequency": "daily"},
+      "primary_surface": {"platform": "api", "sync_model": "real-time"},
+      "jobs_to_be_done": {"functional": "reconcile invoices", "emotional": "in control", "social": "meticulous"},
+      "must_have_constraints": [{"type": "regulatory", "value": "SOC2"}, {"type": "latency", "value": "<500ms p95"}],
+      "non_goals": ["general accounting UI", "tax filing"]
+    },
+    "incoming_content": "# Invoice Reconciliation API\n\nProduct-facing REST service for freelance accountants who need to reconcile invoices across multiple banking providers before client deadlines. The API exposes audit-ready diffs so reconciliations are defensible during a SOC2 review and stay under 500ms p95.\n\n## Who this is for\n\nFreelance accountants dealing with tax-season deadline-panic. The primary workflow is importing invoice records, matching against bank feeds, and exporting an audit-ready diff set. Non-goals: general accounting UI, tax filing — see `specs/SPEC.md` for the full boundary.\n\n## Getting started\n\n```bash\npnpm install\ncp .env.example .env\ndocker-compose up -d postgres\npnpm prisma migrate dev\npnpm --filter @app/api dev  # http://localhost:3000\n```\n\n## Endpoints\n\n- `POST /reconcile/invoices` — batch reconciliation with audit diffs\n- `GET  /reconcile/status`   — job-status polling\n- `GET  /healthz`            — liveness\n\n## Deployment\n\nWe use docker-compose for development and a container image built via `pnpm --filter @app/api build && docker build`. Production reconciliations are processed in real-time against connected bank feeds; the 500ms p95 constraint shapes the entire service. SOC2 audit logs are written for every request.\n",
+    "expected_exit": 0
+  },
+  {
+    "id": "legit-block-wrong-product",
+    "class": "technical",
+    "target_subpath": "specs/openapi.yaml",
+    "rationale": "Same chosen_preview as above (invoice reconciliation for freelance accountants), but the incoming SPEC is a Slack bot for retail inventory. Almost no product-intent overlap — must BLOCK (exit 2) even under the looser technical threshold of 0.3.",
+    "chosen_preview": {
+      "id": "P10",
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "title": "Reconciliation API",
+      "pitch": "Automate invoice reconciliation across multiple banking providers with audit-ready diffs",
+      "one_liner": "Invoice reconciliation API for freelance accountants"
+    },
+    "idea_spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.8,
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "target_persona": {"profile": "freelance accountant", "primary_pain": "deadline-panic", "usage_frequency": "daily"},
+      "primary_surface": {"platform": "api", "sync_model": "real-time"},
+      "jobs_to_be_done": {"functional": "reconcile invoices", "emotional": "in control", "social": "meticulous"},
+      "must_have_constraints": [{"type": "regulatory", "value": "SOC2"}, {"type": "latency", "value": "<500ms p95"}],
+      "non_goals": ["general accounting UI", "tax filing"]
+    },
+    "incoming_content": "openapi: 3.1.0\ninfo:\n  title: Retail Inventory Slack Bot\n  version: 0.1.0\n  description: Slack slash-command bot for brick-and-mortar boutique inventory tracking\npaths:\n  /slack/command:\n    post:\n      summary: Handle /inventory slash command\n      description: Receives Slack slash-command payload, looks up boutique SKU stock levels, replies with a threaded Block Kit message\n      responses:\n        '200':\n          description: Slack response attachment\n  /slack/interactivity:\n    post:\n      summary: Handle Slack button clicks from inventory messages\n      responses:\n        '200':\n          description: acknowledge\ncomponents:\n  schemas:\n    SlackPayload:\n      type: object\n      properties:\n        team_id: {type: string}\n        channel_id: {type: string}\n        user_id: {type: string}\n        text: {type: string}\n    BoutiqueSKU:\n      type: object\n      properties:\n        sku: {type: string}\n        quantity_on_hand: {type: integer}\n        reorder_threshold: {type: integer}\n        supplier: {type: string}\n",
+    "expected_exit": 2
+  }
+]

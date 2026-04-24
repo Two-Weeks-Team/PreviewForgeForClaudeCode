@@ -13,7 +13,8 @@
     "opus_4_7_capability",
     "mvp_scope",
     "one_liner_pitch",
-    "mockup_path"
+    "mockup_path",
+    "spec_alignment_notes"
   ],
   "properties": {
     "id": {
@@ -68,7 +69,8 @@
     },
     "spec_alignment_notes": {
       "type": "string",
-      "description": "(v1.6.0+) Advocate's reasoning when an idea.spec.json field was null/\"unknown\" and the advocate had to choose. Format: 'X field unknown → assumed Y because Z'. Optional — empty string or omitted when every relevant spec field was already populated.",
+      "description": "(v1.6.0+, A-6 v1.7.0 required) Advocate's reasoning for **every** spec field interpretation — including the trivial/matching cases. Format: 'X field=Y → chose Z because ...' or 'X field unknown → assumed Y because Z'. Required even when every spec field was already populated, because I2 Diversity Validator lints framework-convergence (see A-6 acceptance in umbrella #31) against this text. Empty string is NOT acceptable; use a short explicit note like 'all fields populated, followed spec verbatim' if no interpretation was needed.",
+      "minLength": 1,
       "maxLength": 500
     }
   },
