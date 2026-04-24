@@ -78,7 +78,14 @@ fi
 # don't have POSIX word-char boundaries; false-positive risk is negligible
 # since these are multi-character distinctive terms.
 #
-# Quality-engineer pushed for explicit JP/CN stubs — empty for v1.4.0, flagged TODO.
+# R-4 (v1.7.0+, was quality-engineer TODO): JP/CN signal banks deferred
+# to v2.0+. Escalation signals here are compliance-regime specific
+# (Stripe / HIPAA / GDPR / SOC2), which have EN-native naming even in
+# KR markets; adding Japanese / Chinese banks would require translators
+# who know the LOCAL equivalent regulatory terms (個人情報保護法 / 个人
+# 信息保护法 / PIPL / APPI / etc.), not mechanical translation. This is
+# a product-scope decision, not an implementation gap — revisit when
+# Preview Forge has explicit JP or CN adoption signal from users.
 
 EN_HARD_PAYMENTS=("stripe" "pci" "subscription" "billing flow" "payment processing")
 EN_HARD_PHI=("hipaa" "ehr" "healthcare")
