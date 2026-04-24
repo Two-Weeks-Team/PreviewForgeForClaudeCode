@@ -34,6 +34,81 @@ if [ ! -f "$previews_file" ]; then
   echo "generate-gallery.sh: previews.json not found at $previews_file" >&2
   exit 1
 fi
+
+# A-5 (v1.7.0+): emit the plain-text companion `gallery-text.md` FIRST —
+# before any cache-hit early-exit — so the H1 inline-list fallback has
+# a cat-able summary regardless of whether the run has per-advocate
+# mockup HTMLs on disk. Defense-in-depth: fields are sanitised through
+# a non-control-char allowlist and length-capped so poisoned previews
+# cannot smuggle ANSI escapes or arbitrary-size content into the
+# terminal renderer (gemini medium on the original additive block).
+mkdir -p "$mockups_dir"
+text_out="$mockups_dir/gallery-text.md"
+python3 - "$previews_file" "$text_out" <<'TEXT_PY'
+import json
+import re
+import sys
+import unicodedata
+from pathlib import Path
+
+ID_RE = re.compile(r"^P\d{2}$")
+MAX_FIELD = {
+    "advocate": 80,
+    "target_persona": 120,
+    "primary_surface": 40,
+    "one_liner_pitch": 200,
+}
+
+
+def sanitize(value, max_len):
+    """Allowlist-by-category: drop Unicode control chars (except space),
+    collapse whitespace runs, cap length."""
+    s = str(value or "")
+    s = "".join(
+        ch for ch in s
+        if ch == " " or unicodedata.category(ch)[0] != "C"
+    )
+    s = " ".join(s.split())
+    return s[:max_len]
+
+
+previews = json.load(open(sys.argv[1]))
+
+
+def row(p):
+    raw_id = str(p.get("id", "") or "").strip()
+    if not ID_RE.fullmatch(raw_id):
+        return None
+    advocate = sanitize(p.get("advocate", ""), MAX_FIELD["advocate"]) or "(unknown)"
+    persona = sanitize(p.get("target_persona", ""), MAX_FIELD["target_persona"]) or "(no persona)"
+    surface = sanitize(p.get("primary_surface", ""), MAX_FIELD["primary_surface"]) or "(no surface)"
+    pitch = sanitize(p.get("one_liner_pitch", ""), MAX_FIELD["one_liner_pitch"]) or "(no pitch)"
+    pitch_md = pitch.replace("|", "\\|")
+    return f"- **{raw_id}** · `{advocate}` — {persona} / {surface} — {pitch_md}"
+
+
+rendered = [r for r in (row(p) for p in previews) if r is not None]
+lines = [
+    "# Preview Forge — Gallery (text fallback)",
+    "",
+    f"{len(rendered)} of {len(previews)} cards rendered. Pick one by its `P##` id in the "
+    "AskUserQuestion modal. If you have a browser opener, the full iframe "
+    "gallery is at `gallery.html` in this same directory.",
+    "",
+]
+lines.extend(rendered)
+skipped = len(previews) - len(rendered)
+if skipped:
+    lines.append("")
+    lines.append(f"> {skipped} card(s) skipped — invalid `id` (must match `^P\\d{{2}}$`).")
+lines.append("")
+Path(sys.argv[2]).write_text("\n".join(lines) + "\n", encoding="utf-8")
+print(
+    f"generate-gallery.sh: wrote {sys.argv[2]} "
+    f"({len(rendered)} of {len(previews)} cards)"
+)
+TEXT_PY
+
 # On PreviewDD cache hits, `preview-cache.sh cmd_put` only persists
 # previews.json, not the per-advocate HTML files. Rather than exit
 # silently and leave H1's subsequent `open runs/<id>/mockups/gallery.html`
@@ -363,39 +438,3 @@ out_path.parent.mkdir(parents=True, exist_ok=True)
 out_path.write_text(doc, encoding="utf-8")
 print(f"generate-gallery.sh: wrote {out_path} ({count} of {len(previews)} previews)")
 PYEOF
-
-# A-5 (v1.7.0+): also emit a plain-text `gallery-text.md` so the H1 gate's
-# inline-list fallback (when open-browser.sh exits 3 — no opener) has a
-# cat-able summary to surface in terminal without needing a browser. This
-# never replaces the HTML gallery; it is a companion artifact.
-text_out="$mockups_dir/gallery-text.md"
-python3 - "$previews_file" "$text_out" <<'TEXT_PY'
-import json
-import sys
-from pathlib import Path
-
-previews = json.load(open(sys.argv[1]))
-
-def row(p):
-    pid = str(p.get("id", "")).strip() or "P??"
-    advocate = str(p.get("advocate", "")).strip() or "(unknown)"
-    persona = str(p.get("target_persona", "")).strip() or "(no persona)"
-    surface = str(p.get("primary_surface", "")).strip() or "(no surface)"
-    pitch = str(p.get("one_liner_pitch", "")).strip() or "(no pitch)"
-    # One line per card — grep/pick-friendly. Escape pipes to keep the
-    # markdown table renderable if a user happens to paste this file.
-    pitch_flat = pitch.replace("|", "\\|").replace("\n", " ")
-    return f"- **{pid}** · `{advocate}` — {persona} / {surface} — {pitch_flat}"
-
-lines = ["# Preview Forge — Gallery (text fallback)", ""]
-lines.append(
-    f"{len(previews)} preview cards. Pick one by its `P##` id in the "
-    "AskUserQuestion modal. If you have a browser opener, the full "
-    "iframe gallery is at `gallery.html` in this same directory."
-)
-lines.append("")
-lines.extend(row(p) for p in previews)
-lines.append("")
-Path(sys.argv[2]).write_text("\n".join(lines) + "\n", encoding="utf-8")
-print(f"generate-gallery.sh: wrote {sys.argv[2]} ({len(previews)} cards)")
-TEXT_PY

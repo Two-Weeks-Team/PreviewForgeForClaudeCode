@@ -148,7 +148,8 @@ def load_idea_spec(run_root: Path) -> dict:
     if not spec.exists():
         return {}
     try:
-        data = json.load(spec.open())
+        with spec.open() as f:
+            data = json.load(f)
         return data if isinstance(data, dict) else {}
     except (OSError, json.JSONDecodeError):
         return {}
