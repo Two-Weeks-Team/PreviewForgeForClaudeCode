@@ -11,11 +11,15 @@
 #
 # Security (S-2): URLs are validated against a strict RFC-3986-ish charset
 # before reaching any opener, so shell metacharacters (quotes, semicolons,
-# backticks, backslashes, whitespace) cannot be smuggled through cmd.exe's
-# `start` re-parser or PowerShell's single-quoted Start-Process. Local
-# paths are percent-encoded when converted to file:// URLs. Windows is
-# launched via PowerShell argv-bound Start-Process as the primary path so
-# the URL is never inlined into a script string.
+# backticks, backslashes, whitespace, newline) cannot be smuggled through
+# PowerShell's Start-Process. Local paths are percent-encoded when
+# converted to file:// URLs. On Windows we invoke PowerShell with a
+# script block `& { param($u) Start-Process -FilePath $u }` so the URL
+# is passed as an argv-bound parameter, never interpolated into the
+# script string. cmd.exe and bare `start` fallbacks were removed after
+# external review — `cmd /c` expands `%VAR%` in the URL post-validation
+# and the `%%` literal-percent escape only works inside .bat/.cmd files,
+# not on the `cmd /c` command line, so neither fallback is safe.
 #
 # Usage:
 #   scripts/open-browser.sh <file-or-url>
@@ -99,29 +103,23 @@ if command -v xdg-open >/dev/null 2>&1; then
   xdg-open "$url" >/dev/null 2>&1 && exit 0
 fi
 
-# Windows: prefer PowerShell with argv-bound Start-Process. The URL is
-# passed as an additional argument, which PowerShell stores in $args[0]
-# and binds to -FilePath by value — it is NEVER interpolated into the
-# command string, so even a regex regression could not smuggle script.
+# Windows: PowerShell with an EXPLICIT script block + param. The URL is
+# bound to `$u` by PowerShell's own parameter binder, which is safe even
+# if a future validation regression lets a quote through:
+#   -Command "& { param($u) Start-Process -FilePath $u }"  <url>
+# We intentionally do NOT use `-Command "…$args[0]…"` because extra
+# positional args after a plain string `-Command` are appended to the
+# command string (PowerShell 5.1 behavior) rather than bound to $args —
+# so the URL could end up inlined. The `& { … }` form forces script-block
+# semantics and makes the param binding unambiguous.
 # MSYS_NO_PATHCONV=1 suppresses Git Bash's POSIX↔Windows path munging.
 if command -v powershell.exe >/dev/null 2>&1; then
   MSYS_NO_PATHCONV=1 powershell.exe -NoProfile -Command \
-    "Start-Process -FilePath \$args[0]" "$url" >/dev/null 2>&1 && exit 0
+    "& { param(\$u) Start-Process -FilePath \$u }" "$url" >/dev/null 2>&1 && exit 0
 fi
-# cmd.exe and bare `start` re-parse the command line AND expand `%VAR%`
-# after our validation gate runs. Because the URL can legitimately contain
-# `%XX` percent-encoding (e.g. `%20` for space), pre-escape every `%` to
-# `%%` — cmd.exe's literal-percent sequence. That keeps real encoded
-# bytes intact on the browser side while denying attacker URLs like
-# `http://x/%EVIL%` the ability to trigger environment-variable expansion
-# and reinject shell metacharacters post-gate.
-cmd_url="${url//%/%%}"
-if command -v cmd.exe >/dev/null 2>&1; then
-  MSYS_NO_PATHCONV=1 cmd.exe //c start "" "$cmd_url" >/dev/null 2>&1 && exit 0
-fi
-# Legacy bare `start` — only takes this path on genuine DOS/cmd shells.
-if command -v start >/dev/null 2>&1; then
-  start "" "$cmd_url" >/dev/null 2>&1 && exit 0
+if command -v pwsh >/dev/null 2>&1; then
+  pwsh -NoProfile -Command \
+    "& { param(\$u) Start-Process -FilePath \$u }" "$url" >/dev/null 2>&1 && exit 0
 fi
 
 echo "open-browser.sh: no browser opener available — manually open $url" >&2

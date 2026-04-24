@@ -125,9 +125,12 @@ def card(p):
     relative = raw_mockup[len("mockups/"):] if raw_mockup.startswith("mockups/") else raw_mockup
     # S-1 defense: reject everything that is not a bare advocate filename.
     # "/" catches sub-path escapes ("../a" post-strip, "a/b"), "." catches
-    # parent-dir and hidden-file traversal, and MOCKUP_PAT catches URL
-    # schemes ("javascript:..."), query/fragment smuggling, and mixed-case.
-    if "/" in relative or relative.startswith(".") or not MOCKUP_PAT.match(relative):
+    # parent-dir and hidden-file traversal, and MOCKUP_PAT.fullmatch catches
+    # URL schemes ("javascript:..."), query/fragment smuggling, and mixed-
+    # case. fullmatch() is required here — Python's re.match anchors only
+    # the START of the string and `$` accepts a trailing "\n", so a value
+    # like "P01-foo.html\n" slips past .match() but NOT fullmatch().
+    if "/" in relative or relative.startswith(".") or not MOCKUP_PAT.fullmatch(relative):
         sys.stderr.write(
             "generate-gallery.sh: skipping preview id={0!r} with unsafe "
             "mockup_path={1!r}\n".format(p.get("id"), p.get("mockup_path"))
