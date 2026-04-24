@@ -13,8 +13,8 @@
     "advocate": "the-privacy-hawk",
     "target_persona": "tester",
     "primary_surface": "web",
-    "one_liner_pitch": "This card tests sub-path traversal — value contains an internal slash, which is illegal since mockups are flat under mockups/.",
-    "spec_alignment_notes": "S-1 regression — mockup_path='subdir/P02-foo.html' must be rejected (no sub-paths allowed).",
+    "one_liner_pitch": "This card tests parent-dir escape that survives the mockups/ prefix strip — after the generator strips 'mockups/', what's left is '../../secrets/key.pem', which must still be refused.",
+    "spec_alignment_notes": "S-1 regression — mockup_path='mockups/../../secrets/key.pem' must be rejected. The prefix strip does NOT sanitise the remaining traversal; the '/' + startswith('.') gate catches it.",
     "mockup_path": "mockups/../../secrets/key.pem"
   },
   {

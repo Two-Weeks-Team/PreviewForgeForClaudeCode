@@ -3,29 +3,35 @@
 # Exercises: plugins/preview-forge/hooks/auto-retro-trigger.py
 #   SCORE_REPORT / FAILED_FLAG regexes.
 #
-# One payload per line. All lines MUST fail to match (find_run_id returns
-# None). The verify script iterates each line and asserts non-match.
+# Regex contract:
+#   _RUN_ID = r"r-[A-Za-z0-9][A-Za-z0-9_-]{0,63}"
+#   → requires `r-` prefix + alphanumeric first char + up to 63 more
+#     alphanumeric / underscore / hyphen chars.
+#   → blocks traversal (., ..), path injection (/), shell metachars
+#     (;, |, $, backtick, space, newline), unicode, and overlong ids.
 #
-# Canonical matching paths (these SHOULD match, used by verify to prove
-# the regex still accepts legitimate inputs — listed after the `---OK---`
-# separator).
+# One payload per line. Lines before `---OK---` MUST fail to match
+# (find_run_id returns None). Lines after `---OK---` MUST match.
 
 runs/../score/report.json
 runs/../../score/report.json
 runs/./score/report.json
-runs/.. /score/report.json
-runs/r-../score/report.json
-runs/r-12345678-123456extra/score/report.json
-runs/r-12345678/score/report.json
-runs/r-1234567-123456/score/report.json
-runs/r-12345678-12345/score/report.json
-runs/r-/score/report.json
-runs/r-12345678-123456/score/report.json.bak
-runs/../failed.flag
-runs/r-12345678-123456extra/failed.flag
-runs/r-12345678-123456/failed.flag.bak
 runs/.../failed.flag
+runs/r-./score/report.json
+runs/r-../score/report.json
+runs/r-/score/report.json
+runs/r-abc..def/score/report.json
+runs/r-;rm/score/report.json
+runs/r-$(whoami)/score/report.json
+runs/r-001/score/report.json.bak
+runs/r-001/../../root/score/report.json
+runs/r-001/score/report.json.tmp
+runs/r-001/failed.flag.bak
 ---OK---
 runs/r-20260423-221530/score/report.json
-runs/r-19700101-000000/score/report.json
-runs/r-20260424-000001/failed.flag
+runs/r-19700101-000000/failed.flag
+runs/r-001/score/report.json
+runs/r-42/failed.flag
+runs/r-demo/score/report.json
+runs/r-abc_def/failed.flag
+runs/r-abc-def-123/score/report.json

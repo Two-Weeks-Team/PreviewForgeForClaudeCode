@@ -54,8 +54,13 @@ import json, sys
 try:
     import jsonschema
 except ImportError:
-    print("  ⚠ jsonschema not installed — skipping (pip install jsonschema)", file=sys.stderr)
-    sys.exit(0)
+    # Fail-closed (coderabbit major, gemini high): if the validator is
+    # missing, the S-3 defense cannot be verified — that is a CI gap,
+    # not a green signal. Exit non-zero so the outer failure counter
+    # increments and the summary reports the regression.
+    print("  x jsonschema not installed - S-3 defense cannot be verified. "
+          "Install with: pip install jsonschema", file=sys.stderr)
+    sys.exit(1)
 schema = json.load(open("$REPO_ROOT/plugins/preview-forge/schemas/idea-spec.schema.json"))
 payload = json.load(open("$FIXTURES_DIR/malicious-constraints.json"))
 try:

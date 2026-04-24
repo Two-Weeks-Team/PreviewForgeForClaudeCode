@@ -92,18 +92,17 @@ def _lockfile(path: Path):
     if not _HAVE_FCNTL:
         yield
         return
-    import fcntl as _fcntl
     lock_fd = os.open(
         str(lock_path),
         os.O_CREAT | os.O_WRONLY | os.O_NOFOLLOW,
         0o600,
     )
     try:
-        _fcntl.flock(lock_fd, _fcntl.LOCK_EX)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
         yield
     finally:
         try:
-            _fcntl.flock(lock_fd, _fcntl.LOCK_UN)
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
         finally:
             os.close(lock_fd)
 
