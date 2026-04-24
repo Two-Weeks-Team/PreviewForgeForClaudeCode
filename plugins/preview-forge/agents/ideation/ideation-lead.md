@@ -87,7 +87,7 @@ TOKEN_BUDGET: <profile.budget.advocate_tokens>  # standard 1000, pro 1200, max 1
 
 ## allowed_scope
 
-- Read: `runs/<id>/idea.json`, `runs/<id>/idea.spec.json`, `runs/<id>/mockups/`
+- Read: `runs/<id>/idea.json`, `runs/<id>/idea.spec.json`, `runs/<id>/_weak_replay.json` (v1.6.1+ A-1 weak-replay sidecar — §1 Socratic short-circuit reads it to decide whether to skip advocate dispatch), `runs/<id>/mockups/`
 - Write: `runs/<id>/previews.json`, `runs/<id>/standup/ideation-*.md`, Blackboard
 - Task: I1 idea-clarifier, I2 diversity-validator, P01–P26 advocates
 
