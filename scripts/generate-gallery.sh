@@ -241,7 +241,11 @@ def card(p):
     #   screen-reader / hover users get meaningful context, not just "P01
     #   mockup". html.escape already ran on pitch; the truncate keeps the
     #   tooltip readable in narrow viewports.
-    pitch_for_title = (p.get("one_liner_pitch", "") or "")
+    # codex R1 on PR #48 (P1): previews.json from a poisoned seed /
+    # cache replay could deliver a non-string `one_liner_pitch` (None,
+    # int, dict). `str(...)` cast guarantees `.replace` won't AttributeError
+    # on a dict / int before we even reach html.escape.
+    pitch_for_title = str(p.get("one_liner_pitch", "") or "")
     pitch_for_title = pitch_for_title.replace("\n", " ")
     if len(pitch_for_title) > 96:
         pitch_for_title = pitch_for_title[:93].rstrip() + "…"
@@ -255,7 +259,7 @@ def card(p):
         <span class="chip persona" title="target_persona">{persona}</span>
         <span class="chip surface" title="primary_surface">{surface}</span>
       </div>
-      <p class="pitch" title="{pitch}">{pitch}</p>
+      <p class="pitch" title="{pitch}" tabindex="0" role="note" aria-label="Preview pitch (press Tab to focus, expands on focus)">{pitch}</p>
       {f'<p class="notes" title="spec_alignment_notes">{notes}</p>' if notes else ''}
       <div class="frame-wrap">
         <!-- sandbox="allow-same-origin" is intentional and SUFFICIENT for
