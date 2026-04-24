@@ -72,24 +72,39 @@ def signal_hash(categories: list[str]) -> str:
 
 @contextlib.contextmanager
 def _lockfile(path: Path):
-    """POSIX advisory lock. Serialises concurrent record calls so
-    read-modify-write doesn't lose entries (Gemini medium finding).
+    """POSIX advisory lock with symlink-refusing open (S-5, v1.7.0+).
+
+    Serialises concurrent record calls so read-modify-write doesn't lose
+    entries (Gemini medium finding, v1.4+).
+
+    S-5 defense: ``os.open(..., O_CREAT | O_WRONLY | O_NOFOLLOW, 0o600)``
+    refuses to follow a symbolic link at ``lock_path``. On shared /
+    multi-user hosts (``~/.preview-forge/`` lives under $HOME but is
+    world-readable by default), a TOCTOU attacker could pre-plant
+    ``~/.preview-forge/escalation-history.lock`` as a symlink to, e.g.,
+    ``~/.ssh/authorized_keys``; the prior ``open(path, "w")`` would have
+    truncated the target. O_NOFOLLOW raises ``OSError(ELOOP)`` instead,
+    which propagates out of the contextmanager and aborts the write.
+
     No-op on Windows / when fcntl unavailable."""
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
     lock_path = path.with_suffix(".lock")
     if not _HAVE_FCNTL:
         yield
         return
-    import fcntl as _fcntl
-    f = open(lock_path, "w")
+    lock_fd = os.open(
+        str(lock_path),
+        os.O_CREAT | os.O_WRONLY | os.O_NOFOLLOW,
+        0o600,
+    )
     try:
-        _fcntl.flock(f.fileno(), _fcntl.LOCK_EX)
+        fcntl.flock(lock_fd, fcntl.LOCK_EX)
         yield
     finally:
         try:
-            _fcntl.flock(f.fileno(), _fcntl.LOCK_UN)
+            fcntl.flock(lock_fd, fcntl.LOCK_UN)
         finally:
-            f.close()
+            os.close(lock_fd)
 
 
 def load_ledger() -> list[dict]:

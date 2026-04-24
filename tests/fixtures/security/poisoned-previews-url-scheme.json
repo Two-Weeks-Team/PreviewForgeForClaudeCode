@@ -1,0 +1,29 @@
+[
+  {
+    "id": "P01",
+    "advocate": "the-contrarian",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "mockup_path with javascript: URL scheme — must be rejected before reaching <iframe src>.",
+    "spec_alignment_notes": "S-1 regression — MOCKUP_PAT.fullmatch refuses colons so the iframe is never emitted.",
+    "mockup_path": "javascript:alert(1)"
+  },
+  {
+    "id": "P02",
+    "advocate": "the-privacy-hawk",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "mockup_path with file:// scheme pointing at arbitrary local file.",
+    "spec_alignment_notes": "S-1 regression — file:///etc/passwd must be rejected.",
+    "mockup_path": "file:///etc/passwd"
+  },
+  {
+    "id": "P03",
+    "advocate": "the-researcher",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "mockup_path with data: URL that embeds scripted HTML.",
+    "spec_alignment_notes": "S-1 regression — data:text/html,<script>... must be rejected.",
+    "mockup_path": "data:text/html,<script>alert(1)</script>"
+  }
+]

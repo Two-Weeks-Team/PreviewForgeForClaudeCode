@@ -1,0 +1,29 @@
+[
+  {
+    "id": "P01",
+    "advocate": "the-contrarian",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "This card tests traversal rejection — the mockup_path escapes the mockups/ sandbox and would leak /etc/passwd if the gallery generator did not refuse.",
+    "spec_alignment_notes": "S-1 regression — mockup_path='../../../etc/passwd' must be rejected by generate-gallery.sh.",
+    "mockup_path": "../../../etc/passwd"
+  },
+  {
+    "id": "P02",
+    "advocate": "the-privacy-hawk",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "This card tests parent-dir escape that survives the mockups/ prefix strip — after the generator strips 'mockups/', what's left is '../../secrets/key.pem', which must still be refused.",
+    "spec_alignment_notes": "S-1 regression — mockup_path='mockups/../../secrets/key.pem' must be rejected. The prefix strip does NOT sanitise the remaining traversal; the '/' + startswith('.') gate catches it.",
+    "mockup_path": "mockups/../../secrets/key.pem"
+  },
+  {
+    "id": "P03",
+    "advocate": "the-researcher",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "This card tests hidden-file / parent-dir via leading dot.",
+    "spec_alignment_notes": "S-1 regression — relative.startswith('.') must reject '.hidden.html' and '..'.",
+    "mockup_path": ".hidden.html"
+  }
+]

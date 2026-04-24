@@ -162,12 +162,20 @@ def card(p):
       <p class="pitch">{pitch}</p>
       {f'<p class="notes" title="spec_alignment_notes">{notes}</p>' if notes else ''}
       <div class="frame-wrap">
-        <!-- sandbox="allow-same-origin" is intentional: mockups are vetted
-             inline-HTML artifacts per ideation-lead.md ("inline CSS only,
-             max 500 lines"). Keeps scripts/forms disabled by default. If
-             an advocate ever needs executable demo code, switch to
-             sandbox="allow-scripts" and review the file:// origin quirk
-             (some browsers treat file:// iframe parents as same-origin). -->
+        <!-- sandbox="allow-same-origin" is intentional and SUFFICIENT for
+             read-only comparison of inline-HTML mockups (policy: "inline
+             CSS only, max 500 lines" — ideation-lead.md). Scripts + forms
+             disabled by default.
+
+             !!! DO NOT ADD allow-scripts !!!
+
+             Adding allow-scripts while keeping allow-same-origin enables
+             local-file disclosure via sibling-iframe DOM reads on file://
+             origin (S-1/S-4, v1.6.1+v1.7.0 audit): a malicious mockup
+             could script into its sibling P02 iframe and exfiltrate it.
+             If executable demo code is ever required, migrate mockups to
+             a random-port localhost HTTP server — NOT to allow-scripts
+             on file://. -->
         <iframe class="mockup"
                 src="{mockup_path}"
                 loading="lazy"

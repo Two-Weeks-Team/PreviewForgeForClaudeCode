@@ -50,13 +50,14 @@
     },
     "must_have_constraints": {
       "type": "array",
-      "description": "Hard constraints captured by I1 Batch C. Canonical `type` buckets: regulatory | budget | latency | team_size | platform | data_residency. Free-form strings (e.g. 'air-gapped deployment', 'mandated vendor X') are also accepted so the Batch C 'Other' path is never silently dropped.",
+      "description": "Hard constraints captured by I1 Batch C. Canonical `type` buckets: regulatory | budget | latency | team_size | platform | data_residency. Free-form strings (e.g. 'air-gapped deployment', 'mandated vendor X') are also accepted so the Batch C 'Other' path is never silently dropped. S-3 (v1.7.0+): array is capped at 20 entries with per-field maxLength so a poisoned idea.spec.json cannot blow up advocate prompt size / Rule 9 containment budget.",
+      "maxItems": 20,
       "items": {
         "type": "object",
         "required": ["type", "value"],
         "properties": {
-          "type": { "type": "string", "minLength": 1 },
-          "value": { "type": "string", "minLength": 1 }
+          "type": { "type": "string", "minLength": 1, "maxLength": 50 },
+          "value": { "type": "string", "minLength": 1, "maxLength": 2000 }
         },
         "additionalProperties": false
       }
@@ -67,8 +68,9 @@
     },
     "non_goals": {
       "type": "array",
-      "description": "Explicitly out-of-scope items. Empty array allowed (soft anchor).",
-      "items": { "type": "string", "minLength": 1 }
+      "description": "Explicitly out-of-scope items. Empty array allowed (soft anchor). S-3 (v1.7.0+): array is capped at 20 entries, each item ≤500 chars, to bound prompt expansion.",
+      "maxItems": 20,
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
     },
     "monetization_model": {
       "type": ["string", "null"],

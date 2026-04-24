@@ -1,0 +1,37 @@
+# S-6 fixture — malicious hook-input paths whose run_id capture must be refused.
+#
+# Exercises: plugins/preview-forge/hooks/auto-retro-trigger.py
+#   SCORE_REPORT / FAILED_FLAG regexes.
+#
+# Regex contract:
+#   _RUN_ID = r"r-[A-Za-z0-9][A-Za-z0-9_-]{0,63}"
+#   → requires `r-` prefix + alphanumeric first char + up to 63 more
+#     alphanumeric / underscore / hyphen chars.
+#   → blocks traversal (., ..), path injection (/), shell metachars
+#     (;, |, $, backtick, space, newline), unicode, and overlong ids.
+#
+# One payload per line. Lines before `---OK---` MUST fail to match
+# (find_run_id returns None). Lines after `---OK---` MUST match.
+
+runs/../score/report.json
+runs/../../score/report.json
+runs/./score/report.json
+runs/.../failed.flag
+runs/r-./score/report.json
+runs/r-../score/report.json
+runs/r-/score/report.json
+runs/r-abc..def/score/report.json
+runs/r-;rm/score/report.json
+runs/r-$(whoami)/score/report.json
+runs/r-001/score/report.json.bak
+runs/r-001/../../root/score/report.json
+runs/r-001/score/report.json.tmp
+runs/r-001/failed.flag.bak
+---OK---
+runs/r-20260423-221530/score/report.json
+runs/r-19700101-000000/failed.flag
+runs/r-001/score/report.json
+runs/r-42/failed.flag
+runs/r-demo/score/report.json
+runs/r-abc_def/failed.flag
+runs/r-abc-def-123/score/report.json
