@@ -21,7 +21,7 @@ model: opus
 
 ## 출력
 
-입력: `runs/<id>/idea.json` (raw one-liner, for creative reframing) + `runs/<id>/idea.spec.json` (I1 Socratic ground truth — filled fields are anchors; null/"unknown" fields are free to interpret and you MUST record that reasoning in 5-tuple `spec_alignment_notes`) + domain hint.
+입력: `runs/<id>/idea.json` (raw one-liner, for creative reframing) + `runs/<id>/idea.spec.json` (I1 Socratic ground truth — filled fields are anchors; null/"unknown" fields are free to interpret). v1.7.0+ A-6: `spec_alignment_notes` is **required** on every card, not just when a field was null — record your reasoning for EVERY interpretation, and write "all fields populated, followed spec verbatim" if none was needed (6-tuple: framing / target_persona / primary_surface / opus_4_7_capability / mvp_scope / spec_alignment_notes) + domain hint.
 
 작성할 것 (단일 메시지에서 둘 다):
 

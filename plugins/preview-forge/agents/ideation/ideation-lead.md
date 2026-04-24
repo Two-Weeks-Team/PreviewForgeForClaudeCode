@@ -51,13 +51,17 @@ ROLE: <advocate name> (P01 ~ P26 중 선택)
 IDEA: <from idea.json — raw one-liner for creative reframing>
 IDEA_SPEC: <from idea.spec.json — structured ground truth from I1 Socratic interview>
   # Advocate는 spec의 채워진 필드를 ground truth로 삼되, null/"unknown" 필드는
-  # 자유 해석 가능. 자유 해석한 경우 반드시 5-tuple의 spec_alignment_notes에
-  # "X field unknown → assumed Y because Z" 형식으로 기록.
+  # 자유 해석 가능. v1.7.0+ A-6: **모든** spec 해석은 반드시 6-tuple의
+  # spec_alignment_notes에 기록 (null 필드뿐 아니라 그대로 따른 경우도).
+  # 자유 해석: "X field unknown → assumed Y because Z"
+  # 그대로 따른 경우: "all fields populated, followed spec verbatim" 등 한 줄.
+  # 빈 문자열은 preview-card.schema.json (minLength:1) 위반으로 previews.json
+  # validation이 실패한다.
 DOMAIN_HINT: <optional, from scripts/detect-surface.sh>
 MOCKUP_GUIDANCE: 페르소나에 맞는 self-contained mockup.html (inline CSS only, max 500 lines)
 OUTPUT_FORMAT:
-  5-tuple: framing / target_persona / primary_surface / opus_4_7_capability / mvp_scope
-    + optional spec_alignment_notes (advocate의 spec 해석 근거)
+  6-tuple: framing / target_persona / primary_surface / opus_4_7_capability / mvp_scope / spec_alignment_notes
+    # spec_alignment_notes는 v1.7.0+ A-6부터 required; 비어 있으면 schema 검증 실패.
   mockup: runs/<id>/mockups/P{NN}-{name}.html
 TOKEN_BUDGET: <profile.budget.advocate_tokens>  # standard 1000, pro 1200, max 1500
 ```
