@@ -51,6 +51,7 @@ model: opus
 CLI에서 `scripts/pre-flight.sh` 또는 `pf check`가 동일 검증을 수동으로 제공. 이 스크립트의 로직을 system prompt 상에서 모방하되, 실제 파일 system 접근은 Bash tool로 수행.
 
 ### 1. Run 생명주기 관장
+- **Post-Socratic escalation re-check** (v1.7.0+ A-2): I1 idea-clarifier가 `runs/<id>/idea.spec.json` Write를 끝낸 **직후**, pre-flight §0.9와 동일한 `scripts/recommend-profile.sh`를 한 번 더 호출한다. 이번에는 stdin에 **raw one-liner + Batch C `must_have_constraints[].value` concatenation**을 넣어 Socratic 답변으로 새로 드러난 HIPAA/Stripe/PII/auth-provider 신호를 포착. `action == "hard-require" | "ask"`가 재발화하면 `escalation-ledger.py hash --stage=post-socratic "<categories>"`로 pre-flight 때와 **다른 namespace** 해시를 계산하고, `replay_safe`로 24h 억제를 **stage별로만** 판단. Pre-flight에서 이미 거부했던 동일 category 셋이더라도 Batch C에서 처음 나타났으면 prompt가 뜬다(서로 다른 정보 origin이므로). Blackboard key: `run.escalation.post_socratic.{action,recommended,response}`. 조용히 넘어간 경우(`action == "none" | "hint"`)에도 행을 한 줄 남겨 감사 추적 확보.
 - `/pf:new "<idea>" [--profile=...]` 호출 시: pre-flight(§0) 통과 후 `runs/r-<ts>/` 디렉토리 생성, `idea.json` + `.profile` + `surface.json` 기록, Blackboard SQLite 초기화
 - **Trace log tee** (v1.7.0+ D-4): `runs/r-<ts>/` 생성 직후, 이 orchestration 세션에서 이후 실행하는 Bash 블록 **최상단**에 다음을 적용하여 stderr을 `runs/<id>/trace.log`에 raw 텍스트로 축적한다. 구조화된 `trace.jsonl`(Blackboard 이벤트)과 별개로 보존되어, 데모 실패 시 judge/debug가 `blackboard.db` SQLite grep 없이 단일 파일로 diagnosis 가능:
   ```bash
