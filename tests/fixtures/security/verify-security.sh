@@ -88,10 +88,16 @@ if ! grep -q '&lt;script&gt;' "$gallery_html"; then
   fail "gallery.html did not escape <script> payload — html.escape didn't run?"
   xss_leaks=$((xss_leaks + 1))
 fi
-# gallery-text.md: sanitize() strips `<` and `>` entirely from every
-# field so a paste into any markdown previewer stays inert.
-if grep -Fq '<script>' "$text_md" || grep -Fq '<svg' "$text_md" || grep -Fq '<img' "$text_md"; then
-  fail "gallery-text.md leaked raw HTML brackets into sanitised output"
+# gallery-text.md: sanitize() html-escapes `<` and `>` (to `&lt;`/`&gt;`)
+# so a paste into any markdown previewer renders inert. Legitimate
+# comparison text like "SaaS >$1M" survives as "SaaS &gt;$1M".
+if grep -Fq '<script' "$text_md" || grep -Fq '<svg' "$text_md" || grep -Fq '<img' "$text_md"; then
+  fail "gallery-text.md leaked raw < tag into sanitised output"
+  xss_leaks=$((xss_leaks + 1))
+fi
+# Positive check: the raw payload was transformed (not just dropped).
+if ! grep -Fq '&lt;script&gt;' "$text_md"; then
+  fail "gallery-text.md did not html-escape <script> payload — sanitize silently dropped content?"
   xss_leaks=$((xss_leaks + 1))
 fi
 if [[ "$xss_leaks" -eq 0 ]]; then
@@ -187,10 +193,20 @@ rm -rf "$tmp_t6"
 echo
 echo "[T-9.2] preview-cache Korean UTF-8 key"
 utf8_key=$(bash "$REPO_ROOT/scripts/preview-cache.sh" key "한글 아이디어 테스트" pro 2>/dev/null || true)
-if [[ "$utf8_key" =~ ^[0-9a-f]{16,}$ ]]; then
-  pass "preview-cache.sh key on Korean idea → $utf8_key"
+# Second Korean input — content differs, so hash MUST differ (proves
+# the hasher actually consumes non-ASCII bytes, not a locale-default
+# canonicalisation that collapses them).
+utf8_key_b=$(bash "$REPO_ROOT/scripts/preview-cache.sh" key "다른 한국어 아이디어" pro 2>/dev/null || true)
+# Known-good ASCII baseline for shape comparison.
+ascii_key=$(bash "$REPO_ROOT/scripts/preview-cache.sh" key "english baseline idea" pro 2>/dev/null || true)
+if ! [[ "$utf8_key" =~ ^[0-9a-f]{16,}$ ]]; then
+  fail "preview-cache Korean hash not hex: '$utf8_key'"
+elif [[ "$utf8_key" == "$utf8_key_b" ]]; then
+  fail "preview-cache Korean hash collapsed across distinct inputs (locale canon?)"
+elif [[ "$utf8_key" == "$ascii_key" ]]; then
+  fail "preview-cache Korean hash == ASCII-baseline hash (non-ASCII ignored?)"
 else
-  fail "preview-cache.sh key on Korean idea returned non-hex: '$utf8_key'"
+  pass "preview-cache.sh key on Korean idea: $utf8_key (!= ASCII $ascii_key · !=2nd Korean $utf8_key_b)"
 fi
 
 # ----- S-5 : ledger symlink refusal --------------------------------------

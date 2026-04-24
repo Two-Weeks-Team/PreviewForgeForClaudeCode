@@ -60,13 +60,17 @@ MAX_FIELD = {
 }
 
 
+import html as _html
+
 def sanitize(value, max_len):
     """Allowlist-by-category for gallery-text.md (T-4 defense-in-depth):
     - drop Unicode control-category chars (keep ASCII space)
-    - strip HTML angle brackets so `<script>` payloads can't sit raw in a
-      file that a user might open in a markdown-previewer or paste into
-      a chat that renders HTML (terminal cat is fine either way, but
-      we're cheap here)
+    - HTML-escape angle brackets so `<script>` payloads can't sit raw in
+      a file that a user might open in a markdown-previewer or paste
+      into a chat that renders HTML. Terminal cat is fine either way;
+      markdown previewers see inert `&lt;…&gt;`. Uses html.escape with
+      quote=False to preserve comparison chars in legitimate pitch
+      text like "SaaS >$1M clients" → "SaaS &gt;$1M clients".
     - collapse whitespace runs
     - cap length per field
     """
@@ -75,7 +79,7 @@ def sanitize(value, max_len):
         ch for ch in s
         if ch == " " or unicodedata.category(ch)[0] != "C"
     )
-    s = s.replace("<", "").replace(">", "")
+    s = _html.escape(s, quote=False)
     s = " ".join(s.split())
     return s[:max_len]
 
