@@ -96,6 +96,13 @@ from pathlib import Path
 # must never reach the iframe src. The sandbox="allow-same-origin" policy
 # on file:// origin leaks parent-dir contents to an attacker-controlled
 # iframe DOM, so strict allowlisting is the only safe posture.
+#
+# Note: this allowlist is INTENTIONALLY stricter than preview-card.schema.json
+# (which permits `^mockups/P[0-9]{2}-.*\.html$` — any char in the slug).
+# The 26 advocate files in this repo all use lowercase ASCII + hyphens, so
+# tightening the consumer-side check to `[a-z0-9-]+` reduces the iframe-src
+# attack surface without rejecting any legitimate advocate filename. Schema
+# harmonization is tracked for v1.7.0 (see phase umbrella issue #30).
 MOCKUP_PAT = re.compile(r"^P\d{2}-[a-z0-9-]+\.html$")
 
 previews_path = Path(sys.argv[1])

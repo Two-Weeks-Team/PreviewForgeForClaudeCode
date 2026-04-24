@@ -14,12 +14,18 @@
 # backticks, backslashes, whitespace, newline) cannot be smuggled through
 # PowerShell's Start-Process. Local paths are percent-encoded when
 # converted to file:// URLs. On Windows we invoke PowerShell with a
-# script block `& { param($u) Start-Process -FilePath $u }` so the URL
-# is passed as an argv-bound parameter, never interpolated into the
-# script string. cmd.exe and bare `start` fallbacks were removed after
-# external review — `cmd /c` expands `%VAR%` in the URL post-validation
-# and the `%%` literal-percent escape only works inside .bat/.cmd files,
-# not on the `cmd /c` command line, so neither fallback is safe.
+# script block call where the URL is embedded inside a PowerShell single-
+# quoted literal:
+#   powershell.exe -Command "& { param($u) Start-Process -FilePath $u } '$url'"
+# Because the S-2 gate forbids `'` in URLs, the single-quote wrapper cannot
+# be closed-and-escaped by attacker input, and `&` inside the literal
+# cannot act as a statement separator. We deliberately avoid the
+# "trailing positional arg after -Command" shape because PowerShell 5.1
+# appends such args back into the command text (rather than binding them
+# to $args), which would let an unquoted `&` re-parse as a second
+# command. cmd.exe and bare `start` fallbacks were removed in an earlier
+# review round — `cmd /c` expands `%VAR%` post-validation and `%%` only
+# escapes inside .bat/.cmd files, not on the command line.
 #
 # Usage:
 #   scripts/open-browser.sh <file-or-url>
@@ -104,22 +110,32 @@ if command -v xdg-open >/dev/null 2>&1; then
 fi
 
 # Windows: PowerShell with an EXPLICIT script block + param. The URL is
-# bound to `$u` by PowerShell's own parameter binder, which is safe even
-# if a future validation regression lets a quote through:
-#   -Command "& { param($u) Start-Process -FilePath $u }"  <url>
-# We intentionally do NOT use `-Command "…$args[0]…"` because extra
-# positional args after a plain string `-Command` are appended to the
-# command string (PowerShell 5.1 behavior) rather than bound to $args —
-# so the URL could end up inlined. The `& { … }` form forces script-block
-# semantics and makes the param binding unambiguous.
+# embedded INSIDE the -Command string wrapped in PowerShell single quotes
+# ('…'), so a `&` in the URL cannot act as a statement separator and no
+# character can escape the literal-string region. Example expansion with
+# `url=http://x/?a=1&b=2`:
+#   powershell.exe -NoProfile -Command \
+#     "& { param($u) Start-Process -FilePath $u } 'http://x/?a=1&b=2'"
+# Parser: call operator `&` + script block + single-quoted string literal,
+# which binds to the param by position. We rely on the S-2 gate above to
+# forbid `'` in URLs (it's not in the allowed charset), so the single-quote
+# wrapper cannot be closed-and-escaped by attacker input.
+#
+# We do NOT pass `$url` as a trailing positional arg outside the -Command
+# string: PowerShell 5.1's documented behavior is that characters after
+# the -Command string are appended to the command text rather than bound
+# to `$args`. An unquoted `&` in such a trailing URL would then re-parse
+# as a second command (e.g. `& { … } http://x&calc` could launch calc.exe
+# on a Windows host where calc is on PATH). Putting the URL inside the
+# single-quoted string closes that door entirely.
 # MSYS_NO_PATHCONV=1 suppresses Git Bash's POSIX↔Windows path munging.
 if command -v powershell.exe >/dev/null 2>&1; then
   MSYS_NO_PATHCONV=1 powershell.exe -NoProfile -Command \
-    "& { param(\$u) Start-Process -FilePath \$u }" "$url" >/dev/null 2>&1 && exit 0
+    "& { param(\$u) Start-Process -FilePath \$u } '$url'" >/dev/null 2>&1 && exit 0
 fi
 if command -v pwsh >/dev/null 2>&1; then
   pwsh -NoProfile -Command \
-    "& { param(\$u) Start-Process -FilePath \$u }" "$url" >/dev/null 2>&1 && exit 0
+    "& { param(\$u) Start-Process -FilePath \$u } '$url'" >/dev/null 2>&1 && exit 0
 fi
 
 echo "open-browser.sh: no browser opener available — manually open $url" >&2
