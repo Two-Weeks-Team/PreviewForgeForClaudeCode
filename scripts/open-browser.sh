@@ -62,6 +62,7 @@ PYEOF
 case "$target" in
   http://*|https://*|file://*)
     url="$target"
+    abs=""   # no local path to convert for PowerShell
     ;;
   *)
     if command -v realpath >/dev/null 2>&1; then
@@ -99,9 +100,48 @@ if ! [[ "$url" =~ $s2_safe_url_pattern ]]; then
   exit 1
 fi
 
-# Try openers in order. `open` on macOS, `xdg-open` on Linux, PowerShell
-# (preferred) + cmd.exe on Windows (Git Bash / WSL). If none exists,
-# document and continue.
+# D-1 (v1.7.0+): Compute a Windows-form URL used ONLY by PowerShell. We
+# keep `$url` in POSIX form because `open` (macOS) and `xdg-open` (Linux
+# / WSLg) expect file:///Users/… or file:///mnt/c/…; rewriting the path
+# globally would regress WSLg where a Linux browser can serve a
+# /mnt/c/… path. PowerShell's Start-Process, by contrast, needs native
+# Windows form ("C:/…"). `cygpath` exists on Git Bash / MSYS / Cygwin;
+# `wslpath` on WSL. Neither exists on macOS/Linux, so `win_url == url`
+# there and nothing changes.
+win_url="$url"
+if [ -n "$abs" ]; then
+  win_abs="$abs"
+  if command -v cygpath >/dev/null 2>&1; then
+    win_abs="$(cygpath -m "$abs" 2>/dev/null || echo "$abs")"
+  elif command -v wslpath >/dev/null 2>&1; then
+    win_abs="$(wslpath -m "$abs" 2>/dev/null || echo "$abs")"
+  fi
+  # Ensure file:// URL gets three slashes when the path starts with a
+  # drive letter ("C:/…" → "/C:/…" → "file:///C:/…"). POSIX paths
+  # already start with "/" so this is a no-op.
+  case "$win_abs" in
+    /*) ;;
+    *)  win_abs="/$win_abs" ;;
+  esac
+  if [ "$win_abs" != "$abs" ]; then
+    if command -v python3 >/dev/null 2>&1; then
+      win_url="file://$(url_encode_path "$win_abs")"
+    else
+      win_url="file://$win_abs"
+    fi
+    # Re-validate: cygpath/wslpath output is trusted (no shell meta) but
+    # we funnel it through the same S-2 gate for defense in depth.
+    if ! [[ "$win_url" =~ $s2_safe_url_pattern ]]; then
+      echo "open-browser.sh: refusing to open Windows-form URL with unsafe characters: $win_url" >&2
+      exit 1
+    fi
+  fi
+fi
+
+# Try openers in order. `open` on macOS, `xdg-open` on Linux (including
+# WSLg), PowerShell on Windows (Git Bash / WSL headless). If none exists,
+# document and continue. `open`/`xdg-open` use the POSIX-form `$url`;
+# PowerShell uses the Windows-form `$win_url` (equal to `$url` on POSIX).
 if command -v open >/dev/null 2>&1; then
   open "$url" >/dev/null 2>&1 && exit 0
 fi
@@ -131,11 +171,11 @@ fi
 # MSYS_NO_PATHCONV=1 suppresses Git Bash's POSIX↔Windows path munging.
 if command -v powershell.exe >/dev/null 2>&1; then
   MSYS_NO_PATHCONV=1 powershell.exe -NoProfile -Command \
-    "& { param(\$u) Start-Process -FilePath \$u } '$url'" >/dev/null 2>&1 && exit 0
+    "& { param(\$u) Start-Process -FilePath \$u } '$win_url'" >/dev/null 2>&1 && exit 0
 fi
 if command -v pwsh >/dev/null 2>&1; then
   pwsh -NoProfile -Command \
-    "& { param(\$u) Start-Process -FilePath \$u } '$url'" >/dev/null 2>&1 && exit 0
+    "& { param(\$u) Start-Process -FilePath \$u } '$win_url'" >/dev/null 2>&1 && exit 0
 fi
 
 echo "open-browser.sh: no browser opener available — manually open $url" >&2
