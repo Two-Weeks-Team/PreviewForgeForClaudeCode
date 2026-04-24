@@ -64,7 +64,7 @@ def lint_sql_files(search_root: Path) -> list[tuple[int, str, str, str]]:
     pg_cast_pattern = re.compile(r"::(?:tsvector|jsonb|uuid|interval)")
     for sql_file in migrations_dir.rglob("*.sql"):
         try:
-            content = sql_file.read_text()
+            content = sql_file.read_text(encoding="utf-8")
         except OSError:
             continue
         for match in pg_cast_pattern.finditer(content):
@@ -87,7 +87,7 @@ def lint(schema_path: Path) -> int:
         print(f"schema not found: {schema_path}", file=sys.stderr)
         return 2
 
-    content = schema_path.read_text()
+    content = schema_path.read_text(encoding="utf-8")
     lines = content.splitlines()
 
     violations_found = []

@@ -126,7 +126,7 @@ def load_ledger() -> list[dict]:
     if not LEDGER_FILE.exists():
         return []
     try:
-        data = json.loads(LEDGER_FILE.read_text())
+        data = json.loads(LEDGER_FILE.read_text(encoding="utf-8"))
         if isinstance(data, list):
             return data
     except (OSError, json.JSONDecodeError):
@@ -135,11 +135,33 @@ def load_ledger() -> list[dict]:
 
 
 def save_ledger(rows: list[dict]) -> None:
+    """Atomic write via unique NamedTemporaryFile + os.replace.
+
+    T-11 (v1.7.0+): the pre-v1.7.0 implementation wrote to the fixed
+    ``escalation-history.tmp`` name. Two writers that slipped past the
+    advisory flock (e.g. on a host where fcntl is absent — see
+    ``_lockfile``'s Windows no-op branch — or during a lock-upgrade
+    race on NFS mounts that don't fully implement POSIX advisory locks)
+    could clobber each other's tmpfile before the rename. Switching to
+    ``tempfile.NamedTemporaryFile(dir=LEDGER_DIR, delete=False)`` gives
+    every writer its own mkstemp-generated name (PID + random suffix),
+    so the atomic rename into ``escalation-history.json`` is still
+    last-writer-wins but no in-flight data is clobbered on disk.
+    """
+    import tempfile
     LEDGER_DIR.mkdir(parents=True, exist_ok=True)
-    # Write atomically via tmpfile+rename
-    tmp = LEDGER_FILE.with_suffix(".tmp")
-    tmp.write_text(json.dumps(rows, indent=2))
-    tmp.replace(LEDGER_FILE)
+    # Write to a unique tmp file, then os.replace atomically.
+    with tempfile.NamedTemporaryFile(
+        mode="w",
+        encoding="utf-8",
+        dir=str(LEDGER_DIR),
+        prefix=".escalation-history.",
+        suffix=".tmp",
+        delete=False,
+    ) as tmp:
+        json.dump(rows, tmp, indent=2, ensure_ascii=False)
+        tmp_path = tmp.name
+    os.replace(tmp_path, str(LEDGER_FILE))
 
 
 def cmd_record(args: list[str]) -> int:

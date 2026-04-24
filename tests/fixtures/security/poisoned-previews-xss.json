@@ -1,0 +1,20 @@
+[
+  {
+    "id": "P01",
+    "advocate": "<script>alert('advocate-xss')</script>",
+    "target_persona": "<img src=x onerror=alert('persona')>",
+    "primary_surface": "Web PWA",
+    "one_liner_pitch": "pitch with <script>document.cookie</script> embedded — gallery HTML generator must html.escape every field before interpolating into the iframe card template. If <script> survives to the generated gallery.html, an opener that treats file:// as trusted would execute it.",
+    "spec_alignment_notes": "T-4 (v1.7.0+ Phase 3) XSS fixture: every advocate-controlled string is html-escape-tested.",
+    "mockup_path": "mockups/P01-the-contrarian.html"
+  },
+  {
+    "id": "P02",
+    "advocate": "javascript:alert(1)//",
+    "target_persona": "\"><svg/onload=alert('persona-svg')>",
+    "primary_surface": "CLI",
+    "one_liner_pitch": "ok pitch",
+    "spec_alignment_notes": "Double-quote break-out attempt + SVG onload payload.",
+    "mockup_path": "mockups/P02-the-ops-veteran.html"
+  }
+]

@@ -46,6 +46,65 @@ for fixture in poisoned-previews-traversal.json poisoned-previews-url-scheme.jso
   rm -rf "$tmp_run"
 done
 
+# ----- T-4 : generate-gallery XSS escape (Phase 3 Test & CI) ----------
+echo
+echo "[T-4] generate-gallery XSS escape"
+tmp_xss="$(mktemp -d -t pf-t4-xss-XXXXXX)"
+mkdir -p "$tmp_xss/mockups"
+cp "$FIXTURES_DIR/poisoned-previews-xss.json" "$tmp_xss/previews.json"
+# Matching mockup HTMLs so the iframe code path is exercised.
+printf '<html><body>stub1</body></html>' > "$tmp_xss/mockups/P01-the-contrarian.html"
+printf '<html><body>stub2</body></html>' > "$tmp_xss/mockups/P02-the-ops-veteran.html"
+(cd "$REPO_ROOT" && bash scripts/generate-gallery.sh "$tmp_xss" >/dev/null 2>&1 || true)
+gallery_html="$tmp_xss/mockups/gallery.html"
+text_md="$tmp_xss/mockups/gallery-text.md"
+xss_leaks=0
+# gallery.html: must never contain active HTML elements / handlers.
+# Literal text payloads inside escaped nodes are fine (html.escape
+# converts `<` to `&lt;`, `"` to `&quot;`); what we care about is a
+# RAW `<script>` tag or `on[handler]=` attribute surviving.
+# Only RAW (unescaped) element openings count as XSS.
+# `&lt;img src=x onerror=…&gt;` is literal escaped text in a node body
+# and cannot execute; `<img src=x onerror=…>` would.
+# generate-gallery.sh's own HTML template uses: <article>, <span>,
+# <h2>, <p>, <a>, <iframe class="mockup" src=mockup_path …>. None of
+# the advocate-controlled fields land inside a URL attribute (iframe
+# src comes from MOCKUP_PAT-validated mockup_path only). So the raw
+# presence of any of <script / <img / <svg / <iframe-with-foreign-src
+# indicates either template drift or an escape bypass.
+if grep -Fq '<script' "$gallery_html"; then
+  fail "gallery.html contains raw <script ...> opening"
+  xss_leaks=$((xss_leaks + 1))
+fi
+# Raw <img or <svg would mean an advocate field slipped past
+# html.escape — should never happen.
+if grep -qE '<(img|svg)\b' "$gallery_html"; then
+  fail "gallery.html contains raw <img/<svg (not from template)"
+  xss_leaks=$((xss_leaks + 1))
+fi
+# Positive check: at least one payload must be escaped (proves
+# html.escape actually ran over the field).
+if ! grep -q '&lt;script&gt;' "$gallery_html"; then
+  fail "gallery.html did not escape <script> payload — html.escape didn't run?"
+  xss_leaks=$((xss_leaks + 1))
+fi
+# gallery-text.md: sanitize() html-escapes `<` and `>` (to `&lt;`/`&gt;`)
+# so a paste into any markdown previewer renders inert. Legitimate
+# comparison text like "SaaS >$1M" survives as "SaaS &gt;$1M".
+if grep -Fq '<script' "$text_md" || grep -Fq '<svg' "$text_md" || grep -Fq '<img' "$text_md"; then
+  fail "gallery-text.md leaked raw < tag into sanitised output"
+  xss_leaks=$((xss_leaks + 1))
+fi
+# Positive check: the raw payload was transformed (not just dropped).
+if ! grep -Fq '&lt;script&gt;' "$text_md"; then
+  fail "gallery-text.md did not html-escape <script> payload — sanitize silently dropped content?"
+  xss_leaks=$((xss_leaks + 1))
+fi
+if [[ "$xss_leaks" -eq 0 ]]; then
+  pass "poisoned-previews-xss.json — no active script / on*= / raw HTML brackets in either artifact"
+fi
+rm -rf "$tmp_xss"
+
 # ----- S-3 : schema caps --------------------------------------------------
 echo
 echo "[S-3] idea-spec.schema.json maxLength / maxItems"
@@ -70,6 +129,85 @@ try:
 except jsonschema.ValidationError as e:
     print(f"  ✓ malicious-constraints.json — schema rejected ({e.validator} on {list(e.absolute_path)[:3]})")
 PY
+
+# ----- T-6 : open-browser.sh fake-PATH shim (Phase 3 Test & CI) ---------
+echo
+echo "[T-6] open-browser fake-PATH shim"
+tmp_t6="$(mktemp -d -t pf-t6-shim-XXXXXX)"
+mkdir -p "$tmp_t6/fake-bin"
+# Minimal xdg-open stub that records its argv to a file so we can
+# assert what open-browser.sh actually invoked.
+cat > "$tmp_t6/fake-bin/xdg-open" <<'SHIM'
+#!/bin/sh
+printf '%s\n' "$1" > "${XDG_OPEN_LOG:-/tmp/xdg-open-called.log}"
+exit 0
+SHIM
+chmod +x "$tmp_t6/fake-bin/xdg-open"
+target_html="$tmp_t6/gallery.html"
+printf '<!doctype html><html><body>stub</body></html>' > "$target_html"
+
+# Strip macOS-provided `open` and any real `xdg-open` so the fake is
+# first. `command -v open` must fail for the test to exercise the
+# xdg-open branch.
+t6_path="$tmp_t6/fake-bin:/usr/bin:/bin"
+t6_log="$tmp_t6/xdg-open.log"
+rc=0
+PATH="$t6_path" XDG_OPEN_LOG="$t6_log" \
+  bash "$REPO_ROOT/scripts/open-browser.sh" "$target_html" >/dev/null 2>&1 || rc=$?
+if [[ "$rc" -ne 0 ]]; then
+  # On macOS, /usr/bin/open still exists even with stripped PATH; skip
+  # the shim assertion then but at least confirm exit was 0 or 3 (non
+  # fatal per A-5). Exit 1 would mean S-2 URL gate misfired.
+  if [[ "$rc" -eq 1 ]]; then
+    fail "open-browser.sh exit=1 on a valid local file (S-2 gate misfire?)"
+  else
+    pass "T-6 skipped shim assertion — host has \`open\`; exit=$rc is A-5-non-fatal"
+  fi
+elif [[ ! -f "$t6_log" ]]; then
+  # No log → open-browser picked a non-xdg-open opener first
+  pass "T-6 skipped shim assertion — \`open\` or other opener won before xdg-open"
+else
+  captured=$(cat "$t6_log")
+  case "$captured" in
+    file:///*)
+      pass "T-6 xdg-open received file:// URL as expected: $captured"
+      ;;
+    *)
+      fail "T-6 xdg-open received non-file:// URL: $captured"
+      ;;
+  esac
+fi
+
+# S-2 URL gate: injection payload must exit 1.
+rc=0
+PATH="$t6_path" XDG_OPEN_LOG="$t6_log" \
+  bash "$REPO_ROOT/scripts/open-browser.sh" "http://evil.example/';alert(1);//" >/dev/null 2>&1 || rc=$?
+if [[ "$rc" -eq 1 ]]; then
+  pass "T-6 S-2 URL gate rejected injection payload (exit 1)"
+else
+  fail "T-6 S-2 URL gate accepted injection payload (exit=$rc, expected 1)"
+fi
+rm -rf "$tmp_t6"
+
+# ----- T-9.2 : preview-cache Korean UTF-8 hash ---------------------------
+echo
+echo "[T-9.2] preview-cache Korean UTF-8 key"
+utf8_key=$(bash "$REPO_ROOT/scripts/preview-cache.sh" key "한글 아이디어 테스트" pro 2>/dev/null || true)
+# Second Korean input — content differs, so hash MUST differ (proves
+# the hasher actually consumes non-ASCII bytes, not a locale-default
+# canonicalisation that collapses them).
+utf8_key_b=$(bash "$REPO_ROOT/scripts/preview-cache.sh" key "다른 한국어 아이디어" pro 2>/dev/null || true)
+# Known-good ASCII baseline for shape comparison.
+ascii_key=$(bash "$REPO_ROOT/scripts/preview-cache.sh" key "english baseline idea" pro 2>/dev/null || true)
+if ! [[ "$utf8_key" =~ ^[0-9a-f]{16,}$ ]]; then
+  fail "preview-cache Korean hash not hex: '$utf8_key'"
+elif [[ "$utf8_key" == "$utf8_key_b" ]]; then
+  fail "preview-cache Korean hash collapsed across distinct inputs (locale canon?)"
+elif [[ "$utf8_key" == "$ascii_key" ]]; then
+  fail "preview-cache Korean hash == ASCII-baseline hash (non-ASCII ignored?)"
+else
+  pass "preview-cache.sh key on Korean idea: $utf8_key (!= ASCII $ascii_key · !=2nd Korean $utf8_key_b)"
+fi
 
 # ----- S-5 : ledger symlink refusal --------------------------------------
 echo

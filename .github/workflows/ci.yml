@@ -77,6 +77,14 @@ jobs:
           [[ "$DEFAULT" == "standard" ]] || { echo "FAIL: defaultProfile expected 'standard', got '$DEFAULT'"; exit 1; }
           echo "✓ settings.json defaultProfile = standard"
 
+      - name: Fixture suites (Phase 1 security + Phase 3 T-4/T-6/T-9.2, v1.7.0+)
+        run: |
+          # jsonschema already installed a few steps up; the fixtures
+          # now fail-closed on missing dependency so this must stay in
+          # the same job that pip-installs it.
+          bash tests/fixtures/security/verify-security.sh
+          bash tests/fixtures/rule9-fp-guard/verify-rule9.sh
+
   test-hooks:
     name: Test hooks (unit)
     runs-on: ubuntu-latest
@@ -453,6 +461,15 @@ jobs:
             fi
             echo "✓ $dept: $count/$exp"
           done
+
+      - name: All 26 advocates reference idea.spec.json (v1.7.0+ T-1)
+        run: |
+          COUNT=$(grep -l "idea\.spec\.json" plugins/preview-forge/agents/ideation/advocates/P*.md | wc -l | tr -d ' ')
+          if [[ "$COUNT" -ne 26 ]]; then
+            echo "::error::Expected 26 advocates referencing idea.spec.json, got $COUNT"
+            exit 1
+          fi
+          echo "✓ 26/26 advocates reference idea.spec.json"
 
       - name: Check all agents use Opus 4.7
         run: |
