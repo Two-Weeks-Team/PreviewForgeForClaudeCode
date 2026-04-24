@@ -1,0 +1,31 @@
+# S-6 fixture — malicious hook-input paths whose run_id capture must be refused.
+#
+# Exercises: plugins/preview-forge/hooks/auto-retro-trigger.py
+#   SCORE_REPORT / FAILED_FLAG regexes.
+#
+# One payload per line. All lines MUST fail to match (find_run_id returns
+# None). The verify script iterates each line and asserts non-match.
+#
+# Canonical matching paths (these SHOULD match, used by verify to prove
+# the regex still accepts legitimate inputs — listed after the `---OK---`
+# separator).
+
+runs/../score/report.json
+runs/../../score/report.json
+runs/./score/report.json
+runs/.. /score/report.json
+runs/r-../score/report.json
+runs/r-12345678-123456extra/score/report.json
+runs/r-12345678/score/report.json
+runs/r-1234567-123456/score/report.json
+runs/r-12345678-12345/score/report.json
+runs/r-/score/report.json
+runs/r-12345678-123456/score/report.json.bak
+runs/../failed.flag
+runs/r-12345678-123456extra/failed.flag
+runs/r-12345678-123456/failed.flag.bak
+runs/.../failed.flag
+---OK---
+runs/r-20260423-221530/score/report.json
+runs/r-19700101-000000/score/report.json
+runs/r-20260424-000001/failed.flag

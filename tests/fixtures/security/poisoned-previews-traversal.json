@@ -1,0 +1,29 @@
+[
+  {
+    "id": "P01",
+    "advocate": "the-contrarian",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "This card tests traversal rejection — the mockup_path escapes the mockups/ sandbox and would leak /etc/passwd if the gallery generator did not refuse.",
+    "spec_alignment_notes": "S-1 regression — mockup_path='../../../etc/passwd' must be rejected by generate-gallery.sh.",
+    "mockup_path": "../../../etc/passwd"
+  },
+  {
+    "id": "P02",
+    "advocate": "the-privacy-hawk",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "This card tests sub-path traversal — value contains an internal slash, which is illegal since mockups are flat under mockups/.",
+    "spec_alignment_notes": "S-1 regression — mockup_path='subdir/P02-foo.html' must be rejected (no sub-paths allowed).",
+    "mockup_path": "mockups/../../secrets/key.pem"
+  },
+  {
+    "id": "P03",
+    "advocate": "the-researcher",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "This card tests hidden-file / parent-dir via leading dot.",
+    "spec_alignment_notes": "S-1 regression — relative.startswith('.') must reject '.hidden.html' and '..'.",
+    "mockup_path": ".hidden.html"
+  }
+]
