@@ -53,7 +53,7 @@ echo
 
 # 1. cwd hygiene
 CWD="$(pwd)"
-echo "[1/6] Workspace (cwd)"
+echo "[1/7] Workspace (cwd)"
 if [[ -n "$PLUGIN_REPO_ROOT" ]]; then
   fail "You are inside a Claude Code plugin repo at: $PLUGIN_REPO_ROOT"
   echo "     New runs would create runs/ inside plugin source (pollution + commit risk)." >&2
@@ -67,7 +67,7 @@ fi
 
 # 2. Disk space (need at least 2GB free for a reasonable run)
 echo
-echo "[2/6] Disk space"
+echo "[2/7] Disk space"
 if command -v df >/dev/null 2>&1; then
   AVAIL_KB=$(df -Pk "$CWD" | awk 'NR==2 {print $4}')
   AVAIL_MB=$((AVAIL_KB / 1024))
@@ -82,7 +82,7 @@ fi
 
 # 3. Claude Code presence and version
 echo
-echo "[3/6] Claude Code"
+echo "[3/7] Claude Code"
 if ! command -v claude >/dev/null 2>&1; then
   fail "claude CLI not found in PATH. Install from https://claude.com/product/claude-code"
 else
@@ -90,9 +90,29 @@ else
   ok "claude CLI: $VER"
 fi
 
-# 4. Plugin install status
+# 4. Python 3.10+ — D-2 (v1.7.0+). Plugin scripts/hooks (generate-gallery,
+# preview-cache, detect-surface, recommend-profile, idea-drift-detector,
+# cost-regression, escalation-ledger, standard-schema-lint) all invoke
+# `python3` directly. Missing or old python would crash /pf:new partway
+# through — typically mid-H1 — under `set -euo pipefail`. Fail early here
+# so the user fixes their environment before a 15-minute run implodes.
 echo
-echo "[4/6] Plugin install"
+echo "[4/7] Python 3.10+"
+if ! command -v python3 >/dev/null 2>&1; then
+  fail "python3 not found in PATH. Gallery / hooks / verify require 3.10+. Install: https://www.python.org/downloads/"
+else
+  PY_VER=$(python3 -c 'import sys; print(f"{sys.version_info.major}.{sys.version_info.minor}")' 2>/dev/null || echo "?")
+  PY_NUM=$(python3 -c 'import sys; print(sys.version_info.major * 100 + sys.version_info.minor)' 2>/dev/null || echo "0")
+  if [[ "$PY_NUM" -lt 310 ]]; then
+    fail "python3 $PY_VER detected; 3.10+ required (gallery/hooks use f-strings + match + pathlib newer APIs)."
+  else
+    ok "python3 $PY_VER"
+  fi
+fi
+
+# 5. Plugin install status
+echo
+echo "[5/7] Plugin install"
 if command -v claude >/dev/null 2>&1; then
   if claude plugin list 2>/dev/null | grep -q "pf@two-weeks-team"; then
     ok "pf@two-weeks-team installed"
@@ -105,9 +125,9 @@ else
   warn "cannot verify plugin (claude missing)"
 fi
 
-# 5. Memory bootstrap
+# 6. Memory bootstrap
 echo
-echo "[5/6] Memory bootstrap"
+echo "[6/7] Memory bootstrap"
 USER_MEM_DIR="${HOME}/.claude/preview-forge/memory"
 if [[ -d "$USER_MEM_DIR" ]]; then
   if [[ -f "$USER_MEM_DIR/LESSONS.md" ]]; then
@@ -120,9 +140,9 @@ else
   warn "user memory not initialized. Run /pf:bootstrap once per install."
 fi
 
-# 6. Network to Anthropic API
+# 7. Network to Anthropic API
 echo
-echo "[6/6] Network to Anthropic"
+echo "[7/7] Network to Anthropic"
 if command -v curl >/dev/null 2>&1; then
   START=$(date +%s%N)
   if curl -sSf -o /dev/null --max-time 5 "https://api.anthropic.com/v1/models" 2>/dev/null \
