@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.4...v1.6.0) (2026-04-24)
+
+
+### Features
+
+* **ideation,gallery:** Socratic spec + auto-gallery H1 (v1.6.0) ([#25](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/25)) ([e7fc885](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/e7fc885fe21df97cd5ccc4e6439eba9f2e66dfc7))
+
 ## [1.5.4](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.5.3...v1.5.4) (2026-04-23)
 
 
