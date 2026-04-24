@@ -124,6 +124,20 @@ def load_chosen_preview(run_root: Path) -> str:
     return "\n".join(p for p in parts if p)
 
 
+#
+# NOTE (v1.6.0): an earlier draft of this file extended Rule 9's token
+# anchor to include filled fields from runs/<id>/idea.spec.json (produced
+# by I1's Socratic interview). Codex review flagged repeatedly that even
+# the "technical-only" subset (persona pain, JTBD functional/emotional,
+# non_goals, …) produces false-positive drift warnings on legitimate
+# openapi.yaml / SPEC.md writes, because those soft-copy terms rarely
+# appear in API schemas or technical READMEs. Per the "scope discipline"
+# rule (flag same area ≥2 rounds → take the conservative path), Rule 9's
+# anchor remains exactly chosen_preview (pre-v1.6.0 behavior). The spec
+# remains consumed by (a) advocate ground truth in I_LEAD dispatch and
+# (b) the PreviewDD cache key; drift detection just doesn't read it.
+
+
 def read_hook_input() -> dict:
     try:
         raw = sys.stdin.read()

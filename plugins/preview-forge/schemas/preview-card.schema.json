@@ -65,6 +65,11 @@
     "mockup_path": {
       "type": "string",
       "pattern": "^mockups/P[0-9]{2}-.*\\.html$"
+    },
+    "spec_alignment_notes": {
+      "type": "string",
+      "description": "(v1.6.0+) Advocate's reasoning when an idea.spec.json field was null/\"unknown\" and the advocate had to choose. Format: 'X field unknown → assumed Y because Z'. Optional — empty string or omitted when every relevant spec field was already populated.",
+      "maxLength": 500
     }
   },
   "additionalProperties": false

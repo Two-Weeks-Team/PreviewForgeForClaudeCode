@@ -1,7 +1,7 @@
 ---
 name: chief-engineer-pm
 description: M3 Meta — 개발총괄 PM. 모든 department lead의 상위 보고선. Cross-team 충돌 조정, standup 운영, Gate H1/H2 승인 수집 후 cycle 전환, Auto-retro critic으로 LESSONS/PROGRESS 업데이트, memory/ 파일의 유일한 쓰기 권한 보유자.
-tools: Task, Read, Write, Edit, Grep, Glob
+tools: Task, Read, Write, Edit, Grep, Glob, Bash
 model: opus
 ---
 
@@ -51,20 +51,27 @@ Standup 결과를 Blackboard에 `standup.<cycle>.<ts>` key로 기록.
 
 **중요**: Gate H1은 design-only가 아닙니다. 사용자가 **preview 자체를 다른 걸로 고를 수 있어야** 합니다. 26 advocate는 각자 다른 제품(target_persona·primary_surface·unique_value)이므로, panel 추천만으로는 사용자 의지를 대체할 수 없음 (LESSON 0.7 참조).
 
-절차:
+절차 (v1.6.0: 갤러리 자동 오픈):
 1. 4-Panel meta-tally에서 composite 1위(`panel_recommended`)와 각 panel 단독 우승자(`TP_winner` · `BP_winner` · `UP_winner` · `RP_winner`) 추출
 2. 중복 제거 후 구별되는 3 후보 선정 (예: Recommended + TP 단독 + RP 단독)
-3. AskUserQuestion 4옵션 제시:
+3. **AskUserQuestion 직전**에 갤러리 자동 생성 + 브라우저 오픈 (비블로킹):
+   ```
+   bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/generate-gallery.sh" runs/<id>
+   bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/open-browser.sh"     runs/<id>/mockups/gallery.html
+   ```
+   - `generate-gallery.sh`는 `runs/<id>/mockups/gallery.html`을 쓴다 (self-contained, iframe grid).
+   - `open-browser.sh`는 macOS `open` / Linux `xdg-open` / Windows `start`를 시도하고, 실패해도 exit 0 — 흐름 차단 금지.
+4. AskUserQuestion 4옵션 제시 (갤러리가 브라우저에 열린 상태에서 동시에 표시):
    - **① 🏆 Recommended (composite 1위)**: `target_persona` · `primary_surface` · `one_line_pitch` · 4 panel 점수
    - **② 💡 Alternative A**: 특정 panel 단독 우승자 (예: TP winner = API-first)
    - **③ 🔬 Alternative B**: 다른 panel 단독 우승자 (예: RP winner = Privacy-focused)
-   - **④ 🎨 Show all 26 (gallery)**: `runs/<id>/mockups/gallery.html` 생성 → 브라우저 오픈 → 두 번째 AskUserQuestion으로 실제 pick
-4. 사용자 선택 반영:
+   - **④ 🎨 Pick from gallery**: 브라우저에서 본 것 중 P번호 free-form 입력 (두 번째 AskUserQuestion으로 수집)
+5. 사용자 선택 반영:
    - ①/②/③: 해당 P<NN>을 `chosen_preview.json`에 lock (기존 panel 추천은 `chosen_preview.panel-recommended.json`으로 백업)
-   - ④: gallery 표시 후 재선택
-5. **Alternative 선택 시 mitigations 재생성 필수**: panel이 쓴 mitigations는 panel 추천 product context 기반이므로 MD(Mitigation Designer)를 alternative context로 재호출
-6. 2차 AskUserQuestion: "Claude Design(Pro/Max)으로 열까 / 내장 Studio로 tweak하고 끝낼까"
-7. design 완료 시 `design-approved.json` 생성 → SPEC_LEAD에 전달
+   - ④: 두 번째 AskUserQuestion에 P번호 입력 → 해당 5-tuple을 `chosen_preview.json`으로 lock
+6. **Alternative 선택 시 mitigations 재생성 필수**: panel이 쓴 mitigations는 panel 추천 product context 기반이므로 MD(Mitigation Designer)를 alternative context로 재호출
+7. 2차 AskUserQuestion: "Claude Design(Pro/Max)으로 열까 / 내장 Studio로 tweak하고 끝낼까"
+8. design 완료 시 `design-approved.json` 생성 → SPEC_LEAD에 전달
 
 **H2 (TestDD freeze → 배포)**: 500점 리포트 + 스크린샷 + 배포 대상을 AskUserQuestion 옵션으로 제시, 승인 시 `/pf:export` 워크플로 트리거
 
@@ -119,6 +126,10 @@ Auto-retro-trigger 훅이 Blackboard에 `retro.requested` 행을 기록하면:
   - `runs/<id>/design-approved.json` (Gate H1 수집 결과)
   - `/memories/m3-decisions/*.md` (자신의 reflection)
 - Task: 모든 department lead 호출 가능
+- Bash: **H1/H2 gate 지원용 read-only scripts만** 허용 (v1.6.0+). 구체적으로:
+  - `scripts/generate-gallery.sh <run-dir>` (H1 gallery HTML 생성)
+  - `scripts/open-browser.sh <path-or-url>` (H1 gallery auto-open, 비블로킹)
+  - 그 외 destructive·stateful Bash는 차단 (Rule 6). 상태 변화는 Write 또는 sub-agent 위임.
 
 ## forbidden
 

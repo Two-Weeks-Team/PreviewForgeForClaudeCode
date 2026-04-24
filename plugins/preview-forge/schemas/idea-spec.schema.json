@@ -1,0 +1,94 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/schemas/idea-spec.schema.json",
+  "title": "IdeaSpec",
+  "description": "Structured idea specification produced by I1 Socratic Interviewer (3-batch × 3-4 Qs). Soft anchor — every semantic field may be 'unknown' or null so downstream advocates can still reason creatively while the filled subset anchors Rule 9 containment.",
+  "type": "object",
+  "required": ["idea_summary", "_filled_ratio", "_schema_version"],
+  "properties": {
+    "idea_summary": {
+      "type": "string",
+      "description": "Original one-liner from /pf:new, verbatim.",
+      "minLength": 1
+    },
+    "target_persona": {
+      "type": "object",
+      "properties": {
+        "profile": { "type": ["string", "null"], "description": "Concrete user — e.g. 'solo founder under time pressure', not 'small business'." },
+        "primary_pain": { "type": ["string", "null"], "description": "One-sentence description of the user's current pain point." },
+        "usage_frequency": {
+          "type": ["string", "null"],
+          "description": "Canonical values: daily | weekly | monthly | episodic | unknown. Free-form text (e.g. 'twice a day') also allowed so the AskUserQuestion 'Other' path is never silently discarded."
+        }
+      },
+      "additionalProperties": false
+    },
+    "primary_surface": {
+      "type": "object",
+      "properties": {
+        "platform": {
+          "type": ["string", "null"],
+          "description": "Canonical values: web | mobile | desktop | api | hybrid | unknown. Free-form text (e.g. 'Slack bot', 'Telegram') is preserved verbatim so Batch B 'Other' answers are never coerced into a lossy bucket."
+        },
+        "sync_model": {
+          "type": ["string", "null"],
+          "description": "Canonical values: real-time | eventual | batch | unknown. Free-form text allowed."
+        },
+        "offline_capable": { "type": ["boolean", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "jobs_to_be_done": {
+      "type": "object",
+      "description": "Functional/emotional/social framing per jobs-to-be-done skill.",
+      "properties": {
+        "functional": { "type": ["string", "null"], "description": "What practical outcome does the user achieve?" },
+        "emotional": { "type": ["string", "null"], "description": "How does the user want to feel — calm, confident, in control?" },
+        "social": { "type": ["string", "null"], "description": "How does the user want to be perceived by others?" }
+      },
+      "additionalProperties": false
+    },
+    "must_have_constraints": {
+      "type": "array",
+      "description": "Hard constraints captured by I1 Batch C. Canonical `type` buckets: regulatory | budget | latency | team_size | platform | data_residency. Free-form strings (e.g. 'air-gapped deployment', 'mandated vendor X') are also accepted so the Batch C 'Other' path is never silently dropped.",
+      "items": {
+        "type": "object",
+        "required": ["type", "value"],
+        "properties": {
+          "type": { "type": "string", "minLength": 1 },
+          "value": { "type": "string", "minLength": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "killer_feature": {
+      "type": ["string", "null"],
+      "description": "The 1 thing that differentiates this from existing solutions. 'unknown' or null if Socratic phase did not pin it down."
+    },
+    "non_goals": {
+      "type": "array",
+      "description": "Explicitly out-of-scope items. Empty array allowed (soft anchor).",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "monetization_model": {
+      "type": ["string", "null"],
+      "description": "Canonical values: freemium | subscription | one-time | b2b_saas | open_source | ads | transaction_fee | unknown. Free-form text allowed for Batch C 'Other' answers (e.g. 'sponsorship', 'grant-funded')."
+    },
+    "success_metric": {
+      "type": ["string", "null"],
+      "description": "How would you measure if this succeeded — revenue, DAU, retention, task completion time, NPS?"
+    },
+    "_filled_ratio": {
+      "type": "number",
+      "minimum": 0,
+      "maximum": 1,
+      "description": "Fraction of the 9 semantic field slots populated with a non-null / non-\"unknown\" value. Computation rule for I1 (to keep the ratio deterministic across implementations): (1) `idea_summary` is ALWAYS filled (it is `minLength: 1` required) and counts as 1 of 9. (2) Each of the 3 nested objects — `target_persona`, `primary_surface`, `jobs_to_be_done` — counts as filled iff AT LEAST ONE of its sub-fields is non-null/non-unknown (binary, not proportional). (3) `killer_feature`, `monetization_model`, `success_metric` each count as 1 slot, filled iff non-null and non-\"unknown\". (4) `must_have_constraints` and `non_goals` arrays count as filled iff length >= 1 (empty array is treated as `unfilled` — the user did not answer, not an affirmative \"no constraints\"). Denominator is 9. If < 0.5, I_LEAD logs `ideation.low_spec_quality` to the Blackboard but does not block advocate dispatch."
+    },
+    "_schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Schema version for forward-compat. v1.5.x runs have no idea.spec.json; v1.6.x introduced this schema."
+    }
+  },
+  "additionalProperties": false
+}

@@ -138,6 +138,17 @@ Memory Tool (`memory_20250818`)은 beta 헤더 없이 사용.
 - 권장(Recommended) option이 있으면 배열 첫 번째에 배치 + label 끝에 `(Recommended)` 표시
 - 자유형 텍스트 질문 패턴(`"어떻게 하시겠어요?"`, `"선호하는 방식은?"` 등) 출력 감지 시 PostToolUse 훅이 재시도 요구
 
+### Call budget per agent (v1.6.0+)
+
+| Agent / gate | Max calls per run | Notes |
+|---|---|---|
+| I1 idea-clarifier (Socratic interview) | **3** | 3-batch × 3-4 questions per call = 10-12 total questions in 3 modals |
+| Gate H1 (`chief-engineer-pm` at `/pf:design`) | **3** | (1) 4-way preview pick, (2) if gallery path → P-number free-form, (3) Claude Design vs internal Studio |
+| Gate H2 (`chief-engineer-pm` at `/pf:freeze`) | 1 | Deploy approval |
+| Every other agent | 0 | Only above agents may issue AskUserQuestion; others route through M1 escalation |
+
+Per-call payload cap: 1-4 questions per AskUserQuestion call (Claude Code tool schema limit). Pack related dimensions together to minimize modal count.
+
 ---
 
 ## 불변 원칙

@@ -2,13 +2,24 @@
 # Preview Forge — Proposal #11 PreviewDD-level cache
 #
 # Cache key:
-#   sha256(idea_text + advocate_set_hash + model_version + profile_name)
+#   sha256(idea_text + advocate_set_hash + model_version + profile_name + idea_spec_hash)
+#
+# `idea_spec_hash` is the sha256 of runs/<id>/idea.spec.json content when
+# available (v1.6.0+ runs post-I1 Socratic interview). When the spec path
+# is omitted or the file is missing, the hash component is the empty
+# string — v1.5.x callers without spec keep their original cache keys.
 #
 # Cache dir:
 #   ~/.claude/preview-forge/cache/preview-dd/<key>.json
 #
 # Operations (subcommand dispatch):
-#   key <idea_text> <profile_name>           — print cache key (stdout)
+#   key <idea_text> <profile_name> [<idea_spec_path>] [<previews_override>]
+#                                            — print cache key (stdout)
+#   (arg order: spec path is 3rd positional so the common 3-arg call with
+#    spec but no preview override works without positional padding. Legacy
+#    3-arg callers that passed previews_override as the 3rd arg are still
+#    supported: when the 3rd arg is a valid integer AND does not exist as
+#    a file, it is treated as previews_override for back-compat.)
 #   get <key>                                — print cached JSON if fresh; exit 1 if miss
 #   put <key> <json_path>                    — store JSON at key
 #   invalidate <key>                         — delete one key
@@ -41,10 +52,29 @@ print(hashlib.sha256(data).hexdigest()[:16])
 cmd_key() {
   local idea="$1"
   local profile="${2:-pro}"
-  # Optional 3rd arg: explicit preview count override (from /pf:new --previews=N).
-  # When set, the advocate set is distinct from the profile's default count —
-  # runs with different N must not collide in cache.
-  local previews_override="${3:-}"
+  # v1.6.0 arg order: 3rd = idea_spec_path (common call in /pf:new),
+  # 4th = previews_override (used only with /pf:new --previews=N).
+  # Back-compat shim: legacy 3-arg callers passed a bare integer as the
+  # previews_override. We disambiguate with two checks:
+  #   - ends in .json OR exists as a file → treat as v1.6.0 spec path
+  #   - pure integer (no .json)           → treat as legacy previews_override
+  # Both guards together prevent the coderabbit-flagged edge case where a
+  # numeric-named sibling file (e.g. `./26`) in cwd would mis-route.
+  local arg3="${3:-}"
+  local arg4="${4:-}"
+  local spec_path=""
+  local previews_override=""
+  if [[ -n "$arg3" ]]; then
+    if [[ "$arg3" == *.json || -f "$arg3" ]]; then
+      spec_path="$arg3"          # v1.6.0 3-arg call
+      previews_override="$arg4"
+    elif [[ "$arg3" =~ ^[0-9]+$ ]]; then
+      previews_override="$arg3"  # legacy 3-arg call (integer only)
+    else
+      spec_path="$arg3"          # unknown token — treat as spec path, warn below
+      previews_override="$arg4"
+    fi
+  fi
 
   # Load profile's preview count to derive advocate set hash. If profile
   # file missing, fall back to the profile name as the set discriminator.
@@ -65,7 +95,34 @@ except Exception:
   fi
   local advocate_set="${advocate_count:-unknown}-${profile}"
 
-  printf '%s\x1f%s\x1f%s\x1f%s' "$idea" "$advocate_set" "$MODEL_VERSION" "$profile" | hash
+  # Idea spec content hash: empty when absent (back-compat); sha256(file) otherwise.
+  # Back-compat: when no spec is involved, reuse the v1.5.x 4-field keyspace
+  # so pre-upgrade cache entries remain resolvable. v1.6.0+ runs that pass
+  # a real spec path get a distinct 5-field keyspace.
+  #
+  # Safety: if caller explicitly passed a spec_path but it does not resolve
+  # to a readable file, emit a stderr warning and skip silent fallback to
+  # the 4-field keyspace. A cache entry keyed as "v1.5.x-shaped" for a run
+  # that meant to include spec would be poisonous — repeat runs with
+  # different Socratic answers could share the same (pre-upgrade) cache
+  # entry. The warning surfaces the mistake so the caller can fix the path.
+  local spec_hash=""
+  if [[ -n "$spec_path" ]]; then
+    if [[ -f "$spec_path" ]]; then
+      spec_hash=$(python3 -c "
+import hashlib, sys
+print(hashlib.sha256(open(sys.argv[1], 'rb').read()).hexdigest()[:16])
+" "$spec_path")
+    else
+      echo "preview-cache.sh: spec_path='$spec_path' does not exist — key will not include spec hash (cache may hit stale v1.5.x entry)" >&2
+    fi
+  fi
+
+  if [[ -n "$spec_hash" ]]; then
+    printf '%s\x1f%s\x1f%s\x1f%s\x1f%s' "$idea" "$advocate_set" "$MODEL_VERSION" "$profile" "$spec_hash" | hash
+  else
+    printf '%s\x1f%s\x1f%s\x1f%s' "$idea" "$advocate_set" "$MODEL_VERSION" "$profile" | hash
+  fi
 }
 
 cmd_get() {
