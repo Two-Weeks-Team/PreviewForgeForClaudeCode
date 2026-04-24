@@ -20,11 +20,16 @@ model: opus
 ## 책임
 
 ### 1. Idea 전처리 — I1 Socratic 인터뷰 선행 (v1.6.0+)
-- `runs/<id>/idea.json`을 읽어 I1 idea-clarifier에 위임
+- **(v1.6.1 A-1) Weak-replay short-circuit — 최우선 체크**: I_LEAD 진입 시 `runs/<id>/_weak_replay.json` 존재 여부를 먼저 확인한다. 존재하면 /pf:new §4 pre-Socratic probe에서 사용자가 "Yes — 재사용"을 선택한 **명시적 replay 경로**이므로:
+  - I1 Socratic · advocate dispatch(§2) **둘 다 skip**
+  - `runs/<id>/previews.json`은 이미 오케스트레이터가 캐시에서 복원해둔 상태로 진입 — 존재 여부만 sanity-check
+  - §3 diversity 재검증(I2)부터 resume. `_filled_ratio:0`이라도 아래 "low_spec_quality → 여전히 dispatch" 기본 규칙은 **적용하지 않는다** (sidecar가 우선)
+  - Blackboard에 `preview_dd.weak_replay.resumed` 이벤트 기록
+- (비-replay 경로) `runs/<id>/idea.json`을 읽어 I1 idea-clarifier에 위임
 - I1은 **항상** 3-batch AskUserQuestion을 수행하여 `runs/<id>/idea.spec.json`을 산출 (이미 존재하면 스킵)
 - 산출된 `idea.spec.json._filled_ratio`를 확인:
   - `≥ 0.5` → 정상 dispatch
-  - `< 0.5` → Blackboard에 `ideation.low_spec_quality` 이벤트 기록(`{_filled_ratio, reason: "advocate divergence 가능"}`) 후 **여전히 dispatch** (hard gate 아님, 해커톤 데모 UX 우선). I_LEAD는 Bash 도구를 갖지 않으므로 stderr 대신 Blackboard를 쓴다.
+  - `< 0.5` → Blackboard에 `ideation.low_spec_quality` 이벤트 기록(`{_filled_ratio, reason: "advocate divergence 가능"}`) 후 **여전히 dispatch** (hard gate 아님, 해커톤 데모 UX 우선). I_LEAD는 Bash 도구를 갖지 않으므로 stderr 대신 Blackboard를 쓴다. 단, 위의 weak-replay short-circuit이 먼저 걸러졌다면 이 경로에는 도달하지 않는다.
 - I1 호출 자체가 실패(user abort 등)하면 Blackboard에 `ideation.spec_missing` 기록하고 M3에 escalate
 
 ### 2. Profile-aware Advocate 병렬 dispatch
@@ -63,9 +68,10 @@ TOKEN_BUDGET: <profile.budget.advocate_tokens>  # standard 1000, pro 1200, max 1
 - (target_persona, primary_surface) 중복 발견 시 해당 Advocate 2명에게 재작성 요청 (1회)
 - 3회 실패 시 skip + M3에 보고
 
-### 4. Cache pre-warming + PreviewDD-level cache (v1.3+, updated v1.6.0)
+### 4. Cache pre-warming + PreviewDD-level cache (v1.3+, updated v1.6.0, v1.6.1 A-1)
 - N Advocate의 공통 system prompt 부분(persona 공통 + mockup guidance)을 `cache_control: {"ttl": "1h"}`로 캐싱하여 N배 재사용
 - **PreviewDD 결과 자체 캐싱** (profile.caching.preview_dd=true일 때): cache key = sha256(`idea_text` + `advocate_set_hash` + `model_version` + `profile.name` + `idea_spec_hash`) — 실제 `scripts/preview-cache.sh` `cmd_key` 해시 순서와 일치. v1.6.0부터 `idea_spec_hash`가 키에 추가되어 동일 one-liner라도 Socratic 답변이 다르면 cache miss로 제대로 재생성된다. TTL: `profile.caching.ttl_seconds` (standard/pro 7일, max 캐시 비활성화). 캐시 hit 시 Advocate dispatch 전체 스킵 + 재검증만 수행.
+- **v1.6.1 A-1 — weak-alias dual-store**: `cmd_put`을 호출할 때 **세 번째 인자로 weak_key**(`idea_spec_hash`를 제외한 4-field 해시)를 함께 전달해야 한다. 같은 파일이 `<strong_key>.json`과 `<weak_key>.json` 두 곳에 복제되어, `/pf:new` §4의 pre-Socratic probe가 다음 run에서 weak-alias를 hit해 3 Socratic 모달을 사용자 선택으로 스킵할 수 있다. 호출 예: `scripts/preview-cache.sh put "<strong_key>" "runs/<id>/previews.json" "<weak_key>"`. weak_key 계산 시 **spec_path는 미전달**하되, `--previews=N` override가 있으면 그 값을 전달해야 strong 키와 advocate set hash가 정렬된다 — `scripts/preview-cache.sh key "<idea>" "<profile>"`(기본) 또는 `scripts/preview-cache.sh key "<idea>" "<profile>" "<N>"`(override). weak-replay 경로는 runs/<id>/에 이미 `previews.json`이 복원된 상태로 진입하며, 추가로 `runs/<id>/_weak_replay.json` sidecar(`{"_weak_replay":true,"_source_key":…,"replayed_at":…}`)가 기록되어 있으므로 §1의 weak-replay short-circuit이 dispatch를 명시적으로 스킵한다. `idea.spec.json`은 schema를 엄격히 따르는 3-필드 stub(`_schema_version:"1.0.0"` + `_filled_ratio:0` + `idea_summary`)만 보유하고 replay 메타데이터는 sidecar에서 관리하므로 `idea-spec.schema.json`의 `additionalProperties:false` 제약과 충돌하지 않는다.
 - Cache location: `~/.claude/preview-forge/cache/preview-dd/<key>.json`
 - `/pf:new --no-cache` 옵션으로 bypass 가능.
 

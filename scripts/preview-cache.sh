@@ -21,7 +21,14 @@
 #    supported: when the 3rd arg is a valid integer AND does not exist as
 #    a file, it is treated as previews_override for back-compat.)
 #   get <key>                                — print cached JSON if fresh; exit 1 if miss
-#   put <key> <json_path>                    — store JSON at key
+#   put <key> <json_path> [<weak_alias_key>] — store JSON at key; when the
+#                                              optional weak_alias_key is
+#                                              given (v1.6.1 A-1), a
+#                                              duplicate is also written
+#                                              under that key so
+#                                              pre-Socratic replay probes
+#                                              can hit this entry without
+#                                              knowing the spec hash.
 #   invalidate <key>                         — delete one key
 #   prune                                    — delete entries older than TTL (per profile)
 #
@@ -172,8 +179,33 @@ except Exception:
 cmd_put() {
   local key="$1"
   local src="$2"
+  # v1.6.1 A-1: optional weak-key alias. When caller supplies a 4-field
+  # "no-spec" key in addition to the 5-field strong key, duplicate the
+  # cache file under the weak key too. This lets the §4 pre-Socratic
+  # probe in /pf:new detect a replay BEFORE it asks the 3 Socratic
+  # modals — restoring the one-click narrative that v1.5.x offered.
+  # Duplicated content (not a symlink) keeps TTL pruning independent
+  # per key and sidesteps dangling-link edge cases on Windows.
+  local alias_key="${3:-}"
   cp "$src" "$CACHE_DIR/$key.json"
-  echo "cached: $CACHE_DIR/$key.json"
+  if [[ -n "$alias_key" && "$alias_key" != "$key" ]]; then
+    # Alias write is best-effort — the strong key above is the source
+    # of truth. Under `set -euo pipefail`, a bare `cp` failure would
+    # abort cmd_put and surface as a non-zero exit to the caller, even
+    # though the primary cache entry is already safely on disk.
+    # Wrapping the alias write in an `if` keeps the exit status
+    # caller-visible-success; we log the degradation to stderr so a
+    # missed alias doesn't look like a silent feature regression. The
+    # next successful put recreates the alias (self-healing).
+    if cp "$src" "$CACHE_DIR/$alias_key.json" 2>/dev/null; then
+      echo "cached: $CACHE_DIR/$key.json (+weak-alias $alias_key.json)"
+    else
+      echo "preview-cache.sh: weak-alias write failed for $alias_key.json (primary $key.json intact; next put will retry)" >&2
+      echo "cached: $CACHE_DIR/$key.json"
+    fi
+  else
+    echo "cached: $CACHE_DIR/$key.json"
+  fi
 }
 
 cmd_invalidate() {
