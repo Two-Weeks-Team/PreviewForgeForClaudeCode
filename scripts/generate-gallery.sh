@@ -85,8 +85,18 @@ fi
 python3 - "$previews_file" "$out" <<'PYEOF'
 import html
 import json
+import re
 import sys
 from pathlib import Path
+
+# S-1 defense: mockup_path must resolve to a well-formed advocate filename
+# ("P07-the-mobile-first.html"). Anything with path separators, parent-dir
+# markers, URL schemes, or off-pattern tokens is treated as tainted — a
+# poisoned previews.json entry (advocate output, seed import, cache replay)
+# must never reach the iframe src. The sandbox="allow-same-origin" policy
+# on file:// origin leaks parent-dir contents to an attacker-controlled
+# iframe DOM, so strict allowlisting is the only safe posture.
+MOCKUP_PAT = re.compile(r"^P\d{2}-[a-z0-9-]+\.html$")
 
 previews_path = Path(sys.argv[1])
 out_path = Path(sys.argv[2])
@@ -113,6 +123,16 @@ def card(p):
     # untouched while letting the gallery resolve siblings correctly.
     raw_mockup = str(p.get("mockup_path", ""))
     relative = raw_mockup[len("mockups/"):] if raw_mockup.startswith("mockups/") else raw_mockup
+    # S-1 defense: reject everything that is not a bare advocate filename.
+    # "/" catches sub-path escapes ("../a" post-strip, "a/b"), "." catches
+    # parent-dir and hidden-file traversal, and MOCKUP_PAT catches URL
+    # schemes ("javascript:..."), query/fragment smuggling, and mixed-case.
+    if "/" in relative or relative.startswith(".") or not MOCKUP_PAT.match(relative):
+        sys.stderr.write(
+            "generate-gallery.sh: skipping preview id={0!r} with unsafe "
+            "mockup_path={1!r}\n".format(p.get("id"), p.get("mockup_path"))
+        )
+        return None
     mockup_path = esc(relative)
     advocate = esc(p.get("advocate", ""))
     pid = esc(p.get("id", ""))
@@ -150,8 +170,9 @@ def card(p):
     </article>"""
 
 
-cards = "\n".join(card(p) for p in previews)
-count = len(previews)
+rendered = [c for c in (card(p) for p in previews) if c is not None]
+cards = "\n".join(rendered)
+count = len(rendered)
 
 doc = f"""<!doctype html>
 <html lang="en">
@@ -322,5 +343,5 @@ doc = f"""<!doctype html>
 
 out_path.parent.mkdir(parents=True, exist_ok=True)
 out_path.write_text(doc, encoding="utf-8")
-print(f"generate-gallery.sh: wrote {out_path} ({count} previews)")
+print(f"generate-gallery.sh: wrote {out_path} ({count} of {len(previews)} previews)")
 PYEOF
