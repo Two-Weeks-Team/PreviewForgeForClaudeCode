@@ -57,15 +57,18 @@ Standup 결과를 Blackboard에 `standup.<cycle>.<ts>` key로 기록.
 3. **AskUserQuestion 직전**에 갤러리 자동 생성 + 브라우저 오픈 (비블로킹):
    ```
    bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/generate-gallery.sh" runs/<id>
-   bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/open-browser.sh"     runs/<id>/mockups/gallery.html
+   OPEN_RC=0
+   bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/open-browser.sh" runs/<id>/mockups/gallery.html || OPEN_RC=$?
    ```
-   - `generate-gallery.sh`는 `runs/<id>/mockups/gallery.html`을 쓴다 (self-contained, iframe grid).
-   - `open-browser.sh`는 macOS `open` / Linux `xdg-open` / Windows `start`를 시도하고, 실패해도 exit 0 — 흐름 차단 금지.
+   - `generate-gallery.sh`는 두 아티팩트를 동시에 쓴다 (v1.7.0+ A-5): `runs/<id>/mockups/gallery.html` (self-contained iframe grid, 브라우저용) + `runs/<id>/mockups/gallery-text.md` (plain-text 26-card summary, cat/grep 가능).
+   - `open-browser.sh` exit 코드 (v1.7.0+ A-5): `0`= 브라우저 실제 실행, `3`= opener 없음 (headless · CI · SSH-without-DISPLAY), `1`= bad args / S-2 URL 거부.
+   - exit 3이 나오면 option ④를 swap한다(아래 §4). exit 0일 때는 user가 브라우저에서 이미 26 카드를 본 상태로 AskUserQuestion이 뜬다. exit 1은 입력 자체가 잘못된 경우로 H1을 에러로 중단한다.
 4. AskUserQuestion 4옵션 제시 (갤러리가 브라우저에 열린 상태에서 동시에 표시):
    - **① 🏆 Recommended (composite 1위)**: `target_persona` · `primary_surface` · `one_line_pitch` · 4 panel 점수
    - **② 💡 Alternative A**: 특정 panel 단독 우승자 (예: TP winner = API-first)
    - **③ 🔬 Alternative B**: 다른 panel 단독 우승자 (예: RP winner = Privacy-focused)
-   - **④ 🎨 Pick from gallery**: 브라우저에서 본 것 중 P번호 free-form 입력 (두 번째 AskUserQuestion으로 수집)
+   - **④ 🎨 Pick from gallery** (OPEN_RC == 0): 브라우저에서 본 것 중 P번호 free-form 입력 (두 번째 AskUserQuestion으로 수집)
+   - **④ 📜 Pick from full inline list** (OPEN_RC == 3, v1.7.0+ A-5 headless fallback): 브라우저가 열리지 않았으므로 두 번째 AskUserQuestion modal에서 **26 P-entry 전체 + 1줄 pitch**를 options로 제시 (multiSelect=false, 4-option 묶음 × 7 묶음). Description에는 `runs/<id>/mockups/gallery-text.md`를 cat해서 읽으라는 안내도 포함 — 텍스트 내용은 `P01-the-contrarian — <persona> / <surface> — <pitch>` 포맷의 줄 단위 리스트.
 5. 사용자 선택 반영:
    - ①/②/③: 해당 P<NN>을 `chosen_preview.json`에 lock (기존 panel 추천은 `chosen_preview.panel-recommended.json`으로 백업)
    - ④: 두 번째 AskUserQuestion에 P번호 입력 → 해당 5-tuple을 `chosen_preview.json`으로 lock

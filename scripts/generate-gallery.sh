@@ -363,3 +363,39 @@ out_path.parent.mkdir(parents=True, exist_ok=True)
 out_path.write_text(doc, encoding="utf-8")
 print(f"generate-gallery.sh: wrote {out_path} ({count} of {len(previews)} previews)")
 PYEOF
+
+# A-5 (v1.7.0+): also emit a plain-text `gallery-text.md` so the H1 gate's
+# inline-list fallback (when open-browser.sh exits 3 — no opener) has a
+# cat-able summary to surface in terminal without needing a browser. This
+# never replaces the HTML gallery; it is a companion artifact.
+text_out="$mockups_dir/gallery-text.md"
+python3 - "$previews_file" "$text_out" <<'TEXT_PY'
+import json
+import sys
+from pathlib import Path
+
+previews = json.load(open(sys.argv[1]))
+
+def row(p):
+    pid = str(p.get("id", "")).strip() or "P??"
+    advocate = str(p.get("advocate", "")).strip() or "(unknown)"
+    persona = str(p.get("target_persona", "")).strip() or "(no persona)"
+    surface = str(p.get("primary_surface", "")).strip() or "(no surface)"
+    pitch = str(p.get("one_liner_pitch", "")).strip() or "(no pitch)"
+    # One line per card — grep/pick-friendly. Escape pipes to keep the
+    # markdown table renderable if a user happens to paste this file.
+    pitch_flat = pitch.replace("|", "\\|").replace("\n", " ")
+    return f"- **{pid}** · `{advocate}` — {persona} / {surface} — {pitch_flat}"
+
+lines = ["# Preview Forge — Gallery (text fallback)", ""]
+lines.append(
+    f"{len(previews)} preview cards. Pick one by its `P##` id in the "
+    "AskUserQuestion modal. If you have a browser opener, the full "
+    "iframe gallery is at `gallery.html` in this same directory."
+)
+lines.append("")
+lines.extend(row(p) for p in previews)
+lines.append("")
+Path(sys.argv[2]).write_text("\n".join(lines) + "\n", encoding="utf-8")
+print(f"generate-gallery.sh: wrote {sys.argv[2]} ({len(previews)} cards)")
+TEXT_PY
