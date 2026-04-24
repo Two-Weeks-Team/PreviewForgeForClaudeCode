@@ -61,13 +61,21 @@ MAX_FIELD = {
 
 
 def sanitize(value, max_len):
-    """Allowlist-by-category: drop Unicode control chars (except space),
-    collapse whitespace runs, cap length."""
+    """Allowlist-by-category for gallery-text.md (T-4 defense-in-depth):
+    - drop Unicode control-category chars (keep ASCII space)
+    - strip HTML angle brackets so `<script>` payloads can't sit raw in a
+      file that a user might open in a markdown-previewer or paste into
+      a chat that renders HTML (terminal cat is fine either way, but
+      we're cheap here)
+    - collapse whitespace runs
+    - cap length per field
+    """
     s = str(value or "")
     s = "".join(
         ch for ch in s
         if ch == " " or unicodedata.category(ch)[0] != "C"
     )
+    s = s.replace("<", "").replace(">", "")
     s = " ".join(s.split())
     return s[:max_len]
 
