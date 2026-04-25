@@ -16,6 +16,15 @@ the "lots of tiles side-by-side" wow factor in a normal banner ratio.
 
 Determinism: fonts loaded, animations disabled, viewport pinned, file://
 URI. Re-running on the same gallery.html produces a byte-stable PNG.
+
+Setup (#95 / #94 follow-up — Playwright is now a pinned dev dependency):
+
+    python3 -m pip install -r requirements-dev.txt
+    python3 -m playwright install --with-deps firefox chromium
+
+See requirements-dev.txt and CONTRIBUTING.md ("Python dev setup") for the
+full contract. Previously this script relied on an ambient `playwright`
+install; the pin makes it reproducible on a fresh clone.
 """
 from __future__ import annotations
 
