@@ -1,0 +1,152 @@
+[
+  {
+    "id": "skip-interview",
+    "rationale": "B-3 Skip-interview path — only the 3 schema-required keys. Should land in fallback tier (< 0.2).",
+    "expected_ratio": 0.1111,
+    "spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.0,
+      "idea_summary": "회의록 자동 정리 + action item 추출"
+    }
+  },
+  {
+    "id": "fast-path-4-required",
+    "rationale": "B-1 fast path — 4 required answered, all optionals skipped. idea_summary + target_persona.profile + primary_surface.platform + killer_feature + must_have_constraints[1] = 5 slots. Lands in medium tier (0.4–0.7).",
+    "expected_ratio": 0.5556,
+    "spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.5556,
+      "idea_summary": "회의록 자동 정리 + action item 추출",
+      "target_persona": {
+        "profile": "스타트업 PM",
+        "primary_pain": null,
+        "usage_frequency": null
+      },
+      "primary_surface": {
+        "platform": "web",
+        "sync_model": null,
+        "offline_capable": null
+      },
+      "jobs_to_be_done": {
+        "functional": null,
+        "emotional": null,
+        "social": null
+      },
+      "killer_feature": "회의 직후 자동 action item 분배",
+      "must_have_constraints": [{"type": "regulatory", "value": "PII"}],
+      "non_goals": [],
+      "monetization_model": null,
+      "success_metric": null
+    }
+  },
+  {
+    "id": "full-path-9-9",
+    "rationale": "Every semantic slot answered. High tier ground truth.",
+    "expected_ratio": 1.0,
+    "spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 1.0,
+      "idea_summary": "회의록 자동 정리 + action item 추출",
+      "target_persona": {
+        "profile": "스타트업 PM",
+        "primary_pain": "회의 직후 30분 정리 시간 낭비",
+        "usage_frequency": "daily"
+      },
+      "primary_surface": {
+        "platform": "web",
+        "sync_model": "real-time",
+        "offline_capable": false
+      },
+      "jobs_to_be_done": {
+        "functional": "회의 후 5분 안에 action item 자동 분배",
+        "emotional": "안심",
+        "social": "팀에 정확한 follow-up 보여주기"
+      },
+      "killer_feature": "회의 직후 자동 action item 분배",
+      "must_have_constraints": [{"type": "regulatory", "value": "PII"}],
+      "non_goals": ["video editing", "billing"],
+      "monetization_model": "subscription",
+      "success_metric": "weekly active teams"
+    }
+  },
+  {
+    "id": "edge-nested-all-null",
+    "rationale": "Nested object present but all sub-fields null → should NOT count as filled (binary slot rule). Counted slots: idea_summary only.",
+    "expected_ratio": 0.1111,
+    "spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.1111,
+      "idea_summary": "회의록 자동 정리 + action item 추출",
+      "target_persona": {
+        "profile": null,
+        "primary_pain": null,
+        "usage_frequency": null
+      },
+      "primary_surface": {
+        "platform": null,
+        "sync_model": null,
+        "offline_capable": null
+      },
+      "jobs_to_be_done": {
+        "functional": null,
+        "emotional": null,
+        "social": null
+      },
+      "killer_feature": null,
+      "must_have_constraints": [],
+      "non_goals": [],
+      "monetization_model": null,
+      "success_metric": null
+    }
+  },
+  {
+    "id": "edge-leaf-unknown",
+    "rationale": "Leaf string set to 'unknown' (case-insensitive) does NOT count as filled. Slots: idea_summary + target_persona (profile non-null) = 2/9 ≈ 0.2222.",
+    "expected_ratio": 0.2222,
+    "spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.2222,
+      "idea_summary": "회의록 자동 정리 + action item 추출",
+      "target_persona": {
+        "profile": "스타트업 PM",
+        "primary_pain": null,
+        "usage_frequency": null
+      },
+      "killer_feature": "Unknown",
+      "monetization_model": "unknown",
+      "success_metric": "UNKNOWN",
+      "must_have_constraints": [],
+      "non_goals": []
+    }
+  },
+  {
+    "id": "edge-empty-arrays",
+    "rationale": "Empty arrays do NOT count as filled (length >= 1 required). Slots: idea_summary + target_persona + primary_surface + killer_feature = 4/9 ≈ 0.4444.",
+    "expected_ratio": 0.4444,
+    "spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.4444,
+      "idea_summary": "회의록 자동 정리 + action item 추출",
+      "target_persona": {"profile": "스타트업 PM"},
+      "primary_surface": {"platform": "web"},
+      "killer_feature": "auto action item",
+      "must_have_constraints": [],
+      "non_goals": []
+    }
+  },
+  {
+    "id": "edge-bool-false",
+    "rationale": "primary_surface.offline_capable=false IS 'user answered' (not null), so primary_surface counts. Slots: idea_summary + primary_surface = 2/9 ≈ 0.2222.",
+    "expected_ratio": 0.2222,
+    "spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.2222,
+      "idea_summary": "회의록 자동 정리 + action item 추출",
+      "primary_surface": {
+        "platform": null,
+        "sync_model": null,
+        "offline_capable": false
+      }
+    }
+  }
+]

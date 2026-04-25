@@ -1,0 +1,76 @@
+[
+  {
+    "id": "respect-user-pick-api-first",
+    "class": "technical",
+    "target_subpath": "specs/openapi.yaml",
+    "rationale": "User picked P10 API-first. Composite winner was P02 Slack bot (different vocabulary). Incoming OpenAPI write uses P10 vocabulary — should pass Rule 9 because the anchor is chosen_preview, not composite_winner.",
+    "chosen_preview": {
+      "id": "P10",
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "title": "Reconciliation API",
+      "pitch": "Automate invoice reconciliation across multiple banking providers with audit-ready diffs",
+      "one_liner": "Invoice reconciliation API for freelance accountants"
+    },
+    "panel_composite_winner_label": "P02-the-ops-veteran (Slack bot)",
+    "idea_spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.8,
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "target_persona": {
+        "profile": "freelance accountant",
+        "primary_pain": "deadline-panic during tax season",
+        "usage_frequency": "daily"
+      },
+      "primary_surface": {"platform": "api", "sync_model": "real-time"},
+      "jobs_to_be_done": {
+        "functional": "reconcile invoices across bank feeds in under 5 minutes",
+        "emotional": "feel in control, not panicked",
+        "social": "look meticulous to clients"
+      },
+      "must_have_constraints": [
+        {"type": "regulatory", "value": "SOC2 audit-ready logging"},
+        {"type": "latency", "value": "<500ms p95 reconciliation endpoint"}
+      ],
+      "non_goals": ["general accounting UI", "tax filing"]
+    },
+    "incoming_content": "openapi: 3.1.0\ninfo:\n  title: Invoice Reconciliation API\n  version: 1.0.0\n  description: Reconciliation endpoints for freelance accountant clients with SOC2 audit logging — bank feed reconciliation under 500ms p95.\npaths:\n  /reconcile/invoices:\n    post:\n      summary: Reconcile a batch of invoices against bank feeds\n      description: Accepts invoice records and matches them against connected bank feed transactions. Returns audit-ready diffs.\n      responses:\n        '200':\n          description: Reconciliation result with audit diffs\n  /reconcile/status:\n    get:\n      summary: Poll reconciliation job status\ncomponents:\n  schemas:\n    Invoice:\n      type: object\n      required: [id, amount, currency, vendor]\n      properties:\n        id: {type: string}\n        amount: {type: number}\n        currency: {type: string}\n        vendor: {type: string}\n",
+    "expected_exit": 0
+  },
+  {
+    "id": "block-drift-to-composite-winner",
+    "class": "narrative",
+    "target_subpath": "apps/web/README.md",
+    "rationale": "User picked P10 API-first. If a write drifts toward the panel composite_winner P02 Slack bot (totally different vocabulary — Slack, channel, slash command, slackbot), Rule 9 must block. This is the exact LESSON 0.7 regression — the system silently pulling toward the panel's preferred direction.",
+    "chosen_preview": {
+      "id": "P10",
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "title": "Reconciliation API",
+      "pitch": "Automate invoice reconciliation across multiple banking providers with audit-ready diffs",
+      "one_liner": "Invoice reconciliation API for freelance accountants"
+    },
+    "panel_composite_winner_label": "P02-the-ops-veteran (Slack bot)",
+    "idea_spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.8,
+      "idea_summary": "Invoice reconciliation API for freelance accountants",
+      "target_persona": {
+        "profile": "freelance accountant",
+        "primary_pain": "deadline-panic during tax season",
+        "usage_frequency": "daily"
+      },
+      "primary_surface": {"platform": "api", "sync_model": "real-time"},
+      "jobs_to_be_done": {
+        "functional": "reconcile invoices across bank feeds in under 5 minutes",
+        "emotional": "feel in control, not panicked",
+        "social": "look meticulous to clients"
+      },
+      "must_have_constraints": [
+        {"type": "regulatory", "value": "SOC2 audit-ready logging"},
+        {"type": "latency", "value": "<500ms p95 reconciliation endpoint"}
+      ],
+      "non_goals": ["general accounting UI", "tax filing"]
+    },
+    "incoming_content": "# Slack Standup Bot\n\nA conversational Slack bot that runs daily standups in any channel. Members reply with their updates via slash command and the bot summarizes participation.\n\n## Slash commands\n\n- `/standup start` — open today's standup thread in the current channel\n- `/standup remind` — DM members who haven't replied yet\n- `/standup summary` — post the rolled-up text summary back to the channel\n\n## Setup\n\n```bash\nnpm install\nSLACK_TOKEN=xoxb-... SLACK_SIGNING=... npm run dev\n```\n\nAdd the bot to a channel, then anyone can invoke `/standup` to start a session.\n\n## Notes\n\nOnly works in Slack. Channel members must opt in via the slash command before the bot can DM them. Workspace admins can disable the bot per-channel from the Slack admin console.\n",
+    "expected_exit": 2
+  }
+]

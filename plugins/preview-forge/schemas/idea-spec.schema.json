@@ -50,13 +50,16 @@
     },
     "must_have_constraints": {
       "type": "array",
-      "description": "Hard constraints captured by I1 Batch C. Canonical `type` buckets: regulatory | budget | latency | team_size | platform | data_residency. Free-form strings (e.g. 'air-gapped deployment', 'mandated vendor X') are also accepted so the Batch C 'Other' path is never silently dropped. S-3 (v1.7.0+): array is capped at 20 entries with per-field maxLength so a poisoned idea.spec.json cannot blow up advocate prompt size / Rule 9 containment budget.",
+      "description": "Hard constraints captured by I1 Batch C. Canonical `type` buckets: regulatory | budget | latency | team_size | platform | data_residency | other. Free-form strings (e.g. 'air-gapped deployment', 'mandated vendor X') belong under `type: \"other\"` with the verbatim text in `value` — so the Batch C 'Other' path is never silently dropped. S-3 (v1.7.0+): array is capped at 20 entries with per-field maxLength so a poisoned idea.spec.json cannot blow up advocate prompt size / Rule 9 containment budget. T-3 (v1.7 audit): the canonical 7-bucket `type.enum` and the `scripts/normalize-constraints.py` reference normalizer keep the cache key stable across I1 implementations.",
       "maxItems": 20,
       "items": {
         "type": "object",
         "required": ["type", "value"],
         "properties": {
-          "type": { "type": "string", "minLength": 1, "maxLength": 50 },
+          "type": {
+            "type": "string",
+            "enum": ["regulatory", "budget", "latency", "team_size", "platform", "data_residency", "other"]
+          },
           "value": { "type": "string", "minLength": 1, "maxLength": 2000 }
         },
         "additionalProperties": false
