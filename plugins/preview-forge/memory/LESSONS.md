@@ -49,7 +49,7 @@
 - **참조**: `runs/r-20260422-184337/chosen_preview.json` `selection_metadata.prior_stale_override_noted` 필드, blackboard 이벤트 `user-override 11:19:15`(외부) vs `chosen_preview.locked 11:43:17`(내부), commit이 반영된 `v1.2.0` 향후 hook 강화 TODO.
 
 ### 0.7 Panel 추천 ≠ 사용자 의지 — Preview 선택은 사용자가 해야 (category 1 PreviewDD, 핵심 UX 결함) ✅ **resolved v1.1.0 + reinforced v1.6.0+**
-- **문제**: v1.0.0의 PreviewDD는 4-Panel meta-tally로 1개 자동 선정 → `chosen_preview.json` 즉시 lock → Gate H1은 design tweak만. 사용자는 **선택 자체에 개입 불가**, "143 agent가 정해버린" 느낌. 실제 첫 run에서 composite 1위는 P02 Slack bot이었으나 사용자는 P19(legal depo paralegal, 소송 증언녹취 도구)를 의도적으로 선택 — 4 패널 어디에도 top-N 진입 못한 niche. panel 관점은 수량화 가능한 축을 재는 도구이지 사용자 의지의 대체물이 아님
+- **문제**: v1.0.0의 PreviewDD는 4-Panel meta-tally로 1개 자동 선정 → `chosen_preview.json` 즉시 lock → Gate H1은 design tweak만. 사용자는 **선택 자체에 개입 불가**, "143 agent가 정해버린" 느낌. 실제 첫 run(r-20260422-184337)에서 composite 1위는 P02 Slack bot이었으나 사용자는 정식 Gate H1 AskUserQuestion에서 **P10(TP 단독 1위 API-first)을 의도적으로 선택** — composite 우승자가 아닌 단일 panel 우승자였고, 일반적 marketability 축에서는 밀렸지만 사용자가 원하는 제품 방향. (참고: 같은 run에서 외부 보조 assistant가 P19 legal depo paralegal로 chosen_preview를 한 번 덮어썼으나 stale override로 폐기됨 — LESSON 0.8 single-writer 정책 도화선.) panel 관점은 수량화 가능한 축을 재는 도구이지 사용자 의지의 대체물이 아님.
 - **원인**: "인간의 2-click" 마케팅에 집중하다 보니 이상적 경로에서 Gate H1이 design-only가 됨. 하지만 26 advocate는 **디자인만 다른 게 아니라 target_persona·primary_surface·unique_value·killer_feature가 완전히 다른 제품** — 선택 = 제품 방향 결정. 더 깊은 root cause: 26 advocate가 **사용자 의도를 모른 채 dispatch**되어 26개 모두 사용자가 원하지 않는 방향으로 갈 수 있음 (legal depo paralegal은 어떤 advocate에서도 top-N 진입 불가).
 - **해결 (1차, v1.1.0 — Gate H1 선택 가능)**: Gate H1을 **"Preview 선택 + Design tweak" 통합 AskUserQuestion**으로 재설계. 4 옵션 구성:
     1. **추천** (composite 1위, Recommended)

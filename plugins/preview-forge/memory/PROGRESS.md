@@ -16,7 +16,7 @@
 
 | Run ID | 시작 | 종료 | 결과 | 아이디어 | chosen_preview | freeze score | LESSONS 추가 |
 |---|---|---|---|---|---|---|---|
-| r-20260422-184337 | 2026-04-22 18:43 | (Gate H1까지) | PARTIAL — Gate H1 선택 후 외부 override 충돌, 사용자 P19 final | 회의록 자동 정리 + action item 추출 | P19-the-embedded (legal depo) | — | 0.7, 0.8 |
+| r-20260422-184337 | 2026-04-22 18:43 | (Gate H1까지) | PARTIAL — 외부 보조 assistant가 P19로 chosen_preview를 덮어썼으나 stale override로 폐기. 사용자는 정식 Gate H1에서 P10 선택, run-supervisor가 11:42:30 P10으로 재기록 + lock. | 회의록 자동 정리 + action item 추출 | P10-the-dreamer (TP-favored API-first) | — | 0.7, 0.8 |
 | r-20260423-093527 | 2026-04-23 09:35 | (TestDD 미달) | FROZEN_FAILED — 6 POST 라우트 typia validate 미작동, score 451/500 | 당뇨환자 식단 가이드 | (standard profile) | 451 (J2: 67 FAIL) | 11.1 |
 
 ## 과거 LESSONS 요약 (링크만)
