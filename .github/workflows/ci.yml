@@ -99,6 +99,21 @@ jobs:
           bash tests/fixtures/lesson07-regression/verify-lesson07.sh
           bash tests/fixtures/seed-expectations/verify-seed-expectations.sh
 
+      - name: T-7 e2e mock-bootstrap (3 profiles)
+        # Issue #79 (Option A): runs the deterministic /pf:new artifact
+        # pipeline against canned Socratic + Gate H1 responses. Catches
+        # regressions in: filled-ratio-gate, generate-gallery (iframe
+        # count), h1-modal-helper (browser/inline branches),
+        # lint-framework-convergence, generate-spec-anchor-audit.
+        # Pre-W3.9, clean-room manual runs were the only validation path —
+        # this step makes "demo day = first real run" no longer a failure
+        # mode. Same matrix as the rest of verify-plugin (ubuntu + macos)
+        # so BSD-vs-GNU userland divergence is also caught.
+        run: |
+          for profile in standard pro max; do
+            bash tests/e2e/mock-bootstrap.sh "$profile"
+          done
+
   test-hooks:
     name: Test hooks (unit)
     runs-on: ubuntu-latest

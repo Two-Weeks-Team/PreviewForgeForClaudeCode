@@ -1,0 +1,39 @@
+{
+  "_comment": "Canned Socratic + Gate H1 responses for T-7 mock-bootstrap harness, profile=max. LESSON 0.7 reproduction shape (legal-depo paralegal). Drives tests/e2e/mock-bootstrap.sh deterministically. Edit only with PR review.",
+  "profile": "max",
+  "previews_count": 26,
+  "seed_idea": "legal depo paralegal tool",
+  "idea_spec": {
+    "_schema_version": "1.0.0",
+    "_filled_ratio": 1.0,
+    "idea_summary": "legal depo paralegal tool",
+    "target_persona": {
+      "profile": "litigation paralegal at small US law firm",
+      "primary_pain": "Manually indexing deposition transcripts for trial prep",
+      "usage_frequency": "weekly"
+    },
+    "primary_surface": {
+      "platform": "desktop",
+      "sync_model": "batch",
+      "offline_capable": true
+    },
+    "jobs_to_be_done": {
+      "functional": "Auto-index deposition transcripts with cite-pin to PDF page",
+      "emotional": "Confidence that no contradiction was missed before trial",
+      "social": "Be the paralegal partners trust with deposition prep"
+    },
+    "killer_feature": "Cite-pinned contradiction detection across multi-witness depositions",
+    "must_have_constraints": [
+      {"type": "regulatory", "value": "Attorney-client privilege — local-only processing"},
+      {"type": "data_residency", "value": "Files never leave firm's machine"}
+    ],
+    "non_goals": ["Court e-filing integration", "Billing/time-tracking"],
+    "monetization_model": "subscription",
+    "success_metric": "Average minutes saved per deposition prep"
+  },
+  "expected_filled_ratio_mode": "ground-truth",
+  "advocate_surface_default": "Desktop App",
+  "advocate_persona_default": "litigation paralegal at small US law firm",
+  "h1_pick": "P19",
+  "skip_b3": false
+}
