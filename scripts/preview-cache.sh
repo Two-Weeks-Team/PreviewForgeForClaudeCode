@@ -21,14 +21,23 @@
 #    supported: when the 3rd arg is a valid integer AND does not exist as
 #    a file, it is treated as previews_override for back-compat.)
 #   get <key>                                — print cached JSON if fresh; exit 1 if miss
+#   get-fallback <strong_key> <weak_key>     — like `get <strong>`, but on
+#                                              strong-miss falls back to
+#                                              the weak alias and self-heals
+#                                              the missing side (I-8 / #70).
 #   put <key> <json_path> [<weak_alias_key>] — store JSON at key; when the
 #                                              optional weak_alias_key is
 #                                              given (v1.6.1 A-1), a
-#                                              duplicate is also written
-#                                              under that key so
+#                                              hardlink alias is also
+#                                              published under that key so
 #                                              pre-Socratic replay probes
 #                                              can hit this entry without
-#                                              knowing the spec hash.
+#                                              knowing the spec hash. The
+#                                              hardlink (vs. the previous
+#                                              independent copy) closes the
+#                                              I-8 race where a concurrent
+#                                              cmd_get could observe
+#                                              strong-HIT / weak-MISS.
 #   invalidate <key>                         — delete one key
 #   prune                                    — delete entries older than TTL (per profile)
 #
@@ -245,8 +254,21 @@ cmd_put() {
   # cache file under the weak key too. This lets the §4 pre-Socratic
   # probe in /pf:new detect a replay BEFORE it asks the 3 Socratic
   # modals — restoring the one-click narrative that v1.5.x offered.
-  # Duplicated content (not a symlink) keeps TTL pruning independent
-  # per key and sidesteps dangling-link edge cases on Windows.
+  #
+  # I-8 / issue #70 (W1.4): the strong+weak pair MUST land atomically
+  # from the perspective of any concurrent cmd_get observer. Previous
+  # implementation used two independent mktemp+mv sequences, opening a
+  # window where a second runner could observe `cmd_get(strong)` HIT but
+  # `cmd_get(weak)` MISS — which silently re-triggers the Socratic
+  # interview and breaks the one-click replay promise. Fix: write the
+  # strong key via the existing tmp+rename pattern (already correct),
+  # then publish the weak alias as a HARDLINK to the strong file
+  # (`ln -f`). Hardlink creation is atomic (link(2) on the same FS) and
+  # produces a single inode shared by both names — content, mtime, and
+  # existence flip in lock-step for every observer. TTL semantics are
+  # preserved (stat on either name returns the same mtime); independent
+  # per-key invalidation still works because `rm` only removes the name,
+  # leaving the other entry intact until its own TTL/invalidate hits.
   local alias_key="${3:-}"
   # T-9.4 (v1.7.0+): atomic write via unique tmp-file + rename. `cp
   # src dst` is NOT atomic — concurrent writers can produce half-written
@@ -284,29 +306,68 @@ cmd_put() {
   fi
   if [[ -n "$alias_key" && "$alias_key" != "$key" ]]; then
     # Alias write is best-effort — the strong key above is the source
-    # of truth. Under `set -euo pipefail`, a bare `cp` failure would
+    # of truth. Under `set -euo pipefail`, a bare `ln` failure would
     # abort cmd_put and surface as a non-zero exit to the caller, even
     # though the primary cache entry is already safely on disk.
     # Wrapping the alias write in an `if` keeps the exit status
     # caller-visible-success; we log the degradation to stderr so a
     # missed alias doesn't look like a silent feature regression. The
     # next successful put recreates the alias (self-healing).
+    #
+    # I-8 (issue #70): use `ln -f` to create the alias as a hardlink
+    # to the strong-key file. This is the atomic-from-readers fix for
+    # the cmd_put race — no observer can ever see strong-HIT/weak-MISS
+    # because the alias name is published in a single link(2) syscall
+    # against an inode whose contents are already finalised on disk.
+    # `-f` overwrites a stale alias from a prior put.
     safe_alias=$(printf '%s' "$alias_key" | tr -dc '[:alnum:]._-')
-    local alias_tmp
     if [[ -n "$safe_alias" ]] \
-       && alias_tmp=$(mktemp "$CACHE_DIR/.${safe_alias}.tmp.XXXXXX" 2>/dev/null) \
-       && cp "$src" "$alias_tmp" 2>/dev/null \
-       && mv -f "$alias_tmp" "$CACHE_DIR/$safe_alias.json" 2>/dev/null; then
+       && ln -f "$CACHE_DIR/$safe_key.json" "$CACHE_DIR/$safe_alias.json" 2>/dev/null; then
       echo "cached: $CACHE_DIR/$safe_key.json (+weak-alias $safe_alias.json)"
     else
-      # Clean up any leftover alias tmp from a failed cp.
-      [[ -n "${alias_tmp:-}" && -f "$alias_tmp" ]] && rm -f "$alias_tmp"
-      echo "preview-cache.sh: weak-alias write failed for '$alias_key' (primary $safe_key.json intact; next put will retry)" >&2
+      echo "preview-cache.sh: weak-alias hardlink failed for '$alias_key' (primary $safe_key.json intact; next put will retry)" >&2
       echo "cached: $CACHE_DIR/$safe_key.json"
     fi
   else
     echo "cached: $CACHE_DIR/$safe_key.json"
   fi
+}
+
+cmd_get_with_fallback() {
+  # I-8 / issue #70 (W1.4) — Option C self-heal. If a v1.6.1 put landed
+  # the strong key but the weak alias is missing (e.g. legacy entry
+  # written before the hardlink fix, or an alias that was independently
+  # invalidated), restore the alias on the fly so subsequent
+  # pre-Socratic probes hit immediately. Conversely, if the strong key
+  # is missing but the weak alias resolves (rare but possible after a
+  # selective `invalidate STRONG`), repair the strong key from the weak
+  # entry. Either path returns the cached JSON on stdout, exit 0; full
+  # miss returns exit 1 (matches cmd_get).
+  local strong="$1"
+  local weak="$2"
+  local out
+  if out=$(cmd_get "$strong"); then
+    # Strong hit — opportunistically ensure the weak alias is in place
+    # so the NEXT pre-Socratic probe on this idea avoids the cmd_get
+    # round-trip on the strong key entirely.
+    if [[ -n "$weak" && "$weak" != "$strong" && ! -f "$CACHE_DIR/$weak.json" ]]; then
+      ln -f "$CACHE_DIR/$strong.json" "$CACHE_DIR/$weak.json" 2>/dev/null || true
+    fi
+    printf '%s' "$out"
+    return 0
+  fi
+  if out=$(cmd_get "$weak"); then
+    # Weak hit but strong miss — repair the strong key from the weak
+    # file. Hardlink keeps both names pointed at the same inode so
+    # later puts and TTL checks stay consistent.
+    if [[ -n "$strong" && "$strong" != "$weak" ]]; then
+      ln -f "$CACHE_DIR/$weak.json" "$CACHE_DIR/$strong.json" 2>/dev/null || \
+        cp "$CACHE_DIR/$weak.json" "$CACHE_DIR/$strong.json"
+    fi
+    printf '%s' "$out"
+    return 0
+  fi
+  return 1
 }
 
 cmd_invalidate() {
@@ -346,11 +407,12 @@ cmd_prune() {
 case "$cmd" in
   key) cmd_key "$@" ;;
   get) cmd_get "$@" ;;
+  get-fallback) cmd_get_with_fallback "$@" ;;
   put) cmd_put "$@" ;;
   invalidate) cmd_invalidate "$@" ;;
   prune) cmd_prune "$@" ;;
   *)
-    echo "usage: preview-cache.sh {key|get|put|invalidate|prune} ..." >&2
+    echo "usage: preview-cache.sh {key|get|get-fallback|put|invalidate|prune} ..." >&2
     exit 64
     ;;
 esac
