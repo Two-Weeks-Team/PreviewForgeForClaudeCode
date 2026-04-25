@@ -1,0 +1,13 @@
+{
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 0.1111,
+  "idea_summary": "B-3 'Skip interview' fixture — only the required idea_summary is populated, every nested object is null/'unknown', every leaf is null, every array is empty. Expected ratio = 1/9 = 0.1111, mapping to mode=fallback-omit-spec under A-4.",
+  "target_persona": null,
+  "primary_surface": null,
+  "jobs_to_be_done": null,
+  "killer_feature": null,
+  "monetization_model": null,
+  "success_metric": null,
+  "must_have_constraints": [],
+  "non_goals": []
+}

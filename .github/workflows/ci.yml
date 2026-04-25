@@ -93,6 +93,8 @@ jobs:
           bash tests/fixtures/security/verify-security.sh
           bash tests/fixtures/rule9-fp-guard/verify-rule9.sh
           bash tests/fixtures/filled-ratio/verify-filled-ratio.sh
+          bash tests/fixtures/filled-ratio-gating/verify.sh
+          bash tests/fixtures/h1-modal-swap/verify.sh
           bash tests/fixtures/normalize-constraints/verify-normalize.sh
           bash tests/fixtures/lesson07-regression/verify-lesson07.sh
           bash tests/fixtures/seed-expectations/verify-seed-expectations.sh

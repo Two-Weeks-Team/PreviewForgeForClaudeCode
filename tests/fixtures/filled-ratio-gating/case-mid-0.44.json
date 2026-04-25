@@ -1,0 +1,19 @@
+{
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 0.4444,
+  "idea_summary": "Mid-tier fixture — 4 of 9 slots populated (idea_summary + target_persona nested + primary_surface nested + must_have_constraints array). Expected ratio = 4/9 = 0.4444, mapping to mode=hint under A-4.",
+  "target_persona": {
+    "role": "indie operator",
+    "context": "running a one-person workshop"
+  },
+  "primary_surface": {
+    "kind": "web",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": null,
+  "killer_feature": null,
+  "monetization_model": null,
+  "success_metric": null,
+  "must_have_constraints": ["mobile-first responsive layout"],
+  "non_goals": []
+}
