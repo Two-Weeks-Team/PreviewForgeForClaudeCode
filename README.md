@@ -2,10 +2,17 @@
 
 # Preview Forge for Claude Code
 
-### `TDD` drove code with tests. `SpecDD` drove code with specs. We put `PreviewDD` in front.
+### One-line idea → 26 AI-generated previews in your browser. Pick with your eyes.
 
-**A self-contained Claude Code plugin that introduces the 3-DD Methodology.**
-143 Opus 4.7 agents turn a one-line idea into a frozen full-stack app with only two human clicks.
+![26 advocate gallery at Gate H1 — Preview Forge v1.6](docs/assets/v1.6-gallery-hero.png)
+
+> Above: Gate H1 gallery — 26 advocate-generated mockups, side-by-side, in your browser.
+> You pick the one that matches your intent. The rest of the pipeline (spec, tests, deploy)
+> is driven by that pick.
+
+</div>
+
+<div align="center">
 
 [![CI](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/ci.yml/badge.svg)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/ci.yml)
 [![Marketplace Validate](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/marketplace-validate.yml/badge.svg)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/marketplace-validate.yml)
@@ -19,6 +26,11 @@
 [![3-DD Methodology](https://img.shields.io/badge/Methodology-PreviewDD%20%E2%86%92%20SpecDD%20%E2%86%92%20TestDD-d4a574)](#the-3-dd-methodology)
 [![14 Slash Commands](https://img.shields.io/badge/%2Fpf%3A*-14%20commands-7aa6c2)](#slash-commands)
 [![Stars](https://img.shields.io/github/stars/Two-Weeks-Team/PreviewForgeForClaudeCode?style=social)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/stargazers)
+
+`TDD` drove code with tests. `SpecDD` drove code with specs.
+**We put `PreviewDD` in front.** Mockup-first, eyes-first decision-making —
+143 Opus 4.7 agents turn one line of idea into a frozen full-stack app
+with only two human clicks.
 
 </div>
 
