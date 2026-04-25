@@ -38,6 +38,31 @@ model: opus
 
   hard gate 없음 — 해커톤 데모 UX 우선. weak-replay short-circuit이 먼저 걸러졌다면 이 경로에는 도달하지 않는다. I_LEAD는 Bash 도구가 없으므로 stderr 대신 Blackboard로 기록.
 
+<!-- A-4 enforcement section (PR W2.7 / issue #59) -->
+#### Enforcement (A-4)
+
+위 4-tier cascade는 더 이상 prompt-only 가이드가 아니다. `scripts/filled-ratio-gate.sh`가 canonical computation이며, I_LEAD는 §2 advocate dispatch **직전**에 반드시 이 wrapper를 호출하여 그 출력의 `mode=...`로 IDEA_SPEC splice 여부를 결정해야 한다. 이 스크립트는 `scripts/compute-filled-ratio.py`를 위임 호출하므로 슬롯 규칙은 한 군데(파이썬 스크립트)에서만 정의된다.
+
+```bash
+# mode + ratio 라인을 받아오는 형태
+eval "$(bash scripts/filled-ratio-gate.sh runs/<id>/idea.spec.json)"
+# $mode ∈ {ground-truth, hint, low-confidence, fallback-omit-spec}
+
+case "$mode" in
+  ground-truth)        # ratio ≥ 0.7  → IDEA_SPEC을 ground truth로 splice (위 표 'high')
+    ;;
+  hint)                # 0.4 ≤ r < 0.7 → IDEA_SPEC을 hint로 splice  (위 표 'medium')
+    ;;
+  low-confidence)      # 0.2 ≤ r < 0.4 → IDEA_SPEC 약한 hint        (위 표 'low')
+    ;;
+  fallback-omit-spec)  # r < 0.2  → IDEA_SPEC 라인 자체를 빼고 v1.5.4 marker만 (위 표 'fallback')
+    ;;
+esac
+```
+
+`--prompt-fragment` 플래그를 쓰면 advocate 프롬프트에 그대로 붙일 byte-stable 텍스트 블록을 얻을 수 있다 (fallback tier에서는 `IDEA_SPEC_CONFIDENCE` 라인이 의도적으로 누락됨 — A-4 contract). 회귀 테스트: `tests/fixtures/filled-ratio-gating/verify.sh`가 ratio=0.11 / 0.44 / 0.78 케이스에서 mode 값과 fragment 내용이 byte-equal인지 어설션한다.
+<!-- end A-4 -->
+
 - I1 호출 자체가 실패(user abort 등)하면 Blackboard에 `ideation.spec_missing` 기록하고 M3에 escalate
 
 ### 2. Profile-aware Advocate 병렬 dispatch

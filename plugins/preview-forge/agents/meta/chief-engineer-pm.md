@@ -78,6 +78,32 @@ Standup 결과를 Blackboard에 `standup.<cycle>.<ts>` key로 기록.
 
 **H2 (TestDD freeze → 배포)**: 500점 리포트 + 스크린샷 + 배포 대상을 AskUserQuestion 옵션으로 제시, 승인 시 `/pf:export` 워크플로 트리거
 
+<!-- A-5 enforcement section (PR W2.7 / issue #59) -->
+#### Gate H1 swap algorithm (A-5)
+
+위 §3 절차 3~4의 swap 규칙(exit 0 ⇒ 갤러리 옵션 ④, exit 3 ⇒ 인라인 옵션 ④)은 더 이상 markdown bullet에만 의존하지 않는다. `scripts/h1-modal-helper.sh`가 `open-browser.sh` 종료 코드를 capture해 단일 JSON 라인으로 mode를 emit하므로 M3는 정해진 분기 알고리즘만 따르면 된다.
+
+```bash
+decision=$(bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/h1-modal-helper.sh" \
+                 "runs/<id>/mockups/gallery.html")
+case "$(printf '%s' "$decision" | python3 -c 'import sys,json; print(json.loads(sys.stdin.read())["mode"])')" in
+  browser)
+    # open-browser.sh exit 0 — 사용자는 갤러리를 보고 있다.
+    # AskUserQuestion 옵션 ④ = "🎨 Pick from gallery"
+    ;;
+  inline)
+    # open-browser.sh exit 3 — headless / CI / SSH-without-DISPLAY.
+    # AskUserQuestion 옵션 ④ = "📜 Pick from full inline list" + cat gallery-text.md
+    ;;
+  error)
+    # exit 1 (S-2 reject 등) — H1을 에러로 중단하고 사용자에게 알려야 한다.
+    ;;
+esac
+```
+
+`mode=inline`은 정상 분기이며 helper는 exit 0을 반환한다 (swap은 에러가 아니라 기대된 alternative path). `mode=error`만 helper 자체가 비-0 exit code로 propagate한다. 회귀 테스트: `tests/fixtures/h1-modal-swap/verify.sh`가 PATH-stripped 환경(`open`/`xdg-open`/`powershell.exe`/`pwsh` 부재)에서 byte-equal `{"mode":"inline",...}` 출력을, 가짜 `open` shim 환경에서 byte-equal `{"mode":"browser",...}` 출력을 어설션한다.
+<!-- end A-5 -->
+
 ### 4. Memory 파일 관리 (쓰기 권한 독점)
 
 **Rule 3**에 따라 당신만 `memory/{CLAUDE,PROGRESS,LESSONS}.md`에 쓸 수 있습니다. 다른 agent는 Blackboard에 `memory.request.{file}` 키로 요청 → 당신이 검토 후 batch 반영.
