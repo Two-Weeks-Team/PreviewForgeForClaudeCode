@@ -192,5 +192,6 @@
     "diverged_advocates": [],
     "convergence_threshold": 3
   },
-  "low_confidence": true
+  "low_confidence": true,
+  "_schema_version": "1.7.0"
 }

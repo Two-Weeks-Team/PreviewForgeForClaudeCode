@@ -181,6 +181,12 @@ def build_audit(
     if filled_ratio < LOW_CONFIDENCE_THRESHOLD:
         audit["low_confidence"] = True
 
+    # Mirror the spec's _schema_version so downstream consumers can detect the
+    # audit format version they are processing (parity with idea.spec.json).
+    spec_version = spec.get("_schema_version")
+    if isinstance(spec_version, str) and spec_version:
+        audit["_schema_version"] = spec_version
+
     return audit
 
 

@@ -191,5 +191,6 @@
     "surface_distinct_count": 1,
     "diverged_advocates": [],
     "convergence_threshold": 3
-  }
+  },
+  "_schema_version": "1.7.0"
 }

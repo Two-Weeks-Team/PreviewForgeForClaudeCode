@@ -195,5 +195,6 @@
       "P26"
     ],
     "convergence_threshold": 3
-  }
+  },
+  "_schema_version": "1.7.0"
 }

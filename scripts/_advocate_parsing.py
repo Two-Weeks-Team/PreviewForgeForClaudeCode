@@ -22,8 +22,8 @@ from typing import Iterable
 # plugins/preview-forge/agents/ideation/diversity-validator.md §4.
 FRAMEWORK_TOKENS: list[tuple[str, str]] = [
     ("sveltekit", r"\bsveltekit\b"),
-    ("nextjs", r"\bnext(?:\.js|js)?\b"),
-    ("nuxt", r"\bnuxt(?:\.js|js)?\b"),
+    ("nextjs", r"\bnext(?:\.js|js)\b"),
+    ("nuxt", r"\bnuxt(?:\.js|js)\b"),
     ("remix", r"\bremix\b"),
     ("astro", r"\bastro\b"),
     ("solidjs", r"\bsolid(?:js)?\b"),
@@ -87,9 +87,16 @@ def load_advocate_cards(
     cards: list[dict] = []
     for fp in sorted(base.glob("P*.json")):
         try:
-            cards.append(json.loads(fp.read_text(encoding="utf-8")))
+            with fp.open("r", encoding="utf-8") as f:
+                card = json.load(f)
         except json.JSONDecodeError as e:
             raise ValueError(f"{fp}: invalid JSON ({e})") from e
+        if not isinstance(card, dict) or "id" not in card:
+            raise ValueError(
+                f"{fp}: preview-card missing required 'id' field "
+                "(C-5 contract: malformed advocate card blocks freeze)"
+            )
+        cards.append(card)
     if expected_count is not None and len(cards) != expected_count:
         raise ValueError(
             f"advocate card count {len(cards)} != expected {expected_count} "
