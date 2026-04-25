@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.13.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.12.1...v1.13.0) (2026-04-25)
+
+
+### Features
+
+* **workflow:** H1-&gt;SpecDD auto-advance — sentinel hook + dispatch script + M3 imperatives (Phase 1) ([#103](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/103)) ([17f354a](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/17f354a232b3d09f500bfa818b16e4430f0b2e69))
+* **workflow:** H2→preview server auto-launch + /pf:preview slash command (Phase 2) ([#104](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/104)) ([e874019](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/e874019720dbab838b72e406896b2028c1f54f9c))
+
 ## [1.12.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.12.0...v1.12.1) (2026-04-25)
 
 
