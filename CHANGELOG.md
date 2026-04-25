@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.11.1...v1.12.0) (2026-04-25)
+
+
+### Features
+
+* **ideation,meta:** A-4 filled-ratio gate + A-5 H1 modal helper ([#59](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/59)) ([#89](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/89)) ([7abe606](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/7abe6066a92610cf22f1be2a3d117e59186c1473))
+* **ideation,meta:** A-6 framework lint + C-5 spec-anchor audit ([#59](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/59) [#62](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/62)) ([#88](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/88)) ([07c4182](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/07c4182d382e5274df63c2408cd908df8f68a7ee))
+
 ## [1.11.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.11.0...v1.11.1) (2026-04-25)
 
 
