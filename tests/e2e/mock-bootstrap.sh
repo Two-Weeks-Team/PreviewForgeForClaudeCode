@@ -84,7 +84,8 @@ trap 'rm -rf "$TMP_PF_HOME"' EXIT
 # reads once and emits shell-eval-safe key=value lines.
 eval "$(python3 - "$CANNED" <<'PY'
 import json, shlex, sys
-data = json.load(open(sys.argv[1], encoding="utf-8"))
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
 def emit(k, v):
     print(f"PF_{k}={shlex.quote(str(v))}")
 emit("PROFILE", data["profile"])
@@ -147,7 +148,8 @@ fail() {
 
 python3 - "$CANNED" "$RUN_DIR" <<'PY' || fail "step 1: materialize idea.spec.json"
 import json, sys, pathlib
-canned = json.load(open(sys.argv[1], encoding="utf-8"))
+with open(sys.argv[1], encoding="utf-8") as f:
+    canned = json.load(f)
 run_dir = pathlib.Path(sys.argv[2])
 # idea.json — minimal shape used by the orchestrator (commands/new.md §3 step 2).
 (run_dir / "idea.json").write_text(
@@ -176,7 +178,8 @@ ACTUAL_MODE=$(printf '%s\n' "$GATE_OUT" | sed -n 's/^mode=//p')
 
 python3 - "$CANNED" "$RUN_DIR" <<'PY' || fail "step 3: synthesize advocate cards"
 import json, sys, pathlib
-canned = json.load(open(sys.argv[1], encoding="utf-8"))
+with open(sys.argv[1], encoding="utf-8") as f:
+    canned = json.load(f)
 run_dir = pathlib.Path(sys.argv[2])
 mockups = run_dir / "mockups"
 mockups.mkdir(exist_ok=True)
@@ -225,10 +228,13 @@ PY
 
 # Schema-validate previews.json (each entry against preview-card schema).
 python3 - "$REPO_ROOT" "$RUN_DIR" <<'PY' || fail "step 3: previews.json schema validation"
-import json, sys, pathlib
+import json, os, sys, pathlib
 try:
     import jsonschema
 except ImportError:
+    if os.environ.get("CI"):
+        print("ERROR: jsonschema required in CI — fail-closed for previews schema check", file=sys.stderr)
+        sys.exit(1)
     print("WARN: jsonschema not installed — skipping previews schema check", file=sys.stderr)
     sys.exit(0)
 repo, run_dir = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
@@ -299,7 +305,8 @@ grep -qE '^(open|xdg-open) .*gallery\.html' "$OPEN_BROWSER_TRACE" \
 
 python3 - "$CANNED" "$RUN_DIR" <<'PY' || fail "step 6: chosen_preview lock"
 import json, sys, pathlib
-canned = json.load(open(sys.argv[1], encoding="utf-8"))
+with open(sys.argv[1], encoding="utf-8") as f:
+    canned = json.load(f)
 run_dir = pathlib.Path(sys.argv[2])
 pid = canned["h1_pick"]
 cards = json.loads((run_dir / "previews.json").read_text())
@@ -342,7 +349,8 @@ if [ "$PF_PREVIEWS_COUNT" -eq 26 ]; then
   esac
   python3 - "$RUN_DIR/.convergence-lint.out" <<'PY' || fail "step 7: lint output not parseable JSON with required keys"
 import json, sys
-data = json.loads(open(sys.argv[1]).read())
+with open(sys.argv[1], encoding="utf-8") as f:
+    data = json.load(f)
 for k in ("advocate_count", "frameworks_detected", "distinct_count",
          "convergence_threshold", "warning", "diverged_advocates"):
     assert k in data, f"lint output missing key: {k}"
@@ -367,10 +375,13 @@ if [ "$PF_PREVIEWS_COUNT" -eq 26 ]; then
 
   # Schema-validate the produced audit.
   python3 - "$REPO_ROOT" "$RUN_DIR" <<'PY' || fail "step 8: audit schema validation"
-import json, sys, pathlib
+import json, os, sys, pathlib
 try:
     import jsonschema
 except ImportError:
+    if os.environ.get("CI"):
+        print("ERROR: jsonschema required in CI — fail-closed for audit schema check", file=sys.stderr)
+        sys.exit(1)
     print("WARN: jsonschema not installed — skipping audit schema check", file=sys.stderr)
     sys.exit(0)
 repo, run_dir = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
