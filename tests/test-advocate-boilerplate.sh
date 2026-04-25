@@ -20,13 +20,20 @@
 # together with the template change (intentional friction — that PR is
 # also the PR that should re-sync the boilerplate).
 #
-# Usage:   bash tests/test-advocate-boilerplate.sh
+# Usage:
+#   bash tests/test-advocate-boilerplate.sh                # full lint
+#   bash tests/test-advocate-boilerplate.sh --normalize FILE
+#                                                          # emit the
+#     normalized stream for one advocate file to stdout (debug helper —
+#     pair two invocations through `diff` to locate the drifting line).
+#
 # CI hook: invoked from .github/workflows/ci.yml under agent-counts job.
 #
 # Exit codes:
 #   0  PASS — all 26 files normalize to a single hash
 #   1  FAIL — drift detected (per-file hashes printed for diagnosis)
 #   2  FAIL — wrong number of advocate files (expected 26)
+#      (also returned for --normalize argument errors)
 
 set -euo pipefail
 
@@ -35,17 +42,6 @@ ADVOCATES_DIR="$ROOT/plugins/preview-forge/agents/ideation/advocates"
 
 if [[ ! -d "$ADVOCATES_DIR" ]]; then
   echo "FAIL: advocates dir not found: $ADVOCATES_DIR" >&2
-  exit 2
-fi
-
-# Collect advocate files (P01..P26).
-# Avoid `mapfile` for bash 3.2 compatibility (macOS system bash).
-FILES=()
-while IFS= read -r line; do
-  FILES+=("$line")
-done < <(find "$ADVOCATES_DIR" -maxdepth 1 -name 'P*.md' -type f | sort)
-if [[ "${#FILES[@]}" -ne 26 ]]; then
-  echo "FAIL: expected 26 advocate files, found ${#FILES[@]}" >&2
   exit 2
 fi
 
@@ -93,6 +89,32 @@ normalize() {
   ' "$1"
 }
 
+# Debug mode: `--normalize FILE` prints the normalized stream for a single
+# advocate file. Pair two invocations through `diff` to pinpoint the
+# specific line(s) that diverge:
+#
+#   diff <(bash tests/test-advocate-boilerplate.sh --normalize FILE_A) \
+#        <(bash tests/test-advocate-boilerplate.sh --normalize FILE_B)
+if [[ "${1:-}" == "--normalize" ]]; then
+  if [[ -z "${2:-}" || ! -f "$2" ]]; then
+    echo "FAIL: --normalize requires a path to an existing advocate file" >&2
+    exit 2
+  fi
+  normalize "$2"
+  exit 0
+fi
+
+# Collect advocate files (P01..P26).
+# Avoid `mapfile` for bash 3.2 compatibility (macOS system bash).
+FILES=()
+while IFS= read -r line; do
+  FILES+=("$line")
+done < <(find "$ADVOCATES_DIR" -maxdepth 1 -name 'P*.md' -type f | sort)
+if [[ "${#FILES[@]}" -ne 26 ]]; then
+  echo "FAIL: expected 26 advocate files, found ${#FILES[@]}" >&2
+  exit 2
+fi
+
 declare -a HASHES=()
 for f in "${FILES[@]}"; do
   h=$(normalize "$f" | shasum -a 256 | awk '{print $1}')
@@ -106,7 +128,15 @@ if [[ "$distinct" -ne 1 ]]; then
   echo "per-file normalized hashes:" >&2
   printf '  %s\n' "${HASHES[@]}" | sort >&2
   echo "" >&2
-  echo "Hint: run \`diff <(bash tests/test-advocate-boilerplate.sh; cd $ADVOCATES_DIR && for f in P*.md; do echo === \$f ===; done)\` and inspect divergent files." >&2
+  echo "Hint: identify two files with different hashes above, then diff" >&2
+  echo "      their normalized streams to see the exact drifting line(s):" >&2
+  echo "" >&2
+  echo "  diff \\" >&2
+  echo "    <(bash tests/test-advocate-boilerplate.sh --normalize <FILE_A>) \\" >&2
+  echo "    <(bash tests/test-advocate-boilerplate.sh --normalize <FILE_B>)" >&2
+  echo "" >&2
+  echo "  (replace <FILE_A> / <FILE_B> with two paths from $ADVOCATES_DIR" >&2
+  echo "   whose hashes diverge in the table above.)" >&2
   exit 1
 fi
 
