@@ -1,0 +1,743 @@
+[
+  {
+    "id": "panelA-p19-paralegal-must-stay-top3",
+    "rationale": "User-aligned pick is P19 (legal paralegal deposition workspace). Composite scoring must keep P19 in top-3. If a future change to weights drops P19 from top-3, this fixture FAILS \u2014 that is the LESSON 0.7 anti-regression guard at the panel-tally layer.",
+    "idea_spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.8,
+      "idea_summary": "Deposition prep workspace for legal paralegal teams",
+      "target_persona": {
+        "profile": "legal paralegal",
+        "primary_pain": "deposition prep is manual and error-prone",
+        "usage_frequency": "daily"
+      },
+      "primary_surface": {
+        "platform": "web",
+        "sync_model": "real-time"
+      },
+      "jobs_to_be_done": {
+        "functional": "prepare deposition outlines and cite-check exhibits",
+        "emotional": "feel prepared, reduce anxiety before depo day",
+        "social": "look organised to lead attorney"
+      }
+    },
+    "advocates": [
+      {
+        "id": "P01",
+        "advocate": "P01-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal at firm"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Document discovery for paralegal teams.",
+        "spec_alignment_notes": "Document discovery for paralegal teams. Built with react."
+      },
+      {
+        "id": "P02",
+        "advocate": "P02-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack standup bot for ops teams.",
+        "spec_alignment_notes": "Slack standup bot for ops teams."
+      },
+      {
+        "id": "P03",
+        "advocate": "P03-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal in law firm"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Deposition tracker for paralegals.",
+        "spec_alignment_notes": "Deposition tracker for paralegals. Built with nextjs."
+      },
+      {
+        "id": "P04",
+        "advocate": "P04-the-advocate",
+        "target_persona": {
+          "profile": "junior paralegal"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Discovery checklist for paralegal junior staff.",
+        "spec_alignment_notes": "Discovery checklist for paralegal junior staff. Built with react."
+      },
+      {
+        "id": "P05",
+        "advocate": "P05-the-advocate",
+        "target_persona": {
+          "profile": "freelance accountant"
+        },
+        "primary_surface": {
+          "platform": "api"
+        },
+        "one_liner_pitch": "Reconciliation API for accountants.",
+        "spec_alignment_notes": "Reconciliation API for accountants. Built with nextjs."
+      },
+      {
+        "id": "P06",
+        "advocate": "P06-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal litigation"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Litigation calendar for paralegal staff.",
+        "spec_alignment_notes": "Litigation calendar for paralegal staff. Built with svelte."
+      },
+      {
+        "id": "P07",
+        "advocate": "P07-the-advocate",
+        "target_persona": {
+          "profile": "marketing manager"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Campaign dashboard.",
+        "spec_alignment_notes": "Campaign dashboard. Built with react."
+      },
+      {
+        "id": "P08",
+        "advocate": "P08-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal IP"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "IP filing tracker for paralegal.",
+        "spec_alignment_notes": "IP filing tracker for paralegal. Built with vue."
+      },
+      {
+        "id": "P09",
+        "advocate": "P09-the-advocate",
+        "target_persona": {
+          "profile": "paralegal contracts"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Contracts redline for paralegal review.",
+        "spec_alignment_notes": "Contracts redline for paralegal review. Built with react."
+      },
+      {
+        "id": "P10",
+        "advocate": "P10-the-advocate",
+        "target_persona": {
+          "profile": "freelance accountant"
+        },
+        "primary_surface": {
+          "platform": "api"
+        },
+        "one_liner_pitch": "API-first invoice reconciliation.",
+        "spec_alignment_notes": "API-first invoice reconciliation. Built with nextjs."
+      },
+      {
+        "id": "P11",
+        "advocate": "P11-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal corp"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Corporate filings tracker for paralegal.",
+        "spec_alignment_notes": "Corporate filings tracker for paralegal. Built with react."
+      },
+      {
+        "id": "P12",
+        "advocate": "P12-the-advocate",
+        "target_persona": {
+          "profile": "small business owner"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Inventory tracker SMB.",
+        "spec_alignment_notes": "Inventory tracker SMB. Built with vue."
+      },
+      {
+        "id": "P13",
+        "advocate": "P13-the-advocate",
+        "target_persona": {
+          "profile": "paralegal probate"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Probate matter tracker for paralegal.",
+        "spec_alignment_notes": "Probate matter tracker for paralegal. Built with react."
+      },
+      {
+        "id": "P14",
+        "advocate": "P14-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal family"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Family-law case mgmt for paralegal.",
+        "spec_alignment_notes": "Family-law case mgmt for paralegal. Built with react."
+      },
+      {
+        "id": "P15",
+        "advocate": "P15-the-advocate",
+        "target_persona": {
+          "profile": "ux designer"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Design critique tool.",
+        "spec_alignment_notes": "Design critique tool. Built with react."
+      },
+      {
+        "id": "P16",
+        "advocate": "P16-the-advocate",
+        "target_persona": {
+          "profile": "paralegal commercial"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Commercial litigation paralegal docket.",
+        "spec_alignment_notes": "Commercial litigation paralegal docket. Built with nextjs."
+      },
+      {
+        "id": "P17",
+        "advocate": "P17-the-advocate",
+        "target_persona": {
+          "profile": "data analyst"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "BI dashboard.",
+        "spec_alignment_notes": "BI dashboard. Built with react."
+      },
+      {
+        "id": "P18",
+        "advocate": "P18-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal real estate"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Real-estate closing tracker for paralegal.",
+        "spec_alignment_notes": "Real-estate closing tracker for paralegal. Built with react."
+      },
+      {
+        "id": "P19",
+        "advocate": "P19-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal deposition"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Deposition prep workspace for paralegal teams with cite-chec",
+        "spec_alignment_notes": "Deposition prep workspace for paralegal teams with cite-checker. Built with react."
+      },
+      {
+        "id": "P20",
+        "advocate": "P20-the-advocate",
+        "target_persona": {
+          "profile": "developer relations"
+        },
+        "primary_surface": {
+          "platform": "cli"
+        },
+        "one_liner_pitch": "DX cli.",
+        "spec_alignment_notes": "DX cli."
+      },
+      {
+        "id": "P21",
+        "advocate": "P21-the-advocate",
+        "target_persona": {
+          "profile": "paralegal immigration"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Immigration case mgmt for paralegal.",
+        "spec_alignment_notes": "Immigration case mgmt for paralegal. Built with react."
+      },
+      {
+        "id": "P22",
+        "advocate": "P22-the-advocate",
+        "target_persona": {
+          "profile": "product manager"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Roadmap tool.",
+        "spec_alignment_notes": "Roadmap tool. Built with react."
+      },
+      {
+        "id": "P23",
+        "advocate": "P23-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal compliance"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Compliance binder for paralegal.",
+        "spec_alignment_notes": "Compliance binder for paralegal. Built with vue."
+      },
+      {
+        "id": "P24",
+        "advocate": "P24-the-advocate",
+        "target_persona": {
+          "profile": "qa engineer"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Test plan editor.",
+        "spec_alignment_notes": "Test plan editor. Built with svelte."
+      },
+      {
+        "id": "P25",
+        "advocate": "P25-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal corporate gov"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Board minutes tracker for paralegal.",
+        "spec_alignment_notes": "Board minutes tracker for paralegal. Built with react."
+      },
+      {
+        "id": "P26",
+        "advocate": "P26-the-advocate",
+        "target_persona": {
+          "profile": "customer success"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Onboarding playbook.",
+        "spec_alignment_notes": "Onboarding playbook."
+      }
+    ],
+    "panel_reports": {
+      "BP": {
+        "top": [
+          "P02",
+          "P10",
+          "P05"
+        ]
+      },
+      "UP": {
+        "top": [
+          "P03",
+          "P14",
+          "P19"
+        ]
+      },
+      "RP": {
+        "top": [
+          "P10",
+          "P02",
+          "P05"
+        ]
+      },
+      "TP": {
+        "top": [
+          "P10",
+          "P05",
+          "P02"
+        ]
+      }
+    },
+    "expected": {
+      "top_3_must_contain": [
+        "P19"
+      ],
+      "top_3_must_not_drop": [
+        "P19"
+      ]
+    }
+  },
+  {
+    "id": "panelB-h1-modal-must-offer-alternatives",
+    "rationale": "Even when the composite winner is P02 Slack-bot (the LESSON 0.7 failure mode), the H1 modal must present alternative panel winners. We assert top-3 also includes P10 and P19 so the H1 Recommended/Alt-A/Alt-B helper has real alternatives.",
+    "idea_spec": {
+      "_schema_version": "1.0.0",
+      "_filled_ratio": 0.7,
+      "idea_summary": "User explores idea space; persona TBD",
+      "target_persona": {
+        "profile": "operations veteran"
+      },
+      "primary_surface": {
+        "platform": "slack"
+      }
+    },
+    "advocates": [
+      {
+        "id": "P01",
+        "advocate": "P01-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack ops dashboard.",
+        "spec_alignment_notes": "Slack ops dashboard."
+      },
+      {
+        "id": "P02",
+        "advocate": "P02-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack standup bot for ops teams.",
+        "spec_alignment_notes": "Slack standup bot for ops teams."
+      },
+      {
+        "id": "P03",
+        "advocate": "P03-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack productivity bot variant.",
+        "spec_alignment_notes": "Slack productivity bot variant."
+      },
+      {
+        "id": "P04",
+        "advocate": "P04-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack ops dashboard.",
+        "spec_alignment_notes": "Slack ops dashboard."
+      },
+      {
+        "id": "P05",
+        "advocate": "P05-the-advocate",
+        "target_persona": {
+          "profile": "support agent"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Support knowledge web app.",
+        "spec_alignment_notes": "Support knowledge web app. Built with react."
+      },
+      {
+        "id": "P06",
+        "advocate": "P06-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack productivity bot variant.",
+        "spec_alignment_notes": "Slack productivity bot variant."
+      },
+      {
+        "id": "P07",
+        "advocate": "P07-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack ops dashboard.",
+        "spec_alignment_notes": "Slack ops dashboard."
+      },
+      {
+        "id": "P08",
+        "advocate": "P08-the-advocate",
+        "target_persona": {
+          "profile": "support agent"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Support knowledge web app.",
+        "spec_alignment_notes": "Support knowledge web app. Built with react."
+      },
+      {
+        "id": "P09",
+        "advocate": "P09-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack productivity bot variant.",
+        "spec_alignment_notes": "Slack productivity bot variant."
+      },
+      {
+        "id": "P10",
+        "advocate": "P10-the-advocate",
+        "target_persona": {
+          "profile": "freelance accountant"
+        },
+        "primary_surface": {
+          "platform": "api"
+        },
+        "one_liner_pitch": "API-first invoice reconciliation.",
+        "spec_alignment_notes": "API-first invoice reconciliation. Built with nextjs."
+      },
+      {
+        "id": "P11",
+        "advocate": "P11-the-advocate",
+        "target_persona": {
+          "profile": "support agent"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Support knowledge web app.",
+        "spec_alignment_notes": "Support knowledge web app. Built with react."
+      },
+      {
+        "id": "P12",
+        "advocate": "P12-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack productivity bot variant.",
+        "spec_alignment_notes": "Slack productivity bot variant."
+      },
+      {
+        "id": "P13",
+        "advocate": "P13-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack ops dashboard.",
+        "spec_alignment_notes": "Slack ops dashboard."
+      },
+      {
+        "id": "P14",
+        "advocate": "P14-the-advocate",
+        "target_persona": {
+          "profile": "support agent"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Support knowledge web app.",
+        "spec_alignment_notes": "Support knowledge web app. Built with react."
+      },
+      {
+        "id": "P15",
+        "advocate": "P15-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack productivity bot variant.",
+        "spec_alignment_notes": "Slack productivity bot variant."
+      },
+      {
+        "id": "P16",
+        "advocate": "P16-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack ops dashboard.",
+        "spec_alignment_notes": "Slack ops dashboard."
+      },
+      {
+        "id": "P17",
+        "advocate": "P17-the-advocate",
+        "target_persona": {
+          "profile": "support agent"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Support knowledge web app.",
+        "spec_alignment_notes": "Support knowledge web app. Built with react."
+      },
+      {
+        "id": "P18",
+        "advocate": "P18-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack productivity bot variant.",
+        "spec_alignment_notes": "Slack productivity bot variant."
+      },
+      {
+        "id": "P19",
+        "advocate": "P19-the-advocate",
+        "target_persona": {
+          "profile": "legal paralegal deposition"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Deposition prep workspace for paralegal.",
+        "spec_alignment_notes": "Deposition prep workspace for paralegal. Built with react."
+      },
+      {
+        "id": "P20",
+        "advocate": "P20-the-advocate",
+        "target_persona": {
+          "profile": "support agent"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Support knowledge web app.",
+        "spec_alignment_notes": "Support knowledge web app. Built with react."
+      },
+      {
+        "id": "P21",
+        "advocate": "P21-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack productivity bot variant.",
+        "spec_alignment_notes": "Slack productivity bot variant."
+      },
+      {
+        "id": "P22",
+        "advocate": "P22-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack ops dashboard.",
+        "spec_alignment_notes": "Slack ops dashboard."
+      },
+      {
+        "id": "P23",
+        "advocate": "P23-the-advocate",
+        "target_persona": {
+          "profile": "support agent"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Support knowledge web app.",
+        "spec_alignment_notes": "Support knowledge web app. Built with react."
+      },
+      {
+        "id": "P24",
+        "advocate": "P24-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack productivity bot variant.",
+        "spec_alignment_notes": "Slack productivity bot variant."
+      },
+      {
+        "id": "P25",
+        "advocate": "P25-the-advocate",
+        "target_persona": {
+          "profile": "operations veteran"
+        },
+        "primary_surface": {
+          "platform": "slack"
+        },
+        "one_liner_pitch": "Slack ops dashboard.",
+        "spec_alignment_notes": "Slack ops dashboard."
+      },
+      {
+        "id": "P26",
+        "advocate": "P26-the-advocate",
+        "target_persona": {
+          "profile": "support agent"
+        },
+        "primary_surface": {
+          "platform": "web"
+        },
+        "one_liner_pitch": "Support knowledge web app.",
+        "spec_alignment_notes": "Support knowledge web app. Built with react."
+      }
+    ],
+    "panel_reports": {
+      "BP": {
+        "top": [
+          "P02",
+          "P10",
+          "P19"
+        ]
+      },
+      "UP": {
+        "top": [
+          "P02",
+          "P19",
+          "P10"
+        ]
+      },
+      "RP": {
+        "top": [
+          "P02",
+          "P10",
+          "P19"
+        ]
+      },
+      "TP": {
+        "top": [
+          "P10",
+          "P19",
+          "P02"
+        ]
+      }
+    },
+    "expected": {
+      "top_3_must_contain": [
+        "P10",
+        "P19"
+      ],
+      "composite_winner_must_be": "P02"
+    }
+  }
+]

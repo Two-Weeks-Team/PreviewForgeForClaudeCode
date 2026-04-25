@@ -1,14 +1,20 @@
 #!/usr/bin/env bash
 # T-8 — LESSON 0.7 regression verifier.
 #
-# For each case in cases.json, materialise the run workspace
-# (chosen_preview.json + idea.spec.json) and pipe an Edit/Write hook
-# input describing the incoming content. Assert the observed exit code
-# matches expected_exit.
+# Two layers of LESSON 0.7 protection:
 #
-# Goal: prove that Rule 9 anchors on chosen_preview (user's H1 pick),
-# not on the panel composite_winner — the regression LESSON 0.7
-# warns about.
+# 1. Anchor invariant (cases.json) — Rule 9 idea-drift detector must
+#    anchor on chosen_preview (the user's H1 pick), not the panel
+#    composite_winner. Materialises the run workspace per case and
+#    pipes the incoming Edit/Write hook input.
+#
+# 2. Panel-bias regression (panel-bias-cases.json, W4.11b) — the
+#    composite-scoring step itself must not silently drop the
+#    user-aligned preview from top-3 when panel votes are biased
+#    toward an off-axis idea (the original LESSON 0.7 failure mode:
+#    P02 Slack-bot composite #1 for what was actually a P19 paralegal
+#    idea). Driven by simulate-panel-tally.py — a deterministic mock
+#    of the meta-tally step.
 
 set -euo pipefail
 
@@ -16,6 +22,7 @@ FIXTURES_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$FIXTURES_DIR/../../.." && pwd)"
 HOOK="$REPO_ROOT/plugins/preview-forge/hooks/idea-drift-detector.py"
 PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge"
+TALLY="$FIXTURES_DIR/simulate-panel-tally.py"
 
 [[ -x "$HOOK" || -r "$HOOK" ]] || { echo "x idea-drift-detector.py missing at $HOOK" >&2; exit 1; }
 
@@ -86,9 +93,44 @@ PY
 done
 
 echo
-if [[ $fails -eq 0 ]]; then
-  echo "OK T-8 LESSON 0.7 regression — Rule 9 anchors on chosen_preview, not composite_winner."
+echo "--- panel-bias scoring regression (W4.11b) ---"
+
+[[ -r "$TALLY" ]] || { echo "x simulate-panel-tally.py missing at $TALLY" >&2; exit 1; }
+python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$FIXTURES_DIR/panel-bias-cases.json" >/dev/null \
+  || { echo "x panel-bias-cases.json malformed" >&2; exit 1; }
+
+panel_count=$(python3 -c "import json, sys; print(len(json.load(open(sys.argv[1]))))" "$FIXTURES_DIR/panel-bias-cases.json")
+panel_fails=0
+for j in $(seq 0 $((panel_count - 1))); do
+  pcase=$(mktemp -t pf-l07-panel-XXXXXX)
+  python3 - "$FIXTURES_DIR/panel-bias-cases.json" "$j" "$pcase" <<'PY'
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    cases = json.load(f)
+out = sys.argv[3]
+with open(out, "w", encoding="utf-8") as f:
+    json.dump(cases[int(sys.argv[2])], f)
+PY
+  pid=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['id'])" "$pcase")
+  set +e
+  python3 "$TALLY" "$pcase" >/dev/null 2>"$pcase.err"
+  pactual=$?
+  set -e
+  if [[ "$pactual" == "0" ]]; then
+    echo "  OK   [$pid] panel-bias guard held (exit=0)"
+  else
+    echo "  FAIL [$pid] panel-bias guard tripped (exit=$pactual)"
+    sed 's/^/      /' "$pcase.err" >&2 || true
+    panel_fails=$((panel_fails + 1))
+  fi
+  rm -f "$pcase" "$pcase.err"
+done
+
+echo
+total=$((fails + panel_fails))
+if [[ $total -eq 0 ]]; then
+  echo "OK T-8 LESSON 0.7 regression — anchor invariant + panel-bias guard both green."
   exit 0
 fi
-echo "x T-8 LESSON 0.7 regression — $fails of $case_count cases mismatched."
+echo "x T-8 LESSON 0.7 regression — anchor=$fails panel-bias=$panel_fails mismatched."
 exit 1
