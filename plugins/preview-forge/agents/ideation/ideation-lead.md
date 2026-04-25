@@ -27,7 +27,7 @@ model: opus
   - Blackboard에 `preview_dd.weak_replay.resumed` 이벤트 기록
 - (비-replay 경로) `runs/<id>/idea.json`을 읽어 I1 idea-clarifier에 위임
 - I1은 **항상** 3-batch AskUserQuestion을 수행하여 `runs/<id>/idea.spec.json`을 산출 (이미 존재하면 스킵)
-- 산출된 `idea.spec.json._filled_ratio`를 4-tier로 매핑 (v1.7.0+ A-4 — B-1과 동시 ship; threshold가 0.5에서 0.4로 내려간 이유는 B-1이 4 required field만 보장 → ratio 4/9 ≈ 0.44가 정상 minimum이어야 하기 때문):
+- 산출된 `idea.spec.json._filled_ratio`를 4-tier로 매핑 (v1.7.0+ A-4 — B-1과 동시 ship; threshold 0.4 설정 근거: B-1 fast-path 실제 minimum은 5/9 ≈ 0.56 (idea_summary + target_persona + primary_surface + killer_feature + must_have_constraints; nested object는 binary slot 규칙). 5/9에 edge-case safety margin을 더해 0.5 → 0.4로 내림. PR #51 R2 review에서 원래 "4/9 ≈ 0.44" 근거는 binary slot 규칙을 반영하지 못한 오류로 정정 — `idea-clarifier.md` §"Soft anchor 정책" 참조):
 
   | `_filled_ratio` | tier | dispatch 동작 | advocate 받는 신호 |
   |---|---|---|---|
