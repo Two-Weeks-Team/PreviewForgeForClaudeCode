@@ -36,7 +36,9 @@ for fixture in poisoned-previews-traversal.json poisoned-previews-url-scheme.jso
   printf '<html><body>stub</body></html>' > "$tmp_run/mockups/P99-stub.html"
   out=$(cd "$REPO_ROOT" && bash scripts/generate-gallery.sh "$tmp_run" 2>&1 || true)
   skipped=$(printf '%s' "$out" | grep -c "skipping preview id=" || true)
-  total=$(python3 -c "import json;print(len(json.load(open('$FIXTURES_DIR/$fixture'))))")
+  total=$(python3 -c "import json,sys
+with open(sys.argv[1]) as f:
+    print(len(json.load(f)))" "$FIXTURES_DIR/$fixture")
   if [[ "$skipped" -eq "$total" ]]; then
     pass "$fixture — all $total cards rejected"
   else
@@ -50,7 +52,9 @@ done
 echo
 echo "[I-7] open-browser.sh URL gate — injection matrix"
 url_inj_fails=0
-matrix_total=$(python3 -c "import json;print(len(json.load(open('$FIXTURES_DIR/url-injection-matrix.json'))))")
+matrix_total=$(python3 -c "import json,sys
+with open(sys.argv[1]) as f:
+    print(len(json.load(f)))" "$FIXTURES_DIR/url-injection-matrix.json")
 # NUL-separated emit so URLs containing literal \n / \r (which the
 # matrix deliberately includes) survive the pipeline intact. bash 3.2
 # (still default on macOS) has no `mapfile`, so we use `while IFS= read
@@ -67,9 +71,10 @@ while IFS= read -r -d '' url; do
     url_inj_fails=$((url_inj_fails + 1))
   fi
 done < <(python3 -c "import json,sys
-for u in json.load(open('$FIXTURES_DIR/url-injection-matrix.json')):
-    sys.stdout.write(u)
-    sys.stdout.write('\x00')")
+with open(sys.argv[1]) as f:
+    for u in json.load(f):
+        sys.stdout.write(u)
+        sys.stdout.write('\x00')" "$FIXTURES_DIR/url-injection-matrix.json")
 if [[ "$url_inj_fails" -eq 0 ]]; then
   pass "url-injection-matrix.json — all $matrix_total dangerous URLs rejected (rc=1)"
 fi
@@ -77,7 +82,9 @@ fi
 echo
 echo "[I-7] open-browser.sh URL gate — positive matrix (must NOT over-narrow)"
 pos_fails=0
-pos_total=$(python3 -c "import json;print(len(json.load(open('$FIXTURES_DIR/url-injection-positives.json'))))")
+pos_total=$(python3 -c "import json,sys
+with open(sys.argv[1]) as f:
+    print(len(json.load(f)))" "$FIXTURES_DIR/url-injection-positives.json")
 # Same NUL-separated portable pattern as the negative matrix above.
 while IFS= read -r -d '' url; do
   rc=0
@@ -92,23 +99,28 @@ while IFS= read -r -d '' url; do
     pos_fails=$((pos_fails + 1))
   fi
 done < <(python3 -c "import json,sys
-for u in json.load(open('$FIXTURES_DIR/url-injection-positives.json')):
-    sys.stdout.write(u)
-    sys.stdout.write('\x00')")
+with open(sys.argv[1]) as f:
+    for u in json.load(f):
+        sys.stdout.write(u)
+        sys.stdout.write('\x00')" "$FIXTURES_DIR/url-injection-positives.json")
 if [[ "$pos_fails" -eq 0 ]]; then
   pass "url-injection-positives.json — all $pos_total benign URLs accepted (rc!=1)"
 fi
 
 echo
 echo "[I-7] idea-spec.schema.json — per-cap matrix"
-python3 - <<PYEOF || fails=$((fails + 1))
+# Pass schema path + fixtures dir as argv (gemini security-high #85):
+# avoids shell-variable interpolation into the inline Python script.
+python3 - "$REPO_ROOT/plugins/preview-forge/schemas/idea-spec.schema.json" "$FIXTURES_DIR" <<'PYEOF' || fails=$((fails + 1))
 import json, sys
 try:
     import jsonschema
 except ImportError:
     print("  x jsonschema not installed - I-7 per-cap defenses cannot be verified.", file=sys.stderr)
     sys.exit(1)
-schema = json.load(open("$REPO_ROOT/plugins/preview-forge/schemas/idea-spec.schema.json"))
+with open(sys.argv[1]) as f:
+    schema = json.load(f)
+fixtures_dir = sys.argv[2]
 
 # (fixture filename, expected JSON-pointer prefix, expected validator name)
 #   - oversized-non-goals-value : items[0] is 501 chars -> maxLength on non_goals/0
@@ -125,7 +137,8 @@ cases = [
 
 regressions = 0
 for fixture, expected_path, expected_validator in cases:
-    payload = json.load(open(f"$FIXTURES_DIR/{fixture}"))
+    with open(f"{fixtures_dir}/{fixture}") as f:
+        payload = json.load(f)
     try:
         jsonschema.validate(payload, schema)
         print(f"  x {fixture} - REGRESSION: schema accepted oversized payload", file=sys.stderr)
