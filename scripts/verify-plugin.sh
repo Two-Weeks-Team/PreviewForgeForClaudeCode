@@ -133,7 +133,7 @@ schema_count=$(find "$PLUGIN_DIR/schemas" -name "*.json" | wc -l | tr -d ' ')
 # script. We still require the canonical v1.6.0 set as a floor.
 expected_schemas=$(find "$PLUGIN_DIR/schemas" -name "*.schema.json" | wc -l | tr -d ' ')
 [[ "$schema_count" -eq "$expected_schemas" && "$expected_schemas" -ge 5 ]] && \
-  ok "$expected_schemas JSON schemas (dynamic count, floor 5: preview-card, panel-vote, score-report, pf-profile, idea-spec)" || \
+  ok "$expected_schemas JSON schemas (dynamic count, floor 5)" || \
   bad "schemas: $schema_count files / $expected_schemas *.schema.json (expected count match, floor 5)"
 asset_count=$(find "$PLUGIN_DIR/assets" -maxdepth 1 -type f ! -name "*.md" ! -name ".*" | wc -l | tr -d ' ')
 # v1.4: 4 base + 4 standard-profile (prisma, gitignore, README, graduate.sh)

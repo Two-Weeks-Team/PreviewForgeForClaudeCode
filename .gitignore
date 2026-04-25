@@ -32,7 +32,9 @@ Thumbs.db
 # 26-advocate scan that picks up `*.md` is not). The bare `* copy` /
 # `* copy N` forms (no extension) are emitted by Finder when copying
 # extension-less files like LICENSE.
+*\ [0-9]
 *\ [0-9].*
+*\ [0-9][0-9]
 *\ [0-9][0-9].*
 *\ copy
 *\ copy.*
