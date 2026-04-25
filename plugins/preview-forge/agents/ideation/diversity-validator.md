@@ -31,13 +31,41 @@ model: opus
 - 26 advocate의 `one_liner_pitch` 텍스트를 MinHash LSH로 비교
 - 2개 이상 cluster 형성 시 경고 (페르소나가 서로 중복됨을 의미)
 
-### 4. Framework convergence lint (v1.7.0+ A-6)
-- 목적: 같은 `primary_surface` 값(예: `"Web PWA"`)을 26 advocate가 **완전히 다른 framework**로 해석해서 내부 분산만 크고 사용자에게는 혼돈만 주는 실패 모드 차단.
-- 입력: 각 card의 `spec_alignment_notes`(v1.6.0+ 필드, v1.7.0부터 schema `required`).
-- 추출: `spec_alignment_notes` 텍스트에서 framework 토큰을 정규식/키워드 사전으로 추출 — 최소 대상 세트: `React`, `Vue`, `Svelte`, `SolidJS`, `Next.js`, `Nuxt`, `SvelteKit`, `Astro`, `Remix`, `SPA`, `SSR`, `SSG`, `static`, `htmx`, `Phoenix LiveView`. 대소문자 무시, 단어 경계(`\b`) 매치.
-- 집계: `primary_surface` 값별로 선택된 framework 집합을 구함.
-- Lint rule: 어느 surface든 **distinct framework ≥ 4** 이면 해당 surface를 선택한 advocate 전원을 `retry_requests`에 추가(+ reason: `"framework_convergence surface=<X> chosen={<A>,<B>,<C>,<D>} ≥ 4"`). I_LEAD는 재작성 프롬프트에 "같은 surface를 고른 이웃 advocate가 선택한 framework 목록"을 전달해 수렴 유도.
-- 예외: `spec_alignment_notes`에 framework 토큰이 하나도 없으면 해당 card는 집계에서 제외(구체적 언급이 없으므로 중복 유발 아님).
+<!-- A-6 lint section (W2.8, issue #59) -->
+### 4. Framework convergence lint (v1.7.0+ A-6, issue #59)
+
+**Canonical implementation**: `scripts/lint-framework-convergence.py`
+(regex source-of-truth: `scripts/_advocate_parsing.py` ·
+`FRAMEWORK_TOKENS`).
+
+- 목적: 26 advocate가 같은 `primary_surface`를 **완전히 다른 framework**로
+  해석해 내부 분산만 크고 사용자에겐 혼돈만 주는 실패 모드 차단.
+- 입력: 각 card의 `spec_alignment_notes` (v1.6.0+ 필드, v1.7.0부터 schema
+  `required`). 디렉터리 단위로 `P*.json` 26개를 일괄 처리.
+- 추출: 위 helper의 정규식/키워드 사전으로 framework 토큰 추출 — 대상
+  세트: react · vue · svelte · solidjs · nextjs · nuxt · sveltekit · astro
+  · remix · spa · ssr · ssg · static · htmx · hotwire · phoenix-liveview ·
+  native. 대소문자 무시, 단어 경계(`\b`) 매치, 더 구체적인 토큰 우선
+  (`sveltekit` ⟶ `svelte`).
+- Lint rule: distinct (named) framework count > **convergence_threshold**
+  (default 3, `-t/--threshold` overridable) 이면 warning. 가장 인기 없는
+  버킷의 advocate들이 `diverged_advocates`로 집계되어 `retry_requests`에
+  들어간다.
+- 호출 (I_LEAD dispatcher pseudo-code):
+  ```bash
+  python3 "${CLAUDE_PLUGIN_ROOT}/../../scripts/lint-framework-convergence.py" \
+      runs/<id>/ -t 3 > runs/<id>/framework-convergence.json
+  RC=$?
+  # RC=0 → converged · RC=2 → warning, parse diverged_advocates
+  # RC=1 → fixture / IO error → escalate to I_LEAD
+  ```
+- 예외: framework 토큰이 하나도 없는 card는 `unknown` 버킷으로 들어가며
+  `distinct_count` 계산에서 제외 (구체적 언급이 없으므로 중복 유발 아님).
+- Fixture verification: `tests/fixtures/spec-anchor-convergence/verify.sh`
+  (case-aligned / case-divergent / case-low-confidence). Mutation regression:
+  threshold 변경 시 case-divergent에서 정확히 P24..P26 추출 어설션.
+<!-- end A-6 -->
+
 
 ## 출력
 
