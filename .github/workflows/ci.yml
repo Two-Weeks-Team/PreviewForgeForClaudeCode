@@ -483,6 +483,11 @@ jobs:
           fi
           echo "✓ 26/26 advocates reference idea.spec.json"
 
+      - name: All 26 advocates share boilerplate (W2.6 / #61)
+        # Guards against silent boilerplate drift across the 26 P*.md
+        # advocate files — future schema-wide edits MUST hit every file.
+        run: bash tests/test-advocate-boilerplate.sh
+
       - name: Check all agents use Opus 4.7
         run: |
           python3 <<'PYEOF'
