@@ -1,0 +1,110 @@
+[
+  {
+    "id": "P01",
+    "advocate": "E2E-mock-advocate-P01",
+    "framing": "Mock framing for P01 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P01: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P01-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the Web PWA stack"
+  },
+  {
+    "id": "P02",
+    "advocate": "E2E-mock-advocate-P02",
+    "framing": "Mock framing for P02 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P02: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P02-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the Web PWA stack"
+  },
+  {
+    "id": "P03",
+    "advocate": "E2E-mock-advocate-P03",
+    "framing": "Mock framing for P03 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P03: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P03-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the Web PWA stack"
+  },
+  {
+    "id": "P04",
+    "advocate": "E2E-mock-advocate-P04",
+    "framing": "Mock framing for P04 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P04: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P04-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the Web PWA stack"
+  },
+  {
+    "id": "P05",
+    "advocate": "E2E-mock-advocate-P05",
+    "framing": "Mock framing for P05 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P05: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P05-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using nextjs for the Web PWA stack"
+  },
+  {
+    "id": "P06",
+    "advocate": "E2E-mock-advocate-P06",
+    "framing": "Mock framing for P06 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P06: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P06-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the Web PWA stack"
+  },
+  {
+    "id": "P07",
+    "advocate": "E2E-mock-advocate-P07",
+    "framing": "Mock framing for P07 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P07: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P07-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the Web PWA stack"
+  },
+  {
+    "id": "P08",
+    "advocate": "E2E-mock-advocate-P08",
+    "framing": "Mock framing for P08 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P08: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P08-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the Web PWA stack"
+  },
+  {
+    "id": "P09",
+    "advocate": "E2E-mock-advocate-P09",
+    "framing": "Mock framing for P09 — covers persona/surface verbatim from idea.spec.json.",
+    "target_persona": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_surface": "Web PWA",
+    "opus_4_7_capability": "code-generation",
+    "mvp_scope": "demo",
+    "one_liner_pitch": "P09: deterministic e2e mock pitch.",
+    "mockup_path": "mockups/P09-mock.html",
+    "spec_alignment_notes": "all fields populated, followed spec verbatim — using svelte for the Web PWA stack"
+  }
+]

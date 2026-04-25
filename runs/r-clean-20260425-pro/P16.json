@@ -1,0 +1,12 @@
+{
+  "id": "P16",
+  "advocate": "E2E-mock-advocate-P16",
+  "framing": "Mock framing for P16 — covers persona/surface verbatim from idea.spec.json.",
+  "target_persona": "SaaS developer adding meeting intelligence",
+  "primary_surface": "API Only",
+  "opus_4_7_capability": "code-generation",
+  "mvp_scope": "demo",
+  "one_liner_pitch": "P16: deterministic e2e mock pitch.",
+  "mockup_path": "mockups/P16-mock.html",
+  "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the API Only stack"
+}
