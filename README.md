@@ -110,6 +110,32 @@ Categorical scoring (not raw keyword count) means `"audit logging feature"` in a
 - **Rule 9 idea-drift detector** (`hooks/idea-drift-detector.py`) catches the failure where Gate H1 picks product A but SpecDD/Engineering drift to product B. Containment coefficient over token sets (no external ML deps). Block threshold 0.3, warn at 0.4.
 - **P0-B cost-regression sentinel** (`hooks/cost-regression.py`) compares `cost-snapshot.json` against the active profile's P95/hard ceiling every 30s. Hard breach triggers auto-pause + AskUserQuestion handoff.
 
+## What's new (audit umbrellas v1.6 / v1.7 — shipped progressively through semver v1.10.0)
+
+> **Terminology**: "v1.6 audit" / "v1.7 audit" are *feature umbrella* names (issue #28 family / #29–#37). Each PR within an umbrella ships under its own [release-please](https://github.com/googleapis/release-please) semver tag based on Conventional Commits — so the v1.6 schema landed in semver **v1.6.0**, B-1/B-3/A-4 (Phase 9, PR #51) landed in semver **v1.10.0**, etc. See [CHANGELOG.md](CHANGELOG.md) for the per-tag mapping.
+
+The biggest UX shift since v1.0.0: **the gallery comes first**, before any spec or code is written. You don't pick a feature flag matrix; you pick a picture.
+
+### v1.6 — Socratic interview as ground truth (LESSON 0.7 fix)
+
+Before v1.6, 26 Advocates dispatched directly from the one-liner — and the failure mode in LESSON 0.7 played out: user wrote "회의록 자동 정리," panel-recommended composite #1 was a Slack bot, but the user actually wanted a legal deposition paralegal tool. Different product entirely.
+
+v1.6 adds **I1 Idea Clarifier** between `/pf:new` and the 26 advocates. Three batched `AskUserQuestion` modals (10–12 fields total) produce `idea.spec.json` — a structured ground truth (`target_persona`, `primary_surface`, `jobs_to_be_done`, `killer_feature`, `must_have_constraints`, `non_goals`, …) that every advocate receives. Divergence is now intentional creative reframing, not blind misalignment.
+
+The PreviewDD cache key now includes `idea_spec_hash`, so the same one-liner with different Socratic answers gets a fresh advocate set instead of a stale replay.
+
+### v1.7 — 4 required questions, skip-interview, tiered fallback (Phase 9 — Christensen + Kim-Mauborgne + Taleb)
+
+Hackathon demo feedback: 12 questions before seeing any output is too many for a 3-minute pitch. v1.7 trims the contract:
+
+- **B-1 — 4 required, 5–8 optional** (`persona.profile` / `surface.platform` / `killer_feature` / `must_have_constraints[≥1]`). Best path: **4 clicks total** to land on the gallery. Fullest path: 12 questions for deep dive. User choice per modal.
+- **B-3 — Skip interview** option in Batch A. One click writes a 3-field stub (`_schema_version` + `_filled_ratio` + `idea_summary` only) and short-circuits to the v1.5.4 raw-idea path. Demo escape hatch when the interview itself becomes friction.
+- **A-4 — `_filled_ratio` tiered fallback**. The hard 0.5 gate is gone. Now `≥ 0.7` = high-confidence ground truth, `0.4–0.7` = hint, `0.2–0.4` = low-confidence, `< 0.2` = drop spec entirely (Skip-interview lands here at ratio ≈ 0.11). No path is blocked.
+
+### Why this is "gallery-first"
+
+The flow inverts the SaaS-onboarding default of "configure → preview." Instead: **answer 4 questions → see 9 / 18 / 26 mockups → pick one**. The picture is the spec. SpecDD and TestDD only run on the picture you approved. (Godin: lead with the artifact, not the form.)
+
 ## Updating
 
 We release patches and feature updates frequently (see
@@ -226,7 +252,7 @@ All Opus 4.7, zero Sonnet/Haiku.
 | **Seed ideas** | 10 | Pre-verified demo scenarios |
 | **Slash commands** | 14 | `/pf:*` |
 | **CLI** | 1 | `bin/pf` |
-| **Verification** | 1 | `scripts/verify-plugin.sh` (34 checks) |
+| **Verification** | 1 | `scripts/verify-plugin.sh` (56 checks) |
 
 ## Zero third-party dependencies
 
@@ -266,7 +292,7 @@ lessons to every Department Lead.
 ```bash
 git clone https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode
 cd PreviewForgeForClaudeCode
-bash scripts/verify-plugin.sh   # 34/34 checks
+bash scripts/verify-plugin.sh   # 56/56 checks
 ```
 
 ## Hackathon
