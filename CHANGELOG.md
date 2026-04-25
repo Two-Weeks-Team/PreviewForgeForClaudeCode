@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.10.0...v1.11.0) (2026-04-25)
+
+
+### Features
+
+* **v1.7.0:** Phase 8 — Q-9 / Q-1 / Q-2 + verifications + Q-4/Q-6/Q-7/Q-8 deferred — closes umbrella [#37](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/37) ([#55](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/55)) ([99a3aa2](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/99a3aa2c9d3078d8effa0b979b363972a5fe9e34))
+
 ## [1.10.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.9.0...v1.10.0) (2026-04-25)
 
 
