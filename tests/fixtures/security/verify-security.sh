@@ -221,7 +221,13 @@ rm -rf "$tmp_xss"
 # ----- S-3 : schema caps --------------------------------------------------
 echo
 echo "[S-3] idea-spec.schema.json maxLength / maxItems"
-python3 - <<PY || fails=$((fails + 1))
+# Pass schema path + fixtures dir as argv (gemini security-high deferred
+# from #83 PR review, applied after #85 merged the same pattern to S-1/I-7):
+# argv pass + with-open + single-quoted heredoc closes the inline-string
+# interpolation surface that bots flagged. $FIXTURES_DIR / $REPO_ROOT are
+# derived internally via dirname/realpath so injection risk is nil today,
+# but the policy is to never interpolate into Python source.
+python3 - "$REPO_ROOT/plugins/preview-forge/schemas/idea-spec.schema.json" "$FIXTURES_DIR" <<'PY' || fails=$((fails + 1))
 import json, sys
 try:
     import jsonschema
@@ -233,8 +239,12 @@ except ImportError:
     print("  x jsonschema not installed - S-3 defense cannot be verified. "
           "Install with: pip install jsonschema", file=sys.stderr)
     sys.exit(1)
-schema = json.load(open("$REPO_ROOT/plugins/preview-forge/schemas/idea-spec.schema.json"))
-payload = json.load(open("$FIXTURES_DIR/malicious-constraints.json"))
+with open(sys.argv[1]) as f:
+    schema = json.load(f)
+fixtures_dir = sys.argv[2]
+
+with open(f"{fixtures_dir}/malicious-constraints.json") as f:
+    payload = json.load(f)
 try:
     jsonschema.validate(payload, schema)
     print("  ✗ malicious-constraints.json — REGRESSION: schema accepted oversized payload", file=sys.stderr)
@@ -245,7 +255,8 @@ except jsonschema.ValidationError as e:
 # #65 — idea_summary maxLength cap (5000). 5001-char payload must reject;
 # a 5000-char twin must validate (proves the cap is the boundary, not a
 # coincidental other-rule reject like additionalProperties).
-oversize = json.load(open("$FIXTURES_DIR/oversized-idea-summary.json"))
+with open(f"{fixtures_dir}/oversized-idea-summary.json") as f:
+    oversize = json.load(f)
 assert len(oversize["idea_summary"]) == 5001, \
     f"fixture corrupt: idea_summary len={len(oversize['idea_summary'])} (expected 5001)"
 try:
