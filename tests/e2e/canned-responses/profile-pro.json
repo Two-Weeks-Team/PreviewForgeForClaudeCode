@@ -1,11 +1,11 @@
 {
-  "_comment": "Canned Socratic + Gate H1 responses for T-7 mock-bootstrap harness, profile=pro. Drives tests/e2e/mock-bootstrap.sh deterministically. Edit only with PR review.",
+  "_comment": "Canned Socratic + Gate H1 responses for T-7 mock-bootstrap harness, profile=pro. Drives tests/e2e/mock-bootstrap.sh deterministically. Edit only with PR review. v1.11.0+ (#95/#91): the canned `_filled_ratio` MUST byte-equal `compute-filled-ratio.py` output on this `idea_spec` — mock-bootstrap.sh step 2 asserts the equality (within float tolerance) so a future drift here surfaces as a CI failure rather than a silent test smell.",
   "profile": "pro",
   "previews_count": 18,
   "seed_idea": "API for async meeting transcription",
   "idea_spec": {
     "_schema_version": "1.0.0",
-    "_filled_ratio": 0.7777777777777778,
+    "_filled_ratio": 0.8889,
     "idea_summary": "API for async meeting transcription",
     "target_persona": {
       "profile": "SaaS developer adding meeting intelligence",

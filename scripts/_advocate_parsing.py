@@ -31,7 +31,15 @@ FRAMEWORK_TOKENS: list[tuple[str, str]] = [
     ("hotwire", r"\bhotwire\b"),
     ("htmx", r"\bhtmx\b"),
     ("react", r"\breact\b"),
-    ("vue", r"\bvue(?:\.js|js)?\b"),
+    # vue: tightened (v1.11.0+ #95/#88) — bare \bvue\b false-positives on
+    # prose like "a vue, then…", "vue d'ensemble", "rev-vue". Require
+    # either the `.js`/`js` suffix (definitively framework), `Vue <digit>`
+    # (version cite — "Vue 3"), or a recognised framework-citation verb
+    # in front ("uses Vue", "used Vue", "with Vue", "built with Vue",
+    # "runs on Vue", "leveraged Vue"). Past-tense forms (`used`, `leveraged`)
+    # added per gemini PR #98 review — symmetry with `uses` / `leverages`,
+    # zero false-positive risk since the verb must directly precede `vue`.
+    ("vue", r"\bvue(?:\.js|js)\b|\bvue\s+\d|(?<![A-Za-z0-9_])(?:uses?|used|using|with|in|on|via|built\s+with|runs?\s+on|leverag(?:e|es|ed|ing))\s+vue\b"),
     ("svelte", r"\bsvelte\b"),
     ("native", r"\b(?:ios\s+native|android\s+native|native\s+app)\b"),
     ("ssr", r"\bssr\b"),

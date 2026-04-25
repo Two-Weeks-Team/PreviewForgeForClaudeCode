@@ -60,7 +60,45 @@ case "$mode" in
 esac
 ```
 
-`--prompt-fragment` 플래그를 쓰면 advocate 프롬프트에 그대로 붙일 byte-stable 텍스트 블록을 얻을 수 있다 (fallback tier에서는 `IDEA_SPEC_CONFIDENCE` 라인이 의도적으로 누락됨 — A-4 contract). 회귀 테스트: `tests/fixtures/filled-ratio-gating/verify.sh`가 ratio=0.11 / 0.44 / 0.78 케이스에서 mode 값과 fragment 내용이 byte-equal인지 어설션한다.
+`--prompt-fragment` 플래그를 쓰면 advocate 프롬프트에 그대로 붙일 byte-stable 텍스트 블록을 얻을 수 있다 (fallback tier에서는 `IDEA_SPEC_CONFIDENCE` 라인이 의도적으로 누락됨 — A-4 contract).
+
+##### Canonical script output (must stay in sync with `filled-ratio-gate.sh`)
+
+스크립트가 정답이며 아래 블록은 **스크립트의 실제 stdout을 그대로 인용한 mirror** 다 (v1.11.0+ #95/#89 — 이전에는 markdown 설명문이 짧아서 advocate가 splice 시 해석이 갈렸다). 한 줄이라도 어긋나면 `tests/fixtures/filled-ratio-gating/verify.sh`가 byte-equal 비교에서 실패하므로 그 PR이 양쪽을 동시에 갱신해야 한다.
+
+기본 출력 (`bash scripts/filled-ratio-gate.sh <spec.json>`):
+
+```text
+ratio=<float, 4 decimals>
+mode=<ground-truth | hint | low-confidence | fallback-omit-spec>
+```
+
+Prompt-fragment 출력 (`bash scripts/filled-ratio-gate.sh --prompt-fragment <spec.json>`) — tier별 byte-equal 블록:
+
+```text
+# ratio ≥ 0.7  (mode=ground-truth)
+IDEA_SPEC_CONFIDENCE: high
+IDEA_SPEC: <splice runs/<id>/idea.spec.json verbatim — ground truth>
+```
+
+```text
+# 0.4 ≤ ratio < 0.7  (mode=hint)
+IDEA_SPEC_CONFIDENCE: medium
+IDEA_SPEC: <splice runs/<id>/idea.spec.json — hint, free-interpret null/"unknown" fields>
+```
+
+```text
+# 0.2 ≤ ratio < 0.4  (mode=low-confidence)
+IDEA_SPEC_CONFIDENCE: low
+IDEA_SPEC: <splice runs/<id>/idea.spec.json — weak hint, large divergence allowed>
+```
+
+```text
+# ratio < 0.2  (mode=fallback-omit-spec) — IDEA_SPEC_CONFIDENCE 라인 의도적 누락
+IDEA_SPEC: <not provided — fallback v1.5.4 path>
+```
+
+회귀 테스트: `tests/fixtures/filled-ratio-gating/verify.sh`가 ratio=0.11 / 0.22 / 0.44 / 0.78 (모든 4-tier) 케이스에서 mode 값과 fragment 내용을 위 블록과 byte-equal로 어설션한다.
 <!-- end A-4 -->
 
 - I1 호출 자체가 실패(user abort 등)하면 Blackboard에 `ideation.spec_missing` 기록하고 M3에 escalate

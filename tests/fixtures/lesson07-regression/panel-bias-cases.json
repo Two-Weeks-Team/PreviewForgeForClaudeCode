@@ -1,7 +1,7 @@
 [
   {
     "id": "panelA-p19-paralegal-must-stay-top3",
-    "rationale": "User-aligned pick is P19 (legal paralegal deposition workspace). Composite scoring must keep P19 in top-3. If a future change to weights drops P19 from top-3, this fixture FAILS \u2014 that is the LESSON 0.7 anti-regression guard at the panel-tally layer.",
+    "rationale": "User-aligned pick is P19 (legal paralegal deposition workspace). Composite scoring must rank P19 as the composite_winner — strengthened from the previous 'in top-3' assertion (#95/#93) so a milder weight mutation that demotes P19 from #1 (e.g. W_PANEL_FIRST=0.0) without dropping it from top-3 is also caught. Anti-regression guard for the LESSON 0.7 panel-bias scenario.",
     "idea_spec": {
       "_schema_version": "1.0.0",
       "_filled_ratio": 0.8,
@@ -345,9 +345,9 @@
       },
       "UP": {
         "top": [
-          "P03",
+          "P19",
           "P14",
-          "P19"
+          "P03"
         ]
       },
       "RP": {
@@ -371,7 +371,8 @@
       ],
       "top_3_must_not_drop": [
         "P19"
-      ]
+      ],
+      "composite_winner_must_be": "P19"
     }
   },
   {

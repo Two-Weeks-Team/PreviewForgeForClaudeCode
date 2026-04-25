@@ -1,16 +1,21 @@
 #!/usr/bin/env bash
 # A-5 enforcement fixture — `scripts/h1-modal-helper.sh`.
 #
-# Two scenarios:
+# Three scenarios cover the full machine-readable contract surface
+# (browser / inline / error) so a future refactor cannot silently
+# narrow the mapping:
 #   1. NEGATIVE / no-opener: PATH is stripped to a fake bin that has
 #      python3, dirname, basename (so open-browser.sh can run), but NO
 #      `open`, NO `xdg-open`, NO `powershell.exe`, NO `pwsh`. The
 #      helper must emit `{"mode":"inline","url":"..."}` and exit 0.
 #   2. POSITIVE / opener-present: PATH adds a `open` shim that exits 0.
 #      The helper must emit `{"mode":"browser","url":"..."}` and exit 0.
-#
-# Both assertions are byte-equal compares — there is no jq round-trip,
-# so the helper's JSON output format is locked at the byte level.
+#   3. ERROR / malformed URL (v1.11.0+ #95/#89): a URL containing a
+#      shell metacharacter (whitespace, quote, backtick, …) is rejected
+#      by open-browser.sh's S-2 gate with exit 1. The helper must
+#      surface that as `{"mode":"error","exit_code":1,"url":"..."}` and
+#      propagate exit 1 — that branch was previously uncovered, so a
+#      regression in the error-path JSON shape would have shipped.
 
 set -uo pipefail
 
@@ -113,6 +118,29 @@ elif [[ "$browser_out" != "$expected_browser" ]]; then
   fails=$((fails + 1))
 else
   echo "  OK   [opener-present] mode=browser, exit=0, byte-equal"
+fi
+
+# --- Scenario 3: malformed URL → mode=error, exit propagated ---
+# A URL with whitespace fails the S-2 safe-charset gate in
+# open-browser.sh, which returns exit 1 from the wrapper. h1-modal-helper
+# is contracted to wrap that as the error-shape JSON and propagate the
+# non-zero exit. We cannot use a `file://...` because realpath/cd would
+# ALSO fail before the URL check; we use an explicit https URL that
+# contains a literal space (a metachar S-2 always rejects).
+malformed_url='https://example.com/with bad spaces'
+expected_error='{"mode":"error","exit_code":1,"url":"https://example.com/with bad spaces"}'
+error_rc=0
+error_out=$(env -i HOME="$HOME" PATH="$fake_bin" bash "$HELPER" "$malformed_url") || error_rc=$?
+if [[ "$error_rc" -ne 1 ]]; then
+  echo "  FAIL [malformed-url] helper exit=$error_rc (expected 1 — propagated from S-2 gate reject)"
+  fails=$((fails + 1))
+elif [[ "$error_out" != "$expected_error" ]]; then
+  echo "  FAIL [malformed-url] stdout mismatch"
+  echo "      expected: $expected_error"
+  echo "      actual  : $error_out"
+  fails=$((fails + 1))
+else
+  echo "  OK   [malformed-url] mode=error, exit=1 (propagated), byte-equal"
 fi
 
 echo
