@@ -36,21 +36,47 @@ multi-modal user flow without a real Claude Code session.
   marginal value of replaying the modal sequence on top is moderate
   but not critical).
 
-**Decision: defer to post-hackathon**.
+**Decision: SHIPPED via Option A (re-introduced to v1.6 scope, issue #79).**
 
-Rationale:
-1. The artifact-level fixtures (`tests/fixtures/security/`, `rule9-fp-guard/`,
-   `filled-ratio/`, `normalize-constraints/`, `lesson07-regression/`) cover
-   the byte-stable contracts that actually break at runtime.
-2. The mock harness's main payoff — catching regressions in user-modal
-   flow — is outweighed by maintenance overhead for a one-week hackathon
-   where every agent prompt is still iterating.
-3. A new GitHub issue will track this for the post-hackathon roadmap so
-   the assessment isn't lost.
+Original deferral was correct under the maintenance-overhead framing, but
+the v1.11 retrospective revealed a load-bearing dependency we missed:
+clean-room e2e validation (issue #58 C-1) was the *only* path proving the
+full `/pf:new` pipeline still produces its 6 canonical artifacts on a
+fresh machine — and C-1 itself needs a runnable harness in CI, not a
+manual demo. Without T-7 in scope, "demo day = first real run" became
+the failure mode. So T-7 was re-introduced under issue #79 / Option A.
 
-**Re-open trigger**: if a Socratic-interview regression slips past the
-artifact fixtures and reaches a real run (LESSON 0.7-style failure in
-the modal flow itself), revisit T-7 immediately.
+What shipped (PR W3.9):
+- `tests/e2e/mock-bootstrap.sh` — 3-profile (`standard`/`pro`/`max`)
+  artifact-pipeline harness. Strategy: **direct-script-invocation**, not
+  full `claude` CLI stub. The harness materialises canned spec +
+  synthesised advocate cards, then drives the actual deterministic
+  scripts (`filled-ratio-gate.sh`, `generate-gallery.sh`,
+  `h1-modal-helper.sh`, `lint-framework-convergence.py`,
+  `generate-spec-anchor-audit.py`) end-to-end and asserts every artifact
+  against its schema. The original "stub the LLM" approach was rejected
+  as intractable (would itself require an LLM); see
+  `tests/e2e/claude-stub.sh` header for the full rationale.
+- `tests/e2e/canned-responses/profile-{standard,pro,max}.json` — three
+  fixed seed ideas with full Socratic answers + Gate H1 picks. Edit only
+  with PR review.
+- `.github/workflows/ci.yml` — new e2e-mock job iterating over the three
+  profiles on `ubuntu-latest` + `macos-14`.
+
+What this DOES NOT close: LLM-side regressions in agent prompts
+(idea-clarifier / ideation-lead / 26 advocate-of-X.md / diversity-validator)
+remain validated by the advocate-boilerplate lint (W2.6) and the LESSON
+0.7 panel-bias fixture (W4.11), plus the eventual clean-room run
+(W4.10). The harness deliberately scopes to the deterministic subset of
+`/pf:new` that *can* break without an LLM in the loop.
+
+Maintenance overhead (the original defer rationale) is mitigated by:
+- Canned responses live in version-controlled JSON, not recorded traces.
+- The harness stops at artifact contracts (schema + iframe count) —
+  agent-prompt iteration does not break it unless an interface changes.
+- Failure modes are loud: a single missing artifact, an off-by-one
+  iframe count, or a schema-invalidating field all trip the same exit-1
+  with diagnostic state dumped to stderr.
 
 ## T-12 — Cross-platform CI matrix (Ubuntu / macOS / Windows)
 

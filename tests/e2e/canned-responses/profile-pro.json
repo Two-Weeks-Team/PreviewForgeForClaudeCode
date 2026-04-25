@@ -1,0 +1,38 @@
+{
+  "_comment": "Canned Socratic + Gate H1 responses for T-7 mock-bootstrap harness, profile=pro. Drives tests/e2e/mock-bootstrap.sh deterministically. Edit only with PR review.",
+  "profile": "pro",
+  "previews_count": 18,
+  "seed_idea": "API for async meeting transcription",
+  "idea_spec": {
+    "_schema_version": "1.0.0",
+    "_filled_ratio": 0.7777777777777778,
+    "idea_summary": "API for async meeting transcription",
+    "target_persona": {
+      "profile": "SaaS developer adding meeting intelligence",
+      "primary_pain": "Building ML transcription infra is time-consuming",
+      "usage_frequency": "daily"
+    },
+    "primary_surface": {
+      "platform": "api",
+      "sync_model": "eventual",
+      "offline_capable": null
+    },
+    "jobs_to_be_done": {
+      "functional": "Upload audio, receive diarized transcript via webhook",
+      "emotional": null,
+      "social": null
+    },
+    "killer_feature": "Single-endpoint REST API with webhook callback",
+    "must_have_constraints": [
+      {"type": "latency", "value": "Webhook fired within 2x audio duration"}
+    ],
+    "non_goals": ["Live streaming transcription"],
+    "monetization_model": "transaction_fee",
+    "success_metric": null
+  },
+  "expected_filled_ratio_mode": "ground-truth",
+  "advocate_surface_default": "API Only",
+  "advocate_persona_default": "SaaS developer adding meeting intelligence",
+  "h1_pick": "P10",
+  "skip_b3": false
+}
