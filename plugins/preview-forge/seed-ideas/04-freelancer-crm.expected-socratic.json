@@ -1,0 +1,33 @@
+{
+  "idea_summary": "프리랜서 1인이 고객·견적·인보이스를 관리",
+  "target_persona": {
+    "profile": "솔로 프리랜서 (디자인/개발/번역/마케팅)",
+    "primary_pain": "고객은 노션, 견적은 엑셀, 인보이스는 한글 — 파편화로 입금 누락 발생",
+    "usage_frequency": "weekly"
+  },
+  "primary_surface": {
+    "platform": "web",
+    "sync_model": "real-time",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "functional": "고객 → 견적 → 인보이스 → 입금 추적의 단일 흐름",
+    "emotional": "사업 흐름의 통제감",
+    "social": "클라이언트에게 전문성 있는 프리랜서로 보이기"
+  },
+  "killer_feature": "견적 → 인보이스 1-클릭 변환 + 입금 자동 매칭",
+  "must_have_constraints": [
+    {
+      "type": "regulatory",
+      "value": "한국 부가세 + 종합소득세 신고용 데이터 export"
+    }
+  ],
+  "non_goals": [
+    "급여 관리",
+    "재고/물류"
+  ],
+  "monetization_model": "subscription",
+  "success_metric": "월간 발행 인보이스 수 + 입금 성공률",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}

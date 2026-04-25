@@ -146,6 +146,22 @@ B-3 "Skip interview" 선택 시: ratio ≈ 0.11 → **fallback** v1.5.4 path로 
 
 **차단하지 않음** — 해커톤 데모에서 사용자가 질문 답을 모르겠다고 Other/pass를 눌러도 흐름이 멈추지 않아야 함.
 
+## Q-2 — 사용자에게 ratio + tier 가시화 (Phase 8)
+
+I1 마지막 Batch 직후, 산출된 `idea.spec.json`의 `_filled_ratio`와 A-4 tier label을 stderr 한 줄로 사용자에게 통보한다. 사용자가 자신이 답한 만큼 어떤 confidence tier로 advocate가 dispatch되는지 즉시 파악 가능. 형식:
+
+```text
+[I1] idea.spec.json — _filled_ratio = 0.56 → medium tier (advocate가 spec을 hint로 사용)
+```
+
+tier label은 §"Soft anchor 정책" 표의 4-tier(`high` / `medium` / `low` / `fallback`)와 1:1 매핑. B-3 "Skip interview" 선택 시:
+
+```text
+[I1] idea.spec.json — _filled_ratio = 0.11 → fallback (v1.5.4 path: advocate는 idea.json만 받음)
+```
+
+이 메시지는 informational only. 사용자가 다시 답하고 싶다면 Q-4 amend/retry 경로(아래 ASSESSMENT 참조) 또는 `/pf:new --no-cache`로 재시작.
+
 ## 모델 설정
 - Model: `claude-opus-4-7`, Effort: `medium`, Adaptive: off, Task budget: 30K (이전 20K에서 상향 — 3 batch 인터뷰 + Write)
 

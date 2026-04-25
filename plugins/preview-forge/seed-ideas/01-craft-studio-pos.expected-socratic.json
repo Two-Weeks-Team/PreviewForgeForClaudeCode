@@ -1,0 +1,33 @@
+{
+  "idea_summary": "공방 운영자가 수업·재고·정산을 한 곳에서",
+  "target_persona": {
+    "profile": "1-3인 공방 운영자 (도예/가죽/플라워)",
+    "primary_pain": "수기 장부 + 카카오톡 예약 + 엑셀 재고로 운영이 분산되어 매주 한 번씩 정리에 반나절 소요",
+    "usage_frequency": "daily"
+  },
+  "primary_surface": {
+    "platform": "web",
+    "sync_model": "real-time",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "functional": "수업 예약·재고·매출을 한 화면에서 보고, 월말 정산 자동화",
+    "emotional": "운영의 통제감 — 잊는 것이 없다는 안심",
+    "social": "체계적인 사업주로 단골에게 비치고 싶음"
+  },
+  "killer_feature": "수업·재고·정산 단일 뷰 — 한 페이지에서 오늘 수업, 부족 재료, 미수금 동시 가시화",
+  "must_have_constraints": [
+    {
+      "type": "regulatory",
+      "value": "한국 부가세 신고용 매출 데이터 export 가능"
+    }
+  ],
+  "non_goals": [
+    "인사·급여 모듈",
+    "다국어 UI"
+  ],
+  "monetization_model": "subscription",
+  "success_metric": "월간 활성 매장 수 (MAU at venue level)",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}

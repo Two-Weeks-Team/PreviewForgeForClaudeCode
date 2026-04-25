@@ -1,0 +1,38 @@
+{
+  "idea_summary": "신생아 부모를 위한 수면·수유 리듬 추적",
+  "target_persona": {
+    "profile": "0-12개월 신생아 부모 (특히 첫 아이)",
+    "primary_pain": "새벽 수유·수면 패턴이 머릿속에만 있어서 의사 상담 시 데이터 없음",
+    "usage_frequency": "daily"
+  },
+  "primary_surface": {
+    "platform": "mobile",
+    "sync_model": "eventual",
+    "offline_capable": true
+  },
+  "jobs_to_be_done": {
+    "functional": "수면·수유·기저귀 시각을 1-탭 3초 안에 기록하고 주간 리듬 시각화",
+    "emotional": "안심 — 패턴이 정상 범위인지 데이터로 확인",
+    "social": "배우자·소아과 의사와 데이터 공유"
+  },
+  "killer_feature": "한손 1-탭 기록 (3초 이내) + 의사 상담용 PDF 1-클릭 export",
+  "must_have_constraints": [
+    {
+      "type": "regulatory",
+      "value": "PHI 아님 — 의료 진단/처방 명시적 비제공"
+    },
+    {
+      "type": "latency",
+      "value": "탭 → 기록 완료 1초 이내"
+    }
+  ],
+  "non_goals": [
+    "의료 진단",
+    "약물 처방",
+    "수면 컨설팅"
+  ],
+  "monetization_model": "freemium",
+  "success_metric": "신생아 0-3개월 시기의 30일 retention",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}

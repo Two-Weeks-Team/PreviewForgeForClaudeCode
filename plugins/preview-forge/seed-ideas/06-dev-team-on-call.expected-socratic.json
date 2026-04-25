@@ -1,0 +1,37 @@
+{
+  "idea_summary": "3인 이하 스타트업의 간단한 온콜 스케줄·알림",
+  "target_persona": {
+    "profile": "2-5인 스타트업 엔지니어링 리더 (CTO/Tech lead)",
+    "primary_pain": "PagerDuty는 비싸고 과스펙, 카카오톡 알림은 놓침",
+    "usage_frequency": "weekly"
+  },
+  "primary_surface": {
+    "platform": "hybrid",
+    "sync_model": "real-time",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "functional": "주간 온콜 자동 로테이션 + Slack DM·SMS 알림 + 응답 ETA 추적",
+    "emotional": "안심 — 새벽 알림을 놓치지 않음",
+    "social": "팀 신뢰 — 누가 깰지 명확"
+  },
+  "killer_feature": "Slack 워크스페이스 1-클릭 연결 + 온콜 자동 로테이션 + 미응답 시 자동 escalate",
+  "must_have_constraints": [
+    {
+      "type": "latency",
+      "value": "알림 30초 이내 도달"
+    },
+    {
+      "type": "budget",
+      "value": "월 $20 이하 (PagerDuty 1/10 가격)"
+    }
+  ],
+  "non_goals": [
+    "incident management 워크플로우",
+    "post-mortem 도구"
+  ],
+  "monetization_model": "subscription",
+  "success_metric": "주간 알림 응답률 + 평균 응답 시간",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}

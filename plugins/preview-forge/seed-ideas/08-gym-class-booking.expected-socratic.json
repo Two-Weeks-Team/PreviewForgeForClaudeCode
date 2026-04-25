@@ -1,0 +1,33 @@
+{
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0,
+  "idea_summary": "작은 피트니스 스튜디오 수업 예약·출석",
+  "target_persona": {
+    "profile": "1-2인 운영자의 소규모 피트니스 스튜디오 (필라테스·요가·복싱 등)",
+    "primary_pain": "수업 예약은 카카오톡, 출석은 종이 명부, 무단결석/노쇼 대응이 수기로 흩어져 있음",
+    "usage_frequency": "daily"
+  },
+  "primary_surface": {
+    "platform": "web",
+    "sync_model": "real-time",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "functional": "수업 예약 + 출석 체크 + 결석 알림을 한 화면에서 처리, 월말 회원 출석률 자동 집계",
+    "emotional": "운영의 통제감 — 노쇼·중복 예약을 놓치지 않음",
+    "social": "회원에게 전문 스튜디오로 비치고 싶음"
+  },
+  "killer_feature": "QR/NFC 1-탭 출석 자동 체크 + 무단결석 회원에게 자동 리마인더",
+  "must_have_constraints": [
+    {
+      "type": "budget",
+      "value": "월 ₩30,000 이하 (1인 운영 스튜디오 ARPU 한계)"
+    }
+  ],
+  "non_goals": [
+    "트레이너 매칭",
+    "PT 회차 결제 정산"
+  ],
+  "monetization_model": "subscription",
+  "success_metric": "월간 활성 스튜디오 수 + 출석 자동기록 비율"
+}

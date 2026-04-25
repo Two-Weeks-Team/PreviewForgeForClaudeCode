@@ -1,0 +1,33 @@
+{
+  "idea_summary": "소규모 OSS 메인테이너를 위한 AI 보조 코드 리뷰",
+  "target_persona": {
+    "profile": "1-3인 OSS 메인테이너 (스타 100-2000개 프로젝트)",
+    "primary_pain": "PR 리뷰가 밀려 있고 기여자에게 늦은 피드백, 리뷰 품질도 일관되지 않음",
+    "usage_frequency": "weekly"
+  },
+  "primary_surface": {
+    "platform": "cli",
+    "sync_model": "batch",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "functional": "PR diff에 대한 AI 1차 리뷰 + 메인테이너의 최종 결정 가속",
+    "emotional": "통제 — 결정은 내가, AI는 보조",
+    "social": "기여자에게 24시간 안에 피드백을 돌려주는 메인테이너"
+  },
+  "killer_feature": "메인테이너의 과거 리뷰 스타일을 학습해 일관된 어조로 1차 코멘트 작성",
+  "must_have_constraints": [
+    {
+      "type": "data_residency",
+      "value": "비공개 리포 코드를 외부 LLM에 보내지 않음 (옵션: 로컬 모델 또는 자체 호스팅)"
+    }
+  ],
+  "non_goals": [
+    "자동 머지",
+    "라이선스 호환성 검사"
+  ],
+  "monetization_model": "open_source",
+  "success_metric": "GitHub stars + 메인테이너의 PR 처리 시간 단축",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}

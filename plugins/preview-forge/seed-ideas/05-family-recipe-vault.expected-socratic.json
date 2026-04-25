@@ -1,0 +1,33 @@
+{
+  "idea_summary": "가족 대대로 내려오는 레시피 아카이브 + 공유",
+  "target_persona": {
+    "profile": "30-50대 부모, 자녀·시부모와 레시피 공유 원함",
+    "primary_pain": "할머니·시어머니의 손맛 레시피가 구전·메모로만 있고 사라지고 있음",
+    "usage_frequency": "monthly"
+  },
+  "primary_surface": {
+    "platform": "mobile",
+    "sync_model": "eventual",
+    "offline_capable": true
+  },
+  "jobs_to_be_done": {
+    "functional": "레시피를 사진/음성/텍스트로 보존, 가족 그룹과만 공유",
+    "emotional": "가족과 연결되는 따뜻함",
+    "social": "손주 세대까지 레시피를 전달했다는 자부심"
+  },
+  "killer_feature": "음성 녹음 → 자동 단계별 레시피 텍스트 변환",
+  "must_have_constraints": [
+    {
+      "type": "data_residency",
+      "value": "가족 사진·음성 외부 SNS·검색엔진 노출 차단"
+    }
+  ],
+  "non_goals": [
+    "퍼블릭 SNS 기능",
+    "상업 판매·결제"
+  ],
+  "monetization_model": "freemium",
+  "success_metric": "활성 가족 그룹 수 (≥3명)",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}
