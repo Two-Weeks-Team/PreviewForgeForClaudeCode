@@ -116,6 +116,105 @@ runs on both. Windows tracked as a follow-up issue.
 
 ---
 
+# C-1 — Clean-room E2E Run Evidence (PR W4.10, issue #58)
+
+**Goal**: Prove that a fresh machine running `/pf:new` produces the
+6 canonical artifacts (`idea.spec.json`, `previews.json`,
+`mockups/gallery.html`, `chosen_preview.json` + `.lock`, plus the
+C-5 `spec-anchor-audit.json` on the `max` profile) without prior
+local state. Until W4.10, v1.11.0 claimed v1.6 functional completeness
+on the strength of artifact-level fixtures and the T-7 harness, but no
+*committed* evidence existed that the pipeline ran end-to-end on a
+real layout. The user-facing failure mode was: demo day = first real
+run = ship-and-pray.
+
+**Method (deterministic-script subset of the v1.6 pipeline)**:
+
+The `/pf:new` orchestration is interpreted by Claude Code at runtime,
+so a byte-reproducible commit of an LLM-driven run is not possible
+(every replay would byte-diverge in the advocate cards). What *is*
+reproducible is the deterministic-script subset that T-7
+(`tests/e2e/mock-bootstrap.sh`, PR W3.9) already exercises. For C-1
+we re-ran T-7 against all three profiles with a new `--out-dir` flag
+that points the harness at a committed evidence path instead of an
+auto-cleaned mktemp dir. The committed dirs are the *actual harness
+output*, not hand-crafted JSON.
+
+What this evidence covers:
+
+- `idea.spec.json` schema-valid for all 3 profiles
+  (`plugins/preview-forge/schemas/idea-spec.schema.json`)
+- `previews.json` produced with the per-profile entry count
+  (9 / 18 / 26)
+- `mockups/gallery.html` rendered with the matching iframe count
+- `chosen_preview.json` + `.lock` for the canned H1 pick
+- `spec-anchor-audit.json` (C-5 / W2.8 schema) for the `max`
+  profile only — the audit script enforces the 26-advocate C-5
+  contract by design, so standard / pro intentionally skip it; the
+  smaller profiles are validated by the per-profile fixture suite
+  (`tests/fixtures/spec-anchor-convergence/`) on every push.
+- `trace.log` per dir — minimal step-list breadcrumb so reviewers
+  can read what ran without re-executing.
+
+What this evidence does NOT cover (acknowledged limitation): the
+LLM-driven steps of `/pf:new` (Socratic interview, 26 advocate
+dispatch, diversity validator) are *stubbed* by canned responses +
+synthesised cards. Those LLM-side regressions remain validated by
+the advocate-boilerplate lint (PR W2.6) and the LESSON 0.7 panel-bias
+fixture (PR W4.11). For LLM-driven full e2e, a human-supplied
+`runs/_user-supplied-live/` directory is the canonical home (the
+user can populate it via a real `/pf:new` invocation; that path is
+not committed under `runs/r-clean-*` and remains gitignored).
+
+**Decision: SHIPPED via T-7 evidence-capture mode**.
+
+Files (committed artifacts):
+
+- `runs/r-clean-20260425-standard/` — 9-card profile, ground-truth
+  filled-ratio mode.
+- `runs/r-clean-20260425-pro/` — 18-card profile, ground-truth mode.
+- `runs/r-clean-20260425-max/` — 26-card profile, with C-5
+  `spec-anchor-audit.json` and `.convergence-lint.out`.
+
+Each dir contains: `idea.json`, `idea.spec.json`, `previews.json`,
+`mockups/gallery.html` + N per-card mockup HTMLs, P*.json per-card
+JSON, `chosen_preview.json` + `.lock`, `.filled-ratio-gate.out`,
+`.h1-helper.out`, and `trace.log`. The `max` dir additionally
+holds `spec-anchor-audit.json` and `.convergence-lint.out`.
+
+How to reproduce locally:
+
+```bash
+for profile in standard pro max; do
+  bash tests/e2e/mock-bootstrap.sh "$profile"        --out-dir "runs/r-clean-$(date -u +%Y%m%d)-$profile"
+done
+```
+
+The `--out-dir` flag is the only addition T-7 needed for evidence
+capture: with the flag, the run dir survives harness exit and
+`trace.log` is written next to the artifacts; without the flag, T-7
+keeps its original CI behaviour (auto-cleaned mktemp).
+
+`.gitignore` was extended to allow `runs/r-clean-*/` to be tracked
+while keeping arbitrary local `runs/<id>/` ignored. The negate
+pattern lives at the bottom of `.gitignore` so it wins over the
+later `*.log` rule (relevant for `trace.log`).
+
+| Run dir | Profile | Filled-ratio mode | Cards | iframes | Audit | trace.log |
+|---|---|---|---|---|---|---|
+| `runs/r-clean-20260425-standard/` | standard | ground-truth | 9 | 9 | n/a (skipped, C-5 needs 26) | yes |
+| `runs/r-clean-20260425-pro/` | pro | ground-truth | 18 | 18 | n/a (skipped, C-5 needs 26) | yes |
+| `runs/r-clean-20260425-max/` | max | ground-truth | 26 | 26 | shipped (schema-valid) | yes |
+
+Re-open trigger: any future change that breaks a deterministic
+script (`filled-ratio-gate.sh`, `generate-gallery.sh`,
+`h1-modal-helper.sh`, `lint-framework-convergence.py`,
+`generate-spec-anchor-audit.py`) without a corresponding evidence
+re-capture should fail PR review. The committed artifacts are the
+canonical "what the pipeline actually emits today" reference.
+
+---
+
 # Phase 8 — Q-4 / Q-6 / Q-7 / Q-8 Assessment
 
 > 4 of the 9 Phase 8 items deferred to post-hackathon. Q-9 / Q-1 / Q-2
