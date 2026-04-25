@@ -238,6 +238,36 @@ ACTUAL_MODE=$(printf '%s\n' "$GATE_OUT" | sed -n 's/^mode=//p')
 [ "$ACTUAL_MODE" = "$PF_EXPECTED_MODE" ] \
   || fail "step 2: filled-ratio-gate mode mismatch (got '$ACTUAL_MODE', expected '$PF_EXPECTED_MODE')"
 
+# v1.11.0+ (#95/#91): assert the canned `_filled_ratio` byte-matches what
+# `compute-filled-ratio.py` would produce on the same canned spec. The
+# canned file's `_filled_ratio` is technically a derived field — keeping
+# it in the JSON is a documentation aid for reviewers, but a value that
+# disagrees with the canonical computation is a silent test smell (and
+# could mask a real change in slot-counting semantics). This assertion
+# locks the contract: re-derive the ratio, compare to the canned one
+# within float tolerance, fail if they disagree.
+COMPUTED_RATIO=$(python3 "$REPO_ROOT/scripts/compute-filled-ratio.py" "$RUN_DIR/idea.spec.json") \
+  || fail "step 2: compute-filled-ratio.py failed on canned spec"
+CANNED_RATIO=$(python3 - "$CANNED" <<'PY' || true
+import json, sys
+with open(sys.argv[1], encoding="utf-8") as f:
+    print(json.load(f)["idea_spec"]["_filled_ratio"])
+PY
+)
+RATIO_OK=$(python3 - "$COMPUTED_RATIO" "$CANNED_RATIO" <<'PY' || true
+import sys
+computed = float(sys.argv[1])
+canned = float(sys.argv[2])
+# 1e-3 tolerance: compute-filled-ratio.py prints 4 decimals (rounded); the
+# canned file may carry more precision, but a meaningful slot-count change
+# is always >= 1/9 ≈ 0.111 which dwarfs 1e-3.
+print("OK" if abs(computed - canned) <= 1e-3 else "DRIFT")
+PY
+)
+if [ "$RATIO_OK" != "OK" ]; then
+  fail "step 2: canned _filled_ratio drift — canned=$CANNED_RATIO computed=$COMPUTED_RATIO (rule: scripts/compute-filled-ratio.py is canonical; update the canned response so it byte-equals the computed value)"
+fi
+
 # ---------- step 3: synthesize N advocate cards + previews.json ----------
 
 python3 - "$CANNED" "$RUN_DIR" <<'PY' || fail "step 3: synthesize advocate cards"
