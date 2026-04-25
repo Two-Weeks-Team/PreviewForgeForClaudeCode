@@ -1,0 +1,42 @@
+[
+  {
+    "form": "command-prefix",
+    "command": "command eval $(rm -rf /tmp/x)",
+    "rationale": "`command` builtin prefix bypasses any shell function/alias named `eval` and falls through to the real builtin. Word-boundary `\\beval\\b` still catches it."
+  },
+  {
+    "form": "backslash-escape",
+    "command": "\\eval $(echo gh release create v0)",
+    "rationale": "Backslash before a builtin suppresses alias lookup but bash still executes the underlying builtin. `\\b` matches between `\\` (non-word) and `e` (word)."
+  },
+  {
+    "form": "ifs-separator",
+    "command": "eval$IFS$1",
+    "rationale": "IFS-trick bypass: no literal whitespace after `eval`, only `$IFS` expansion. The old `\\beval\\s+` regex MISSED this because `\\s+` requires literal whitespace."
+  },
+  {
+    "form": "paren-grouping",
+    "command": "(eval rm -rf /home)",
+    "rationale": "Subshell grouping. `\\b` matches between `(` (non-word) and `e` (word)."
+  },
+  {
+    "form": "semicolon-chain",
+    "command": "true;eval npm publish",
+    "rationale": "Statement separator. The old `\\beval\\s+` would still match because of the trailing space, but a determined attacker writing `eval;cmd` (no trailing space) would slip past — covered now by `\\beval\\b`."
+  },
+  {
+    "form": "quoted-literal-trail",
+    "command": "eval\"docker push registry.example.com/x\"",
+    "rationale": "No whitespace between `eval` and the quoted argument. Old regex MISSED this; `\\beval\\b` matches at the `eval`/`\"` boundary."
+  },
+  {
+    "form": "if-conditional",
+    "command": "if eval kubectl prod-delete; then echo done; fi",
+    "rationale": "Inside `if … then` clause. Caught by both old and new regex, included for coverage parity."
+  },
+  {
+    "form": "bare-eval-eof",
+    "command": "eval",
+    "rationale": "Bare `eval` at end-of-line. Useless on its own (eval reads no args) but proves the regex no longer requires a trailing token. Defensive: a future bypass that pipes data into `eval` via stdin (`echo cmd | eval`) needs the bare form to still match."
+  }
+]

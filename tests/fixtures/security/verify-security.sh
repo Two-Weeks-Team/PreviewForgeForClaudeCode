@@ -81,6 +81,37 @@ fi
 
 echo
 echo "[I-7] open-browser.sh URL gate — positive matrix (must NOT over-narrow)"
+# Issue #95 / PR #85 follow-up — local-dev safety: previously this loop
+# called `open-browser.sh` for every benign URL, which on a developer
+# workstation actually invoked the OS opener (macOS `open`, Linux
+# `xdg-open`) and spawned dozens of real browser tabs every time the
+# security suite was run. CI was quiet (no DISPLAY), but the local
+# experience punished anyone running `bash tests/fixtures/security/
+# verify-security.sh` interactively, discouraging the very thing we want
+# devs to do — run security tests locally.
+#
+# Fix is option (b) from the cluster spec: install a fake-PATH shim that
+# intercepts `open` (macOS), `xdg-open` (Linux), and `powershell.exe`
+# (defensive; verify-security may run under WSL/Cygwin), records the
+# accepted URL, and exits 0 without launching anything. Same shim
+# pattern used by T-6 and T-13 elsewhere in this file. The S-2 URL
+# gate is upstream of every opener, so the shims only ever see URLs
+# that already passed the gate — exactly what the positive-matrix
+# assertion measures.
+pos_shim_dir="$(mktemp -d -t pf-i7-pos-shim-XXXXXX)"
+pos_record_file="$pos_shim_dir/accepted-urls.log"
+: > "$pos_record_file"
+for shim_name in open xdg-open powershell.exe; do
+  cat > "$pos_shim_dir/$shim_name" <<SHIM
+#!/bin/sh
+# I-7 positive-matrix shim ($shim_name) — record argv, do NOT launch.
+printf '%s\t%s\n' "$shim_name" "\$*" >> "$pos_record_file"
+exit 0
+SHIM
+  chmod +x "$pos_shim_dir/$shim_name"
+done
+pos_path="$pos_shim_dir:$PATH"
+
 pos_fails=0
 pos_total=$(python3 -c "import json,sys
 with open(sys.argv[1]) as f:
@@ -89,11 +120,11 @@ with open(sys.argv[1]) as f:
 while IFS= read -r -d '' url; do
   rc=0
   # We test the S-2 gate in isolation: the URL must NOT trigger the
-  # gate's exit-1 rejection path. rc=0 (opener succeeded) or rc=3 (no
-  # opener available — A-5 non-fatal in CI) both mean the URL passed
-  # the gate; only rc=1 indicates the over-narrowing regression we
-  # want to catch.
-  bash "$REPO_ROOT/scripts/open-browser.sh" "$url" >/dev/null 2>&1 || rc=$?
+  # gate's exit-1 rejection path. rc=0 (shim accepted, no real opener
+  # invoked) or rc=3 (no opener available — A-5 non-fatal) both mean
+  # the URL passed the gate; only rc=1 indicates the over-narrowing
+  # regression we want to catch.
+  PATH="$pos_path" bash "$REPO_ROOT/scripts/open-browser.sh" "$url" >/dev/null 2>&1 || rc=$?
   if [[ "$rc" -eq 1 ]]; then
     fail "I-7 URL positives over-narrowed and rejected: $(printf '%q' "$url")"
     pos_fails=$((pos_fails + 1))
@@ -103,9 +134,16 @@ with open(sys.argv[1]) as f:
     for u in json.load(f):
         sys.stdout.write(u)
         sys.stdout.write('\x00')" "$FIXTURES_DIR/url-injection-positives.json")
-if [[ "$pos_fails" -eq 0 ]]; then
-  pass "url-injection-positives.json — all $pos_total benign URLs accepted (rc!=1)"
+# Defense-in-depth: count shim invocations so the summary surfaces
+# whether the loop actually drove URLs through an opener (vs. silently
+# bailing on rc=3). 0 real browser tabs are launched in either case.
+shim_invocations=$(wc -l < "$pos_record_file" | tr -d ' ')
+if [[ "$pos_fails" -eq 0 && "$shim_invocations" -ge 1 ]]; then
+  pass "url-injection-positives.json — all $pos_total benign URLs accepted (rc!=1; $shim_invocations shim invocations, 0 real browser tabs)"
+elif [[ "$pos_fails" -eq 0 ]]; then
+  pass "url-injection-positives.json — all $pos_total benign URLs accepted (rc!=1; A-5 fallback path, no opener invoked)"
 fi
+rm -rf "$pos_shim_dir"
 
 echo
 echo "[I-7] idea-spec.schema.json — per-cap matrix"
@@ -697,6 +735,47 @@ if regressions:
     sys.exit(1)
 print(f"  ✓ run-id-traversal.txt — {len(bad)} malicious rejected + {len(good)} canonical accepted")
 PY
+
+# ----- I-9 : factory-policy eval-bypass probes (#95 / #85 follow-up) -----
+#
+# The Layer-0 factory-policy hook treats any `eval` invocation as a shell-
+# expansion bypass attempt (eval is the canonical way to re-execute a
+# dynamically-built string and thus the canonical way to smuggle a
+# BLOCKED_BASH pattern past the outer scan). PR #85 introduced the eval
+# detector as `\beval\s+`, which required a literal whitespace token
+# after `eval`. Issue #95 widened this to `\beval\b` so non-whitespace
+# token boundaries are also caught (IFS-separator trick, quoted-literal
+# trail, paren grouping, semicolon chain, bare `eval` at EOF, `command`
+# builtin prefix, backslash-escape alias-bypass form).
+#
+# This fixture asserts every shape in eval-bypass-probes.json exits 2
+# (block) when piped through factory-policy.py.
+echo "[I-9] factory-policy eval-bypass probes"
+i9_fails=0
+i9_total=$(python3 -c "import json,sys
+with open(sys.argv[1]) as f:
+    print(len(json.load(f)))" "$FIXTURES_DIR/eval-bypass-probes.json")
+# NUL-separated emit (each command line may contain `;`, quotes, `$IFS`
+# expansions etc. that we want passed through unchanged).
+while IFS= read -r -d '' probe_cmd; do
+  rc=0
+  payload=$(printf '%s' "$probe_cmd" | python3 -c 'import json,sys; print(json.dumps({"tool_name":"Bash","tool_input":{"command":sys.stdin.read()}}))')
+  printf '%s' "$payload" \
+    | CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+      python3 "$REPO_ROOT/plugins/preview-forge/hooks/factory-policy.py" \
+    >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -ne 2 ]]; then
+    fail "I-9 eval-bypass probe NOT blocked (rc=$rc): $(printf '%q' "$probe_cmd")"
+    i9_fails=$((i9_fails + 1))
+  fi
+done < <(python3 -c "import json,sys
+with open(sys.argv[1]) as f:
+    for p in json.load(f):
+        sys.stdout.write(p['command'])
+        sys.stdout.write('\x00')" "$FIXTURES_DIR/eval-bypass-probes.json")
+if [[ "$i9_fails" -eq 0 ]]; then
+  pass "eval-bypass-probes.json — all $i9_total bypass shapes blocked (exit 2)"
+fi
 
 echo
 echo "=== Summary ==="
