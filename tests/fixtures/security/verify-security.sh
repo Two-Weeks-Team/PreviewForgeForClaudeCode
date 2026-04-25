@@ -241,6 +241,35 @@ try:
     sys.exit(1)
 except jsonschema.ValidationError as e:
     print(f"  ✓ malicious-constraints.json — schema rejected ({e.validator} on {list(e.absolute_path)[:3]})")
+
+# #65 — idea_summary maxLength cap (5000). 5001-char payload must reject;
+# a 5000-char twin must validate (proves the cap is the boundary, not a
+# coincidental other-rule reject like additionalProperties).
+oversize = json.load(open("$FIXTURES_DIR/oversized-idea-summary.json"))
+assert len(oversize["idea_summary"]) == 5001, \
+    f"fixture corrupt: idea_summary len={len(oversize['idea_summary'])} (expected 5001)"
+try:
+    jsonschema.validate(oversize, schema)
+    print("  ✗ oversized-idea-summary.json — REGRESSION: schema accepted 5001-char idea_summary", file=sys.stderr)
+    sys.exit(1)
+except jsonschema.ValidationError as e:
+    if e.validator != "maxLength" or "idea_summary" not in list(e.absolute_path):
+        print(f"  ✗ oversized-idea-summary.json — rejected for wrong reason "
+              f"({e.validator} on {list(e.absolute_path)[:3]}); expected maxLength on idea_summary",
+              file=sys.stderr)
+        sys.exit(1)
+    print(f"  ✓ oversized-idea-summary.json — schema rejected (maxLength on idea_summary)")
+
+# Boundary positive: 5000 chars must pass (proves cap is exactly 5000).
+boundary = dict(oversize)
+boundary["idea_summary"] = "x" * 5000
+try:
+    jsonschema.validate(boundary, schema)
+    print(f"  ✓ idea_summary boundary — 5000 chars accepted (cap is exactly 5000)")
+except jsonschema.ValidationError as e:
+    print(f"  ✗ idea_summary boundary — 5000 chars REJECTED ({e.validator}); cap is too tight",
+          file=sys.stderr)
+    sys.exit(1)
 PY
 
 # ----- T-6 : open-browser.sh fake-PATH shim (Phase 3 Test & CI) ---------
