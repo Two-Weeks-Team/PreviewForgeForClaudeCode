@@ -106,9 +106,11 @@ To add a new role, justify why an existing member is insufficient.
 ### 4. 🐛 Bug fix
 
 Use the bug report issue template. All bug fix PRs must:
-- Include a regression test (in `.github/workflows/ci.yml` if hook-related)
+- Include a regression test (under `tests/` — fixture, e2e, or boilerplate
+  lint as appropriate; CI wiring lives in `.github/workflows/ci.yml`)
 - Pass `bash scripts/verify-plugin.sh`
-- Include a LESSON entry in `LESSONS.md` (root cause + prevention)
+- Include a LESSON entry in `plugins/preview-forge/memory/LESSONS.md`
+  (root cause + prevention)
 
 ### 5. 📝 Documentation / spec
 
