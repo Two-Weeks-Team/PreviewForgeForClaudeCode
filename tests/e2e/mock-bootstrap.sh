@@ -42,8 +42,12 @@
 #     (W4.11), plus the eventual clean-room run (W4.10).
 #
 # USAGE
-#   bash tests/e2e/mock-bootstrap.sh <profile>
-#   profile ∈ {standard, pro, max}
+#   bash tests/e2e/mock-bootstrap.sh <profile> [--out-dir <path>]
+#   profile  ∈ {standard, pro, max}
+#   --out-dir  optional explicit RUN_DIR (used by W4.10 clean-room evidence
+#              capture, issue #58). When supplied, the run dir is NOT auto-
+#              cleaned at exit so artifacts can be committed. Without the flag
+#              the harness uses a self-cleaning mktemp dir (CI default).
 #
 # EXIT
 #   0  every artifact present + schema-valid + side-effect recordings asserted
@@ -54,11 +58,43 @@ set -u
 
 # ---------- arg parsing ----------
 
-PROFILE="${1:-}"
+PROFILE=""
+OUT_DIR=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --out-dir)
+      [ $# -ge 2 ] || { echo "usage: $0 <profile> [--out-dir <path>]" >&2; exit 2; }
+      OUT_DIR="$2"
+      shift 2
+      ;;
+    --out-dir=*)
+      OUT_DIR="${1#--out-dir=}"
+      shift
+      ;;
+    -h|--help)
+      echo "usage: $0 <profile> [--out-dir <path>]" >&2
+      exit 0
+      ;;
+    --*)
+      echo "$0: unknown flag: $1" >&2
+      exit 2
+      ;;
+    *)
+      if [ -z "$PROFILE" ]; then
+        PROFILE="$1"
+        shift
+      else
+        echo "$0: unexpected positional arg: $1" >&2
+        exit 2
+      fi
+      ;;
+  esac
+done
+
 case "$PROFILE" in
   standard|pro|max) ;;
   *)
-    echo "usage: $0 <standard|pro|max>" >&2
+    echo "usage: $0 <standard|pro|max> [--out-dir <path>]" >&2
     exit 2
     ;;
 esac
@@ -98,8 +134,21 @@ emit("H1_PICK", data["h1_pick"])
 PY
 )"
 
-RUN_ID="r-e2e-$PROFILE-$(date -u +%Y%m%d%H%M%S)"
-RUN_DIR="$TMP_PF_HOME/runs/$RUN_ID"
+# RUN_DIR placement:
+#   - default:   under the auto-cleaned $TMP_PF_HOME (CI behaviour, original).
+#   - --out-dir: explicit committed-evidence path (W4.10 / issue #58). The
+#                directory is created if missing and survives harness exit
+#                so its contents can be reviewed and committed. We do NOT
+#                rmtree pre-existing contents — caller chooses semantics.
+if [ -n "$OUT_DIR" ]; then
+  # Resolve to absolute path so downstream scripts that cd elsewhere keep working.
+  mkdir -p "$OUT_DIR"
+  RUN_DIR=$(cd "$OUT_DIR" && pwd)
+  RUN_ID=$(basename "$RUN_DIR")
+else
+  RUN_ID="r-e2e-$PROFILE-$(date -u +%Y%m%d%H%M%S)"
+  RUN_DIR="$TMP_PF_HOME/runs/$RUN_ID"
+fi
 mkdir -p "$RUN_DIR/mockups"
 
 # Recording file for the open-browser PATH stub assertion.
@@ -413,6 +462,39 @@ REQUIRED=(
 for f in "${REQUIRED[@]}"; do
   [ -f "$f" ] || fail "missing artifact: $f"
 done
+
+# ---------- step 10: trace.log (committed-evidence breadcrumb) ----------
+#
+# When --out-dir is used (W4.10 evidence capture), produce a small trace.log
+# next to the artifacts so reviewers can see at a glance which profile,
+# which steps, and what mode the gate took without re-running. Kept minimal
+# (deterministic-script subset only — LLM-driven steps are stubbed; see
+# tests/fixtures/ASSESSMENT.md "C-1 evidence" section). For tmp runs we
+# also write trace.log so CI logs can attach it on failure.
+TRACE_LOG="$RUN_DIR/trace.log"
+{
+  echo "# T-7 mock-bootstrap trace"
+  echo "profile=$PROFILE"
+  echo "previews_count=$PF_PREVIEWS_COUNT"
+  echo "filled_ratio_mode=$ACTUAL_MODE"
+  echo "iframe_count=$IFRAME_COUNT"
+  echo "framework_lint_rc=$LINT_RC"
+  echo "h1_pick=$PF_H1_PICK"
+  echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  echo "run_id=$RUN_ID"
+  echo "out_dir_mode=$([ -n "$OUT_DIR" ] && echo committed || echo tmp)"
+  echo
+  echo "# Steps executed (deterministic-script subset of /pf:new pipeline)"
+  echo "step_1=materialize_idea_spec"
+  echo "step_2=filled_ratio_gate"
+  echo "step_3=synthesize_advocate_cards_+_previews_json"
+  echo "step_4=generate_gallery_html"
+  echo "step_5=h1_modal_helper_dual_branch"
+  echo "step_6=chosen_preview_lock"
+  echo "step_7=framework_convergence_lint"
+  echo "step_8=spec_anchor_audit"
+  echo "step_9=artifact_presence_check"
+} > "$TRACE_LOG"
 
 echo "PASS: T-7 mock-bootstrap profile=$PROFILE → all artifacts present, schemas valid, side-effects recorded"
 echo "  run_dir: $RUN_DIR"
