@@ -37,7 +37,7 @@ fails=0
 # Tools the helper / open-browser.sh need at runtime, plus `bash` itself
 # (since we invoke the helper through `env -i ... bash "$HELPER"`).
 need_tools=(bash dirname basename realpath)
-fake_bin=$(mktemp -d -t pf-h1-fake-bin-XXXX)
+fake_bin=$(mktemp -d -t pf-h1-fake-bin-XXXXXX)
 trap 'rm -rf "$fake_bin"' EXIT
 
 for t in "${need_tools[@]}"; do
