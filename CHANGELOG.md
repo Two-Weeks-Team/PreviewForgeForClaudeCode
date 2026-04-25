@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.12.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.12.0...v1.12.1) (2026-04-25)
+
+
+### Bug Fixes
+
+* **security:** broader eval regex + fake-shim for positive URL loop ([#95](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/95) / [#85](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/85) follow-up) ([#97](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/97)) ([303c302](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/303c30208217bdc1730140855f6e43552f0a3bad))
+* **security:** defense in depth — input-path cap + cache read-path size check ([#95](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/95) / [#83](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/83) follow-up) ([#96](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/96)) ([2136c56](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/2136c56261a328ec9c8b77d9d40a728d25e70852))
+
 ## [1.12.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.11.1...v1.12.0) (2026-04-25)
 
 
