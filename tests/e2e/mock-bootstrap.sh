@@ -65,10 +65,14 @@ while [ $# -gt 0 ]; do
     --out-dir)
       [ $# -ge 2 ] || { echo "usage: $0 <profile> [--out-dir <path>]" >&2; exit 2; }
       OUT_DIR="$2"
+      [ -n "$OUT_DIR" ] || { echo "$0: --out-dir requires a non-empty path" >&2; exit 2; }
       shift 2
       ;;
     --out-dir=*)
       OUT_DIR="${1#--out-dir=}"
+      # Reject empty --out-dir= (would silently fall back to auto-cleaned tmp,
+      # surprising evidence-capture callers — codex review PR #92).
+      [ -n "$OUT_DIR" ] || { echo "$0: --out-dir= requires a non-empty path" >&2; exit 2; }
       shift
       ;;
     -h|--help)
@@ -145,6 +149,17 @@ if [ -n "$OUT_DIR" ]; then
   mkdir -p "$OUT_DIR"
   RUN_DIR=$(cd "$OUT_DIR" && pwd)
   RUN_ID=$(basename "$RUN_DIR")
+  # Clear known artifact patterns to prevent stale evidence from masking
+  # regressions (e.g. an old `max` dir reused for a `standard` run would
+  # leave P10..P26 + spec-anchor-audit.json behind, and step 9 only
+  # checks required-file presence — codex review PR #92).
+  rm -f "$RUN_DIR"/idea.json "$RUN_DIR"/idea.spec.json \
+        "$RUN_DIR"/previews.json "$RUN_DIR"/chosen_preview.json \
+        "$RUN_DIR"/chosen_preview.json.lock "$RUN_DIR"/spec-anchor-audit.json \
+        "$RUN_DIR"/trace.log "$RUN_DIR"/.filled-ratio-gate.out \
+        "$RUN_DIR"/.h1-helper.out "$RUN_DIR"/.convergence-lint.out
+  rm -f "$RUN_DIR"/P[0-9][0-9].json
+  rm -rf "$RUN_DIR"/mockups
 else
   RUN_ID="r-e2e-$PROFILE-$(date -u +%Y%m%d%H%M%S)"
   RUN_DIR="$TMP_PF_HOME/runs/$RUN_ID"
@@ -350,6 +365,23 @@ grep -q '"mode":"browser"' "$RUN_DIR/.h1-helper.out" \
 grep -qE '^(open|xdg-open) .*gallery\.html' "$OPEN_BROWSER_TRACE" \
   || fail "step 5b: stub did not record opener invocation hitting gallery.html"
 
+# Sanitize the absolute machine path out of .h1-helper.out under --out-dir
+# so committed evidence is portable across machines (gemini review PR #92).
+# h1-modal-helper.sh resolves the gallery to an absolute path; we rewrite
+# it to a repo-relative form using REPO_ROOT as the prefix to strip.
+if [ -n "$OUT_DIR" ]; then
+  python3 - "$RUN_DIR/.h1-helper.out" "$REPO_ROOT" <<'PY' || fail "step 5b: .h1-helper.out sanitization failed"
+import json, pathlib, sys
+out = pathlib.Path(sys.argv[1])
+repo_root = sys.argv[2].rstrip("/")
+data = json.loads(out.read_text())
+url = data.get("url", "")
+if url.startswith(repo_root + "/"):
+    data["url"] = url[len(repo_root) + 1:]
+out.write_text(json.dumps(data, separators=(",", ":")) + "\n", encoding="utf-8")
+PY
+fi
+
 # ---------- step 6: chosen_preview lock (canned H1 pick) ----------
 
 python3 - "$CANNED" "$RUN_DIR" <<'PY' || fail "step 6: chosen_preview lock"
@@ -480,7 +512,20 @@ TRACE_LOG="$RUN_DIR/trace.log"
   echo "iframe_count=$IFRAME_COUNT"
   echo "framework_lint_rc=$LINT_RC"
   echo "h1_pick=$PF_H1_PICK"
-  echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  # Byte-reproducible timestamp under --out-dir so committed evidence
+  # diffs against re-runs cleanly (gemini review PR #92). Live runs keep
+  # the real wall-clock for triage.
+  if [ -n "$OUT_DIR" ]; then
+    # Per-profile fixed timestamp — keeps committed evidence stable (and
+    # distinguishable per profile in the historical record) across re-runs.
+    case "$PROFILE" in
+      standard) echo "timestamp_utc=2026-04-25T10:01:05Z" ;;
+      pro)      echo "timestamp_utc=2026-04-25T10:01:07Z" ;;
+      max)      echo "timestamp_utc=2026-04-25T10:01:10Z" ;;
+    esac
+  else
+    echo "timestamp_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+  fi
   echo "run_id=$RUN_ID"
   echo "out_dir_mode=$([ -n "$OUT_DIR" ] && echo committed || echo tmp)"
   echo
