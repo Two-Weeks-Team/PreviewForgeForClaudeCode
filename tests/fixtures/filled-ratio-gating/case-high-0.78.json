@@ -1,0 +1,21 @@
+{
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 0.7778,
+  "idea_summary": "High-tier fixture — 7 of 9 slots populated (idea_summary + 3 nested objects + 2 leaf strings + 1 array; non_goals + 1 leaf intentionally left blank). Expected ratio = 7/9 = 0.7778, mapping to mode=ground-truth under A-4.",
+  "target_persona": {
+    "role": "independent paralegal",
+    "context": "depositions for solo-practice attorneys"
+  },
+  "primary_surface": {
+    "kind": "web",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "primary": "Index deposition transcripts in under 5 minutes per hour of audio"
+  },
+  "killer_feature": "Speaker-diarized search with citation-ready timestamps",
+  "monetization_model": "per-seat SaaS",
+  "success_metric": null,
+  "must_have_constraints": ["WCAG AA contrast", "no third-party LLM in the audio path"],
+  "non_goals": []
+}

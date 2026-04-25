@@ -1,0 +1,13 @@
+{
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 0.2222,
+  "idea_summary": "Low-confidence-tier fixture — 2 of 9 slots populated (idea_summary + must_have_constraints array). Expected ratio = 2/9 = 0.2222, mapping to mode=low-confidence under A-4 (0.2 ≤ ratio < 0.4 boundary).",
+  "target_persona": null,
+  "primary_surface": null,
+  "jobs_to_be_done": null,
+  "killer_feature": null,
+  "monetization_model": null,
+  "success_metric": null,
+  "must_have_constraints": ["WCAG AA contrast"],
+  "non_goals": []
+}
