@@ -105,13 +105,34 @@ if [[ -z "$idea" ]]; then
 fi
 
 # Length check via python3 (Unicode code points, matching JSON Schema
-# `maxLength` semantics — see header). Argv pass + with-open + single-
-# quoted heredoc closes the inline-string interpolation surface (same
-# pattern as scripts/preview-cache.sh::py_read_json caller contract).
+# `maxLength` semantics — see header). Argv pass + single-quoted heredoc
+# closes the inline-string interpolation surface (same pattern as
+# scripts/preview-cache.sh::py_read_json caller contract).
+#
+# Bounded read (gemini PR #96 review): we only need to know whether the
+# length exceeds MAX_LEN, so cap stdin.read at MAX_LEN+1 code points to
+# avoid pulling a multi-megabyte payload into Python memory. If the read
+# returns exactly MAX_LEN+1 chars, we know length > MAX_LEN. We pass
+# MAX_LEN as argv to avoid shell-interpolating it into the inline python
+# source (parallels preview-cache.sh::py_read_json contract).
+#
+# Note: python MUST drain the rest of stdin even after the bounded read,
+# otherwise `printf '%s' "$idea"` upstream gets SIGPIPE when python
+# exits early — and `set -euo pipefail` propagates that as rc=141 to the
+# overall pipeline. Cheap drain: a no-op .read(1<<20) loop. Cost is the
+# same as the unbounded form but bounded *peak* memory by chunking, so
+# we still meet the gemini review intent (peak RSS, not total throughput).
 length=$(printf '%s' "$idea" | python3 -c '
 import sys
-print(len(sys.stdin.read()))
-')
+limit = int(sys.argv[1])
+data = sys.stdin.read(limit + 1)
+n = len(data)
+# Drain remaining bytes in chunks so upstream printf does not SIGPIPE
+# under pipefail. Chunk size keeps peak RSS bounded.
+while sys.stdin.read(1 << 20):
+    pass
+print(n)
+' "$MAX_LEN")
 
 if [[ "$length" -le "$MAX_LEN" ]]; then
   # Pass-through: emit the idea on stdout for the caller to capture
@@ -122,18 +143,28 @@ fi
 
 # Over the cap.
 if [[ "$mode" == "truncate" ]]; then
-  echo "validate-idea-input.sh: idea length=$length > $MAX_LEN — truncating to first $MAX_LEN code points" >&2
-  printf '%s' "$idea" | python3 -c "
+  echo "validate-idea-input.sh: idea length>${MAX_LEN} — truncating to first $MAX_LEN code points" >&2
+  # Bounded read + argv pass (gemini PR #96 review): only read MAX_LEN
+  # code points (we throw away anything beyond), and pass MAX_LEN through
+  # argv so the python source itself stays single-quoted — no shell
+  # interpolation surface.
+  printf '%s' "$idea" | python3 -c '
 import sys
-data = sys.stdin.read()
-sys.stdout.write(data[:$MAX_LEN])
-"
+limit = int(sys.argv[1])
+sys.stdout.write(sys.stdin.read(limit))
+# Drain to avoid upstream printf SIGPIPE under pipefail (see length-
+# check rationale above).
+while sys.stdin.read(1 << 20):
+    pass
+' "$MAX_LEN"
   exit 0
 fi
 
-# Default mode: hard reject.
+# Default mode: hard reject. Note: `length` is bounded at MAX_LEN+1 by
+# the read cap above (gemini PR #96 review — peak RSS protection), so
+# we report ">${MAX_LEN}" instead of the exact overflow count.
 cat >&2 <<EOF
-validate-idea-input.sh: idea length=$length exceeds $MAX_LEN-character cap.
+validate-idea-input.sh: idea length>${MAX_LEN} (exact: ≥${length}) exceeds $MAX_LEN-character cap.
 
 The /pf:new seed idea is bounded at $MAX_LEN Unicode code points to match
 the idea-spec schema's idea_summary maxLength. Please shorten the idea, or

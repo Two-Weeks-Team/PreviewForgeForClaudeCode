@@ -37,12 +37,23 @@ cleanup_idea_tmp() {
 }
 trap cleanup_idea_tmp EXIT
 
-if [[ "${1:-}" == "--idea" && -n "${2:-}" ]]; then
+if [[ "${1:-}" == "--idea" ]]; then
+  # Parse `--idea` regardless of emptiness — empty seed is exactly the
+  # case we want to hard-fail at validate-idea-input.sh (T-9.1 parallel),
+  # NOT silently skip the gate by falling through as a legacy invocation.
+  if [[ $# -lt 2 ]]; then
+    echo "pre-flight.sh: --idea requires an argument (use --idea \"\" to test the empty-reject path)" >&2
+    exit 1
+  fi
   IDEA_TEXT_FILE="$(mktemp -t pf-preflight-idea-XXXXXX)"
   IDEA_TEXT_FILE_OWNED=1
   printf '%s' "$2" > "$IDEA_TEXT_FILE"
   shift 2
-elif [[ "${1:-}" == "--idea-file" && -n "${2:-}" ]]; then
+elif [[ "${1:-}" == "--idea-file" ]]; then
+  if [[ $# -lt 2 ]]; then
+    echo "pre-flight.sh: --idea-file requires a path argument" >&2
+    exit 1
+  fi
   if [[ ! -f "$2" ]]; then
     echo "pre-flight.sh: --idea-file path not found: $2" >&2
     exit 1
@@ -100,11 +111,15 @@ if [[ -n "$IDEA_TEXT_FILE" ]]; then
   if [[ ! -x "$SCRIPT_DIR/validate-idea-input.sh" ]]; then
     fail "validate-idea-input.sh missing or not executable at $SCRIPT_DIR/validate-idea-input.sh"
   else
-    if "$SCRIPT_DIR/validate-idea-input.sh" - < "$IDEA_TEXT_FILE" >/dev/null 2>&1; then
+    # Capture stderr in a single execution (gemini PR #96 review): the
+    # previous shape ran the validator twice — once for rc, once for the
+    # message — which is wasteful (and re-streams the entire idea twice
+    # through python3). `2>&1 >/dev/null` redirects stderr→stdout while
+    # discarding stdout so $(…) only collects the error message.
+    if validator_err=$("$SCRIPT_DIR/validate-idea-input.sh" - < "$IDEA_TEXT_FILE" 2>&1 >/dev/null); then
       ok "idea text within 5000-code-point cap"
     else
       validator_rc=$?
-      validator_err=$("$SCRIPT_DIR/validate-idea-input.sh" - < "$IDEA_TEXT_FILE" 2>&1 >/dev/null || true)
       fail "idea text rejected by validate-idea-input.sh (rc=$validator_rc): ${validator_err}"
     fi
   fi
