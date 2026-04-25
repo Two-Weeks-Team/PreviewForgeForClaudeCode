@@ -27,9 +27,17 @@ model: opus
   - Blackboard에 `preview_dd.weak_replay.resumed` 이벤트 기록
 - (비-replay 경로) `runs/<id>/idea.json`을 읽어 I1 idea-clarifier에 위임
 - I1은 **항상** 3-batch AskUserQuestion을 수행하여 `runs/<id>/idea.spec.json`을 산출 (이미 존재하면 스킵)
-- 산출된 `idea.spec.json._filled_ratio`를 확인:
-  - `≥ 0.5` → 정상 dispatch
-  - `< 0.5` → Blackboard에 `ideation.low_spec_quality` 이벤트 기록(`{_filled_ratio, reason: "advocate divergence 가능"}`) 후 **여전히 dispatch** (hard gate 아님, 해커톤 데모 UX 우선). I_LEAD는 Bash 도구를 갖지 않으므로 stderr 대신 Blackboard를 쓴다. 단, 위의 weak-replay short-circuit이 먼저 걸러졌다면 이 경로에는 도달하지 않는다.
+- 산출된 `idea.spec.json._filled_ratio`를 4-tier로 매핑 (v1.7.0+ A-4 — B-1과 동시 ship; threshold 0.4 설정 근거: B-1 fast-path 실제 minimum은 5/9 ≈ 0.56 (idea_summary + target_persona + primary_surface + killer_feature + must_have_constraints; nested object는 binary slot 규칙). 5/9에 edge-case safety margin을 더해 0.5 → 0.4로 내림. PR #51 R2 review에서 원래 "4/9 ≈ 0.44" 근거는 binary slot 규칙을 반영하지 못한 오류로 정정 — `idea-clarifier.md` §"Soft anchor 정책" 참조):
+
+  | `_filled_ratio` | tier | dispatch 동작 | advocate 받는 신호 |
+  |---|---|---|---|
+  | `≥ 0.7` | **high** | 정상 dispatch, spec을 ground truth로 사용 | `IDEA_SPEC_CONFIDENCE: high` |
+  | `0.4 ≤ ratio < 0.7` | **medium** | 정상 dispatch, spec을 hint로 사용 (자유 해석 허용 폭 ↑) | `IDEA_SPEC_CONFIDENCE: medium` |
+  | `0.2 ≤ ratio < 0.4` | **low** | 정상 dispatch + Blackboard `ideation.spec_confidence_tier=low` (이전 `low_spec_quality`의 후계) | `IDEA_SPEC_CONFIDENCE: low` |
+  | `< 0.2` | **fallback** | **v1.5.4 path**: advocate dispatch 시 `idea.spec.json`을 **전달하지 않음** (`IDEA_SPEC: <not provided — fallback v1.5.4 path>` — `<...>` 플레이스홀더는 리터럴이 아니라 실제 런타임 substitution 결과; 아래 §2 dispatch template과 동일 형식). Blackboard `ideation.spec_fallback_v1_5_4=true` 기록. B-3 "Skip interview" 선택자가 자동으로 이 경로 진입 (ratio ≈ 0.11) | spec 미전달 |
+
+  hard gate 없음 — 해커톤 데모 UX 우선. weak-replay short-circuit이 먼저 걸러졌다면 이 경로에는 도달하지 않는다. I_LEAD는 Bash 도구가 없으므로 stderr 대신 Blackboard로 기록.
+
 - I1 호출 자체가 실패(user abort 등)하면 Blackboard에 `ideation.spec_missing` 기록하고 M3에 escalate
 
 ### 2. Profile-aware Advocate 병렬 dispatch
@@ -50,6 +58,8 @@ model: opus
 ROLE: <advocate name> (P01 ~ P26 중 선택)
 IDEA: <from idea.json — raw one-liner for creative reframing>
 IDEA_SPEC: <from idea.spec.json — structured ground truth from I1 Socratic interview>
+  # 단, A-4 fallback tier(< 0.2)인 경우 IDEA_SPEC 라인 자체를 빼고
+  # `IDEA_SPEC: <not provided — fallback v1.5.4 path>`로 대체한다.
   # Advocate는 spec의 채워진 필드를 ground truth로 삼되, null/"unknown" 필드는
   # 자유 해석 가능. v1.7.0+ A-6: **모든** spec 해석은 반드시 6-tuple의
   # spec_alignment_notes에 기록 (null 필드뿐 아니라 그대로 따른 경우도).
@@ -57,6 +67,11 @@ IDEA_SPEC: <from idea.spec.json — structured ground truth from I1 Socratic int
   # 그대로 따른 경우: "all fields populated, followed spec verbatim" 등 한 줄.
   # 빈 문자열은 preview-card.schema.json (minLength:1) 위반으로 previews.json
   # validation이 실패한다.
+IDEA_SPEC_CONFIDENCE: <high | medium | low>   # v1.7.0+ A-4 — A-4 §1 표 참조.
+  # `high`: spec 그대로 anchor. divergence 최소화.
+  # `medium`: spec을 hint로. null 필드는 자유 해석 OK, 채워진 필드는 anchor.
+  # `low`: spec은 약한 hint. 큰 divergence 허용 (최소 ratio가 4 required only인 경우).
+  # `fallback` tier에서는 이 라인도 함께 누락된다 (advocate는 spec 받지 않음).
 DOMAIN_HINT: <optional, from scripts/detect-surface.sh>
 MOCKUP_GUIDANCE: 페르소나에 맞는 self-contained mockup.html (inline CSS only, max 500 lines)
 OUTPUT_FORMAT:
