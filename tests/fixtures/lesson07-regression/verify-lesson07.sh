@@ -102,12 +102,14 @@ python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$FIXTURES_DIR/panel
 panel_count=$(python3 -c "import json, sys; print(len(json.load(open(sys.argv[1]))))" "$FIXTURES_DIR/panel-bias-cases.json")
 panel_fails=0
 for j in $(seq 0 $((panel_count - 1))); do
-  pcase=$(mktemp -t pf-l07-panel-XXXXXX.json)
+  pcase=$(mktemp -t pf-l07-panel-XXXXXX)
   python3 - "$FIXTURES_DIR/panel-bias-cases.json" "$j" "$pcase" <<'PY'
 import json, sys
-cases = json.load(open(sys.argv[1]))
+with open(sys.argv[1], encoding="utf-8") as f:
+    cases = json.load(f)
 out = sys.argv[3]
-json.dump(cases[int(sys.argv[2])], open(out, "w"))
+with open(out, "w", encoding="utf-8") as f:
+    json.dump(cases[int(sys.argv[2])], f)
 PY
   pid=$(python3 -c "import json,sys; print(json.load(open(sys.argv[1]))['id'])" "$pcase")
   set +e

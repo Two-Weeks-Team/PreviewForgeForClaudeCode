@@ -170,7 +170,8 @@ def main(argv: list[str]) -> int:
         print("usage: simulate-panel-tally.py <case.json>", file=sys.stderr)
         return 64
     case_path = Path(argv[1])
-    case = json.loads(case_path.read_text(encoding="utf-8"))
+    with case_path.open(encoding="utf-8") as f:
+        case = json.load(f)
     result = tally(case)
     print(json.dumps(result, indent=2, sort_keys=True))
     failures = assert_expectations(result, case.get("expected", {}))
