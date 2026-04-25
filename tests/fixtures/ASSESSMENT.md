@@ -87,3 +87,151 @@ runs on both. Windows tracked as a follow-up issue.
 - T-7 e2e mock harness → opened as a separate post-hackathon issue (not
   in this PR) before umbrella #32 closes.
 - T-12 macOS CI → shipped in this PR. Windows tracked likewise.
+
+---
+
+# Phase 8 — Q-4 / Q-6 / Q-7 / Q-8 Assessment
+
+> 4 of the 9 Phase 8 items deferred to post-hackathon. Q-9 / Q-1 / Q-2
+> shipped; Q-3 / Q-5 verified-as-shipped from earlier PRs. This section
+> documents the deferrals.
+
+## Q-4 — Interview amend/retry path
+
+**Goal**: Let users go back during/after the I1 Socratic interview to
+change a previous answer without losing later state or restarting the
+whole `/pf:new` run.
+
+**Cost**:
+- Requires a UX flow change to `idea-clarifier.md` (5th option per
+  modal: "← go back to Batch A/B"), plus state machine updates so an
+  edit to Batch A doesn't silently invalidate Batch C answers.
+- Touches AskUserQuestion's modal contract — the user might amend
+  `target_persona.profile`, which would change the Batch B/C question
+  *wording* (because rationales reference persona). That implies
+  re-running Batch B with regenerated prompts, not just re-asking with
+  the same prompts.
+- Cache key changes: amending an answer changes `idea_spec_hash`, so
+  the cached PreviewDD result would no longer match. Need explicit
+  cache invalidation in the amend path.
+
+**Benefit**:
+- Without Q-4 today, users who realize they answered wrong have to
+  `/pf:new --no-cache` and redo the whole interview. That's the
+  expected workaround for hackathon demos.
+- Real value rises sharply for *real* (non-hackathon) users who run
+  `/pf:new` with longer-lived ideas — they're more likely to want to
+  edit. For 7-day hackathon shipping, the workaround suffices.
+
+**Decision: defer to post-hackathon**.
+
+## Q-6 — Multi-run spec import
+
+**Goal**: Allow `/pf:new --import-spec=runs/<other-id>/idea.spec.json`
+to start a new run with a pre-filled spec, skipping the I1 Socratic
+interview entirely.
+
+**Cost**:
+- Adds a new flag to `/pf:new` + a code path that reads the imported
+  spec, validates against schema, copies to the new run dir, marks
+  `_filled_ratio` as already-final.
+- Edge cases: imported spec was generated against an older schema
+  version; imported spec has unknown `must_have_constraints.type`
+  (post-T-3 enum tightening); imported spec mixes different idea
+  one-liner with the new `--idea` arg.
+- Requires a deterministic "is this spec compatible with the current
+  schema?" gate. We have the validator already (`jsonschema`), so
+  technically small. But the UX for "incompatible" is not designed.
+
+**Benefit**:
+- Power-user workflow: research a problem space, save the most useful
+  spec, reuse for multiple new ideas. Demo audiences won't hit this.
+- The Q-9 expected-socratic JSON files in this PR could feed into Q-6
+  trivially once shipped — they're already schema-conformant.
+
+**Decision: defer to post-hackathon**.
+
+Re-open trigger: the first user who asks "can I reuse this spec for
+another run" makes Q-6 immediately worth shipping.
+
+## Q-7 — Headless screenshot thumbnails for gallery
+
+**Goal**: Replace the gallery's per-card `<iframe>` (which forces the
+host to render each mockup live) with pre-rendered PNG thumbnails
+generated via headless Chrome at `/pf:design` time. Faster gallery
+load, no iframe security concerns.
+
+**Cost**:
+- Detect Chrome / Chromium / chromium-browser via PATH.
+- Spawn one subprocess per mockup (26 in `max` profile) with a 5s
+  timeout each, loading `mockups/P{NN}-*.html` and screenshotting at a
+  consistent viewport (probably 1280×800).
+- Fallback chain: if Chrome missing → keep current iframe behavior.
+- Concurrency: 26× sequential = 130s worst-case before H1 modal opens.
+  Either parallelize (xargs -P 8?) or just block. Adds latency.
+- Cross-platform: macOS has `/Applications/Google Chrome.app/Contents/MacOS/Google Chrome`,
+  Linux usually `google-chrome` or `chromium`, Windows headless requires
+  `--headless=new` flag. Each variant has slightly different invocation.
+
+**Benefit**:
+- Gallery initial render goes from "26 iframes loading in parallel"
+  to "26 PNG `<img>` tags" — significantly faster on slower laptops
+  (hackathon judging machines).
+- Removes the iframe sandbox boundary, simplifying CSP / accessibility
+  story (Phase 6 F-7 already added `content-visibility: auto` to
+  partially mitigate iframe perf cost).
+
+**Decision: defer to post-hackathon**.
+
+Reasoning:
+- Phase 6 F-7 (`content-visibility: auto`) and F-9 iframe `title`
+  already gives acceptable gallery performance for the hackathon
+  demo's 9-card / 18-card profiles. The benefit only really shows on
+  the 26-card max profile, which judges are unlikely to run.
+- Cross-platform Chrome detection + lifecycle management is the kind of
+  thing that fails in unexpected ways during a live demo. Carrying
+  that risk into hackathon week is unwise.
+
+## Q-8 — Adaptive/branching interview (interview-tree.json)
+
+**Goal**: Replace the static 3-batch Socratic interview with a
+deterministic decision tree (`interview-tree.json`) that adapts the
+question set based on earlier answers. Example branch: if user picks
+`primary_surface=cli`, Batch C drops `monetization_model` and adds
+`open-source license` instead.
+
+**Cost**:
+- Design the tree itself — needs the Q-9 data (now shipped) to derive
+  branch points. ~1 day to design + write the JSON, ~1 day to
+  implement the runtime that walks the tree.
+- Requires a new `idea-clarifier-tree.md` agent variant or a major
+  rewrite of `idea-clarifier.md` to consume the tree.
+- Deterministic replay test (umbrella DoD requires this) couples Q-8
+  to Phase 3 T-7 (mock harness, also deferred).
+
+**Benefit**:
+- Better answers → higher `_filled_ratio` → fewer fallback-tier runs
+  → less divergence in the 26 advocates → tighter gallery.
+- Educational: the tree itself is a teaching artifact (here are the
+  decision points that distinguish a B2B SaaS from a consumer app).
+
+**Decision: defer to post-hackathon**.
+
+Reasoning:
+- The static 3-batch interview already meets the hackathon's "10–12
+  questions in 3 modals" goal. Marginal improvement from branching
+  doesn't justify ~2 days of work + an entirely new agent class
+  during freeze week.
+- Q-9 data shipped in this PR makes Q-8 *cheaper* to ship later — that
+  was the umbrella's explicit ordering rationale ("Q-9 must ship first
+  → Q-8 → ..."). We honored the order, just stopped after Q-9.
+
+## Re-open triggers (summary)
+
+| Item | Re-open if … |
+|---|---|
+| Q-4 amend/retry | First non-hackathon user reports "I want to fix Batch A without restarting." |
+| Q-6 multi-run import | Same. |
+| Q-7 headless screenshots | Gallery on a 26-card `max` profile feels sluggish to a real user. |
+| Q-8 interview tree | Q-9 data shows clear branching axes that a flat interview can't capture, OR `_filled_ratio` is consistently <0.4 in real runs. |
+

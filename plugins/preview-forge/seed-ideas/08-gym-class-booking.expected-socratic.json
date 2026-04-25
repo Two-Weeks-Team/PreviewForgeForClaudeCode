@@ -1,0 +1,33 @@
+{
+  "idea_summary": "헬스장 수업 자리 예약 + 취소 알림",
+  "target_persona": {
+    "profile": "소규모 헬스장 월회원 (특히 GX 인기 수업)",
+    "primary_pain": "카운터 직접 등록 또는 카카오톡 줄서기, 취소 자리 발생 시 모름",
+    "usage_frequency": "weekly"
+  },
+  "primary_surface": {
+    "platform": "mobile",
+    "sync_model": "real-time",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "functional": "수업 시간표 + 자리 예약 + 취소 자리 알림",
+    "emotional": "안심 — 가고 싶은 수업 자리 확보",
+    "social": "친구와 같이 예약 잡기"
+  },
+  "killer_feature": "취소 자리 발생 시 대기자에게 즉시 푸시 알림",
+  "must_have_constraints": [
+    {
+      "type": "latency",
+      "value": "예약 결제 3초 이내 완료"
+    }
+  ],
+  "non_goals": [
+    "트레이너 매칭",
+    "PT 결제"
+  ],
+  "monetization_model": "transaction_fee",
+  "success_metric": "주간 예약 건수 + 취소-알림 전환율",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}

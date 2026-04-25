@@ -1,0 +1,33 @@
+{
+  "idea_summary": "회의록 자동 정리 + action item 추출",
+  "target_persona": {
+    "profile": "5-15인 팀의 회의 주재자 (PM/팀장)",
+    "primary_pain": "회의 후 30분-1시간을 회의록 정리에 소모, action item 누락 잦음",
+    "usage_frequency": "daily"
+  },
+  "primary_surface": {
+    "platform": "web",
+    "sync_model": "real-time",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "functional": "음성 입력 → 요약 + action item 자동 추출 + 담당자 자동 지정",
+    "emotional": "통제 — 결정사항·다음 단계 모두 기록됨",
+    "social": "팀에 정확한 follow-up을 빠르게 보여주기"
+  },
+  "killer_feature": "회의 종료 후 5분 안에 action item이 담당자별로 자동 분배",
+  "must_have_constraints": [
+    {
+      "type": "regulatory",
+      "value": "회의 음성 데이터 PII 보호 — 외부 LLM 미전송 또는 명시 동의"
+    }
+  ],
+  "non_goals": [
+    "감정 분석",
+    "발언자 KPI 점수"
+  ],
+  "monetization_model": "subscription",
+  "success_metric": "주간 활성 팀 수 + 회의당 action item 정확도",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}

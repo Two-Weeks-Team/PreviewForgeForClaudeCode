@@ -85,7 +85,7 @@ jobs:
           [[ "$DEFAULT" == "standard" ]] || { echo "FAIL: defaultProfile expected 'standard', got '$DEFAULT'"; exit 1; }
           echo "✓ settings.json defaultProfile = standard"
 
-      - name: Fixture suites (Phase 1 security + Phase 3 T-2/T-3/T-4/T-6/T-8/T-9.2, v1.7.0+)
+      - name: Fixture suites (P1 security + P3 T-2/T-3/T-4/T-6/T-8/T-9.2 + P8 Q-9, v1.7 audit)
         run: |
           # jsonschema already installed a few steps up; the fixtures
           # now fail-closed on missing dependency so this must stay in
@@ -95,6 +95,7 @@ jobs:
           bash tests/fixtures/filled-ratio/verify-filled-ratio.sh
           bash tests/fixtures/normalize-constraints/verify-normalize.sh
           bash tests/fixtures/lesson07-regression/verify-lesson07.sh
+          bash tests/fixtures/seed-expectations/verify-seed-expectations.sh
 
   test-hooks:
     name: Test hooks (unit)

@@ -118,8 +118,14 @@ grep -q "cwd hygiene" "$PLUGIN_DIR/agents/meta/run-supervisor.md" && ok "M1 run-
 [[ -f "$PLUGIN_DIR/memory/PROGRESS.md" ]] && ok "memory/PROGRESS.md" || bad "memory/PROGRESS.md missing"
 [[ -f "$PLUGIN_DIR/memory/LESSONS.md" ]] && ok "memory/LESSONS.md" || bad "memory/LESSONS.md missing"
 [[ -f "$PLUGIN_DIR/methodology/global.md" ]] && ok "methodology/global.md (Layer-0)" || bad "methodology missing"
-seed_count=$(find "$PLUGIN_DIR/seed-ideas" -name "*.md" | wc -l | tr -d ' ')
+# Seed ideas count: numbered files only (`NN-*.md`), excluding the README.md
+# index added in Phase 8 Q-9. The 10 numbered seeds are the canonical demo set;
+# the README explains why each ships paired with `<id>.expected-socratic.json`.
+seed_count=$(find "$PLUGIN_DIR/seed-ideas" -maxdepth 1 -name "[0-9][0-9]-*.md" | wc -l | tr -d ' ')
 [[ "$seed_count" -eq 10 ]] && ok "10 seed ideas" || bad "seed-ideas: $seed_count (expected 10)"
+# Q-9 (Phase 8): each numbered seed must pair with an `<id>.expected-socratic.json`
+expected_socratic_count=$(find "$PLUGIN_DIR/seed-ideas" -maxdepth 1 -name "[0-9][0-9]-*.expected-socratic.json" | wc -l | tr -d ' ')
+[[ "$expected_socratic_count" -eq 10 ]] && ok "10 seed-idea expected-socratic.json (Q-9)" || bad "seed-ideas/*.expected-socratic.json: $expected_socratic_count (expected 10)"
 schema_count=$(find "$PLUGIN_DIR/schemas" -name "*.json" | wc -l | tr -d ' ')
 # v1.6.0: 5 schemas (preview-card, panel-vote, score-report, pf-profile, idea-spec).
 [[ "$schema_count" -eq 5 ]] && ok "5 JSON schemas (preview-card, panel-vote, score-report, pf-profile, idea-spec)" || bad "schemas: $schema_count (expected 5)"

@@ -1,0 +1,33 @@
+{
+  "idea_summary": "인디 게임 플레이테스트 빌드 배포 + 피드백 수집",
+  "target_persona": {
+    "profile": "1-2인 인디 게임 개발자 (Steam·itch.io)",
+    "primary_pain": "빌드 배포는 itch.io, 피드백은 Discord, 플레이 영상은 OBS — 도구 분산",
+    "usage_frequency": "weekly"
+  },
+  "primary_surface": {
+    "platform": "desktop",
+    "sync_model": "batch",
+    "offline_capable": false
+  },
+  "jobs_to_be_done": {
+    "functional": "빌드 배포 + 플레이테스터 피드백 수집 + 플레이 영상 자동 capture",
+    "emotional": "자신감 — 데이터 기반 개선",
+    "social": "커뮤니티에 진척 빠르게 공유"
+  },
+  "killer_feature": "플레이테스트 영상 자동 녹화 + 피드백 시점 매핑",
+  "must_have_constraints": [
+    {
+      "type": "data_residency",
+      "value": "빌드 파일 비공개 — URL 만료 + 토큰 인증"
+    }
+  ],
+  "non_goals": [
+    "배포 플랫폼 (Steam 대체)",
+    "결제 처리"
+  ],
+  "monetization_model": "freemium",
+  "success_metric": "빌드당 피드백 수 + 영상 분석 retention",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}

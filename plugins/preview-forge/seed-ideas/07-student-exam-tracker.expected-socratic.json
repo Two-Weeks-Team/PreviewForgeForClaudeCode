@@ -1,0 +1,33 @@
+{
+  "idea_summary": "학생의 시험 준비 진도·목표·복습 스케줄",
+  "target_persona": {
+    "profile": "고등학생·대학생 (특히 시험 여러 개 동시 준비)",
+    "primary_pain": "시험 일정·과목별 진도·복습 알림이 머릿속에만 있어서 막판 벼락치기",
+    "usage_frequency": "daily"
+  },
+  "primary_surface": {
+    "platform": "web",
+    "sync_model": "eventual",
+    "offline_capable": true
+  },
+  "jobs_to_be_done": {
+    "functional": "시험 일정 등록 + 과목별 진도 + 망각 곡선 기반 복습 알림",
+    "emotional": "시험 스트레스 완화 — 계획대로 가고 있음",
+    "social": "부모/멘토와 진도 공유 (선택)"
+  },
+  "killer_feature": "망각 곡선 기반 자동 복습 스케줄 (Anki 스타일)",
+  "must_have_constraints": [
+    {
+      "type": "budget",
+      "value": "학생 무료 또는 ₩2,000/월 이하"
+    }
+  ],
+  "non_goals": [
+    "과외 매칭",
+    "AI 학습 분석"
+  ],
+  "monetization_model": "freemium",
+  "success_metric": "시험 D-day까지의 일별 활성도",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0
+}
