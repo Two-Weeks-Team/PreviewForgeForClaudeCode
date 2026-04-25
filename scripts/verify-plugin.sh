@@ -5,7 +5,7 @@
 # Checks:
 #   1. Manifest JSON syntax (marketplace.json + plugin.json)
 #   2. All 144 agents present with valid frontmatter
-#   3. 14 slash commands present
+#   3. 15 slash commands present
 #   4. 3 hooks + hooks.json valid
 #   5. Memory seed + methodology + assets + schemas + seeds present
 

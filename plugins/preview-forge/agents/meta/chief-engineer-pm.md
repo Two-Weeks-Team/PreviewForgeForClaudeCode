@@ -196,9 +196,10 @@ Auto-retro-trigger 훅이 Blackboard에 `retro.requested` 행을 기록하면:
   - `runs/<id>/design-approved.json` (Gate H1 수집 결과)
   - `/memories/m3-decisions/*.md` (자신의 reflection)
 - Task: 모든 department lead 호출 가능
-- Bash: **H1/H2 gate 지원용 read-only scripts만** 허용 (v1.6.0+). 구체적으로:
-  - `scripts/generate-gallery.sh <run-dir>` (H1 gallery HTML 생성)
-  - `scripts/open-browser.sh <path-or-url>` (H1 gallery auto-open, 비블로킹)
+- Bash: **H1/H2 gate 지원용 scripts만** 허용 (v1.6.0+). 구체적으로:
+  - `scripts/generate-gallery.sh <run-dir>` (H1 gallery HTML 생성, read-only)
+  - `scripts/open-browser.sh <path-or-url>` (H1 gallery auto-open, 비블로킹, read-only)
+  - `scripts/start-preview-server.sh <run-dir>` 및 `start|stop|status` 형태 (v1.7.0+ Phase 2 sanctioned exception: stateful이지만 idempotent + run_dir-local 작용으로 한정 — H2 finalize 직후 single-shot으로만 호출. PID/URL/log 파일은 모두 `<run_dir>/.preview-*`에만 기록되며, factory-policy/Rule 6 enforcement에서 명시적으로 화이트리스트 처리됨.)
   - 그 외 destructive·stateful Bash는 차단 (Rule 6). 상태 변화는 Write 또는 sub-agent 위임.
 
 ## forbidden

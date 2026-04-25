@@ -8,12 +8,14 @@
 # DEMO-STORYBOARD.md L1:50–2:00 expectation that a new tab pops up at
 # http://localhost:18080 automatically.
 #
-# Profiles auto-detected from <run_dir> contents:
-#   1. pro / max     — `<run_dir>/docker-compose.yml` exists.
+# Profiles auto-detected from <run_dir> contents (also probes <run_dir>/generated/
+# since be-lead.md and the QA leads write apps to runs/<id>/generated/, while
+# /pf:freeze and /pf:preview pass `runs/<id>/`):
+#   1. pro / max     — docker-compose.yml at run_dir/ or run_dir/generated/.
 #                      → `docker compose up -d`, wait for any service Up,
 #                        extract first published port, open browser.
-#   2. standard      — `<run_dir>/apps/api/package.json` AND
-#                      `<run_dir>/apps/web/package.json` exist.
+#   2. standard      — apps/api/package.json AND apps/web/package.json at
+#                      run_dir/ or run_dir/generated/.
 #                      → install (pnpm > npm), pick free port from 18080+,
 #                        spawn api + web `pnpm dev` in background, persist
 #                        PIDs, wait for web TCP, open browser.
@@ -108,7 +110,7 @@ pids_alive() {
 
 docker_project_up() {
   [ -f "$ID_FILE" ] || return 1
-  local compose_file="$run_dir/docker-compose.yml"
+  local compose_file="${scaffold_root:-$run_dir}/docker-compose.yml"
   [ -f "$compose_file" ] || return 1
   command -v docker >/dev/null 2>&1 || return 1
   # Any service in `running` state?
@@ -157,12 +159,19 @@ open_url() {
 }
 
 # ---- profile detection ----
+# Engineering teams (be-lead.md) write apps to `runs/<id>/generated/`, but
+# `/pf:freeze` and `/pf:preview` instruct callers to pass `runs/<id>/`. So if
+# the scaffold isn't directly under run_dir, transparently fall through to
+# `<run_dir>/generated/` before declaring "scaffold missing".
+scaffold_root=""
 profile=""
-if [ -f "$run_dir/docker-compose.yml" ]; then
-  profile="docker"
-elif [ -f "$run_dir/apps/api/package.json" ] && [ -f "$run_dir/apps/web/package.json" ]; then
-  profile="standard"
-fi
+for cand in "$run_dir" "$run_dir/generated"; do
+  if [ -f "$cand/docker-compose.yml" ]; then
+    scaffold_root="$cand"; profile="docker"; break
+  elif [ -f "$cand/apps/api/package.json" ] && [ -f "$cand/apps/web/package.json" ]; then
+    scaffold_root="$cand"; profile="standard"; break
+  fi
+done
 
 # ---- action: status ----
 if [ "$action" = "status" ]; then
@@ -207,9 +216,15 @@ if [ "$action" = "stop" ]; then
     fi
     rm -f "$PID_FILE"
   fi
-  # Docker-based stop.
-  if [ -f "$ID_FILE" ] && [ -f "$run_dir/docker-compose.yml" ] && command -v docker >/dev/null 2>&1; then
-    docker compose -f "$run_dir/docker-compose.yml" down >/dev/null 2>&1 || true
+  # Docker-based stop. Scaffold may live under either run_dir or run_dir/generated.
+  stop_compose=""
+  for cand in "$run_dir" "$run_dir/generated"; do
+    if [ -f "$cand/docker-compose.yml" ]; then
+      stop_compose="$cand/docker-compose.yml"; break
+    fi
+  done
+  if [ -f "$ID_FILE" ] && [ -n "$stop_compose" ] && command -v docker >/dev/null 2>&1; then
+    docker compose -f "$stop_compose" down >/dev/null 2>&1 || true
   fi
   rm -f "$ID_FILE" "$URL_FILE"
   echo "preview server stopped (run_dir=$run_dir)"
@@ -220,7 +235,7 @@ fi
 
 # No profile detected → caller has not run TestDD freeze yet.
 if [ -z "$profile" ]; then
-  echo "neither apps/{api,web}/package.json nor docker-compose.yml found in $run_dir; cannot start preview server" >&2
+  echo "neither apps/{api,web}/package.json nor docker-compose.yml found in $run_dir or $run_dir/generated; cannot start preview server" >&2
   exit 2
 fi
 
@@ -252,7 +267,7 @@ fi
 
 # ---- profile: docker (pro / max) ----
 if [ "$profile" = "docker" ]; then
-  compose_file="$run_dir/docker-compose.yml"
+  compose_file="$scaffold_root/docker-compose.yml"
   if [ "${PF_PREVIEW_DRY_RUN:-0}" = "1" ]; then
     echo "[dry-run] profile=docker compose_file=$compose_file"
     echo "[dry-run] would: docker compose -f $compose_file up -d --quiet-pull"
@@ -284,23 +299,24 @@ if [ "$profile" = "docker" ]; then
     port="$(docker compose -f "$compose_file" ps --format json 2>/dev/null \
       | python3 -c '
 import json, sys
-for line in sys.stdin:
-    line = line.strip()
-    if not line:
-        continue
+raw = sys.stdin.read().strip()
+records = []
+if raw:
+    # Older docker emits a single JSON array; newer ones emit NDJSON.
     try:
-        rec = json.loads(line)
+        parsed = json.loads(raw)
+        records = parsed if isinstance(parsed, list) else [parsed]
     except json.JSONDecodeError:
-        # Some docker versions emit a single JSON array instead of NDJSON.
-        try:
-            arr = json.loads(line)
-        except Exception:
-            continue
-        for rec in arr if isinstance(arr, list) else []:
-            for p in rec.get("Publishers") or []:
-                pub = p.get("PublishedPort")
-                if pub:
-                    print(pub); sys.exit(0)
+        for line in raw.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                records.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+for rec in records:
+    if not isinstance(rec, dict):
         continue
     for p in rec.get("Publishers") or []:
         pub = p.get("PublishedPort")
@@ -321,8 +337,8 @@ for line in sys.stdin:
 fi
 
 # ---- profile: standard (apps/api + apps/web) ----
-api_dir="$run_dir/apps/api"
-web_dir="$run_dir/apps/web"
+api_dir="$scaffold_root/apps/api"
+web_dir="$scaffold_root/apps/web"
 
 # Pick free ports: web on 18080+, api on 18180+ (offset of 100 keeps logs scannable).
 web_port="$(pick_free_port 18080 11)" || {
@@ -346,9 +362,9 @@ fi
 
 # Install deps. Prefer pnpm if pnpm-lock.yaml exists; else npm.
 pkg_mgr=""
-if command -v pnpm >/dev/null 2>&1 && [ -f "$run_dir/pnpm-lock.yaml" ]; then
+if command -v pnpm >/dev/null 2>&1 && [ -f "$scaffold_root/pnpm-lock.yaml" ]; then
   pkg_mgr="pnpm"
-elif command -v pnpm >/dev/null 2>&1 && [ -f "$run_dir/pnpm-workspace.yaml" ]; then
+elif command -v pnpm >/dev/null 2>&1 && [ -f "$scaffold_root/pnpm-workspace.yaml" ]; then
   pkg_mgr="pnpm"
 elif command -v npm >/dev/null 2>&1; then
   pkg_mgr="npm"
@@ -358,28 +374,37 @@ else
 fi
 case "$pkg_mgr" in
   pnpm )
-    (cd "$run_dir" && pnpm install --frozen-lockfile >/dev/null 2>&1) || \
-      (cd "$run_dir" && pnpm install >/dev/null 2>&1) || {
-        echo "start-preview-server.sh: pnpm install failed in $run_dir" >&2
+    (cd "$scaffold_root" && pnpm install --frozen-lockfile >/dev/null 2>&1) || \
+      (cd "$scaffold_root" && pnpm install >/dev/null 2>&1) || {
+        echo "start-preview-server.sh: pnpm install failed in $scaffold_root" >&2
         exit 1
       }
     dev_cmd="pnpm dev"
     ;;
   npm )
-    (cd "$run_dir" && npm install >/dev/null 2>&1) || true
+    (cd "$scaffold_root" && npm install >/dev/null 2>&1) || true
     (cd "$api_dir" && npm install >/dev/null 2>&1) || true
     (cd "$web_dir" && npm install >/dev/null 2>&1) || true
     dev_cmd="npm run dev"
     ;;
 esac
 
-# Spawn api + web in background, redirecting output. setsid (if available)
-# detaches them from the controlling tty so they survive shell exit.
-spawn() {
-  local dir="$1" port="$2" log="$3" extra_env="$4"
-  ( cd "$dir" && eval "$extra_env PORT=$port nohup $dev_cmd >'$log' 2>&1 &" echo $! )
+# Cleanup spawned api/web on early exit so a wait_tcp timeout does not leak
+# zombie processes that would still hold the port and force the next retry to
+# pick a higher port (causing PID_FILE drift).
+cleanup_spawned() {
+  local pid
+  for pid in "${api_pid:-}" "${web_pid:-}"; do
+    case "$pid" in
+      ''|*[!0-9]*) continue ;;
+    esac
+    kill -TERM "$pid" 2>/dev/null || true
+  done
+  rm -f "$PID_FILE"
 }
 
+# Spawn api + web in background, redirecting output. nohup detaches them
+# from the controlling tty so they survive shell exit.
 api_pid="$( ( cd "$api_dir" && PORT="$api_port" nohup $dev_cmd >"$API_LOG" 2>&1 & echo $! ) )"
 web_pid="$( ( cd "$web_dir" && PORT="$web_port" NEXT_PUBLIC_API_URL="http://localhost:$api_port" nohup $dev_cmd >"$WEB_LOG" 2>&1 & echo $! ) )"
 
@@ -394,6 +419,7 @@ if ! wait_tcp 127.0.0.1 "$web_port" 60; then
   echo "start-preview-server.sh: web server did not start on :$web_port within 60s" >&2
   echo "  api log: $API_LOG"
   echo "  web log: $WEB_LOG"
+  cleanup_spawned
   exit 1
 fi
 
