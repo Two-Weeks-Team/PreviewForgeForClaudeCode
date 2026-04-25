@@ -1,7 +1,9 @@
-# 3-Minute Demo Storyboard — Preview Forge v1.0.0
+# 3-Minute Demo Storyboard — Preview Forge v1.7+ (gallery-first)
 
 > 해카톤 제출용 데모 영상. 180초 타깃, 170–190초 허용. 첫 5초가 고정적으로
 > "PreviewDD 이게 뭔데?" 후크. 마지막 10초는 저장소·라이선스 박제.
+> v1.7 ship 이후: **gallery-first** 톤 — Socratic 질문(4개)에서 바로 26 mockup
+> grid로 점프. spec/code 화면은 가속(×8) 처리해 그림이 항상 화면 중심에 있게.
 
 ## 제작 원칙
 
@@ -26,12 +28,13 @@
 |---|---|---|
 | **0:00–0:05** | 검은 화면, 흰 글씨: "**PreviewDD**" 쿵! → "**SpecDD**" → "**TestDD**" 3 단계로 나타남 | **한**: "TDD는 코드를 테스트로 주도했습니다. SpecDD는 스펙으로. **우리는 그 앞에 PreviewDD를 놓았습니다.**" <br> **EN**: "TDD drove code with tests. SpecDD with specs. We put **PreviewDD** in front." |
 | **0:05–0:12** | 터미널: `pf init meeting-minutes`, `cd`, `claude` 순차 타이핑 | **한**: "한 줄 아이디어, 143명의 Opus 4.7 가상 팀, 자동 풀스택." <br> **EN**: "One-line idea. 143 Opus 4.7 agents. Auto full-stack." |
-| **0:12–0:18** | Claude Code 창. `/pf:new "회의록 자동 정리 + action item 추출"` 타이핑 → Enter | **한**: "아이디어 입력, 그게 전부입니다." <br> **EN**: "You type the idea. That's all." |
-| **0:18–0:35** | **PreviewDD**: 26 Advocate 아바타 등장, 각자 mockup.html 생성하는 파일 트리가 왼쪽에 자람 | **한**: "26명이 서로 다른 페르소나로 mockup 1장씩 제안합니다. 같은 아이디어를 26가지로 해석." <br> **EN**: "26 advocates, each with a distinct lens, render 26 different mockups in parallel." |
-| **0:35–0:50** | **4-패널 투표**: 4개 동심원(TP/BP/UP/RP)에 40명 아바타. 막대 그래프 실시간으로 채워짐 | **한**: "기술·비즈니스·UX·리스크. 4개 전문 패널, 40명이 meta-tally로 1개 선택." <br> **EN**: "Technical, Business, UX, Risk. 4 parallel panels, 40 experts, meta-tally." |
-| **0:50–1:00** | **Gate H1**: 선택된 mockup이 크게. 사용자가 native 슬라이더로 컬러·폰트 조정, "Approve" 클릭 | **한**: "인간은 여기서 한 번, 디자인 승인." <br> **EN**: "Human click #1: design approval." |
-| **1:00–1:08** | **SpecDD**: `specs/openapi.yaml` 파일이 타이핑되듯 나타남. 마지막에 🔒 SHA-256 hash 도장 | **한**: "OpenAPI 스펙 잠금. 타입이 source of truth." <br> **EN**: "OpenAPI spec locked by SHA-256. Types become the source of truth." |
-| **1:08–1:25** | **5 Engineering Teams**: 파일 트리가 5개 영역(apps/api, apps/web, prisma, deploy, packages/sdk)으로 동시에 자람. 타임랩스 ×8, 좌하단 `×8` 표시 | **한**: "5개 분야별 팀이 병렬로 빌드. Backend, Frontend, DB, DevOps, SDK." <br> **EN**: "5 engineering teams build in parallel." |
+| **0:12–0:16** | Claude Code 창. `/pf:new "회의록 자동 정리 + action item 추출"` 타이핑 → Enter | **한**: "아이디어 입력, 그게 전부입니다." <br> **EN**: "You type the idea. That's all." |
+| **0:16–0:24** | **I1 Socratic 인터뷰** (v1.6+): 3 modal 중 첫 modal 화면 — `target_persona` / `platform` / `killer_feature` / `constraint` 4개 필수 옵션. 사용자가 1개씩 선택, 4 클릭 (best path). 화면 우측에 `idea.spec.json` 필드가 라이브로 채워짐 | **한**: "4개 질문으로 의도를 잠급니다. 26 mockup이 같은 사용자를 상정하도록." <br> **EN**: "4 questions lock the intent. So 26 mockups talk to the same user." |
+| **0:24–0:38** | **PreviewDD**: 26 Advocate 아바타 등장, 각자 mockup.html 생성하는 파일 트리가 왼쪽에 자람. v1.7+ 추가: 각 카드에 `spec_alignment_notes` 한 줄이 떠올라 "어떻게 해석했는지" 보여줌 | **한**: "26명이 서로 다른 페르소나로 mockup 1장씩 제안합니다. 같은 아이디어를 26가지로 해석." <br> **EN**: "26 advocates, each with a distinct lens, render 26 mockups — same intent, 26 angles." |
+| **0:38–0:50** | **4-패널 투표**: 4개 동심원(TP/BP/UP/RP)에 40명 아바타. 막대 그래프 실시간으로 채워짐 | **한**: "기술·비즈니스·UX·리스크. 4개 전문 패널, 40명이 meta-tally로 1개 선택." <br> **EN**: "Technical, Business, UX, Risk. 4 parallel panels, 40 experts, meta-tally." |
+| **0:50–1:02** | **Gate H1 — Gallery first**: `gallery.html`이 새 브라우저 탭에 뜸. 26 카드 grid (one_liner_pitch + iframe mockup). 사용자가 한 카드 클릭 → AskUserQuestion에서 동일 ID 선택 → "Approve" | **한**: "26개 그림 중 하나, 그게 스펙입니다. 인간 클릭 #1 — 디자인 승인." <br> **EN**: "One picture out of 26 is the spec. Human click #1: design approval." |
+| **1:02–1:10** | **SpecDD** (×4 가속): `specs/openapi.yaml` 파일이 타이핑되듯 나타남. 마지막에 🔒 SHA-256 hash 도장. 좌하단 `×4` 표시 | **한**: "OpenAPI 스펙 잠금. 타입이 source of truth." <br> **EN**: "OpenAPI spec locked by SHA-256. Types become the source of truth." |
+| **1:10–1:25** | **5 Engineering Teams** (×8 가속): 파일 트리가 5개 영역(apps/api, apps/web, prisma, deploy, packages/sdk)으로 동시에 자람. 좌하단 `×8` 표시 | **한**: "5개 분야별 팀이 병렬로 빌드. Backend, Frontend, DB, DevOps, SDK." <br> **EN**: "5 engineering teams build in parallel." |
 | **1:25–1:50** | **TestDD**: 점수 게이지 0 → 412 → 478 → **499**로 차오름. 5개 미니 게이지(J1-J5) + 5 Auditor 체크마크 순차 점등 | **한**: "자기수정 루프가 점수 499점까지 올립니다. 5명 심판 + 5명 감사관의 이중 게이트." <br> **EN**: "Self-correction climbs to 499/500. 5 Judges + 5 Auditors double-gate." |
 | **1:50–2:00** | **Gate H2**: 500점 리포트 + 스크린샷 grid 표시. "Deploy" 버튼 클릭 | **한**: "인간의 두 번째 클릭, 배포 승인." <br> **EN**: "Human click #2: deploy approval." |
 | **2:00–2:25** | **생성된 앱 작동**: 새 탭이 http://localhost:18080 열림. 회의록 붙여넣기 → action item 추출 실행 | **한**: "3분 전 한 줄이었던 것이, 지금 작동합니다." <br> **EN**: "What was one line three minutes ago now runs." |

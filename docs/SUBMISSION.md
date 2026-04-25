@@ -2,6 +2,7 @@
 
 > 해카톤 제출 폼에 넣을 준비 완료 텍스트 + 체크리스트.
 > 마감: 2026-04-26 20:00 EST.
+> Version: v1.10+ (Phase 9 — Business-panel UX shipped: Socratic interview 4-required + Skip-interview + tiered fallback).
 
 ## Written Summary (100–200 words)
 
@@ -9,13 +10,13 @@
 
 > **Preview Forge** introduces a new software-development methodology: **3-DD**. Test-Driven Development drove code with tests. Spec-Driven Development drove code with specs. We put **PreviewDD** in front.
 >
-> Before any spec exists, 26 distinct "Preview Advocates" — each a different Opus 4.7 persona, from The Contrarian to The Anti-AI — render 26 parallel mockups of a one-line idea. Four expert panels (40 agents: Technical, Business, UX, Risk) converge on one direction via meta-tally. The winner locks. Only then does SpecDD (OpenAPI-first, nestia-generated) begin. Then TestDD (499/500 scoreboard + 5-auditor double-gate).
+> A 4-question Socratic interview locks user intent into `idea.spec.json`. Then 26 "Preview Advocates" — each a different Opus 4.7 persona, from The Contrarian to The Anti-AI — render 26 parallel mockups, all anchored to the same intent but interpreted through 26 different lenses. Four expert panels (40 agents: Technical, Business, UX, Risk) converge via meta-tally. The user picks one card from the gallery — that picture is the spec. Only then does SpecDD (OpenAPI-first, nestia-generated) begin. Then TestDD (499/500 scoreboard + 5-auditor double-gate).
 >
 > The human clicks twice: approve design, approve deploy. Everything else — 143 Opus 4.7 agents, cross-run LESSONS.md learning, Layer-0 Rule enforcement via hooks — is self-organized. Distributed as a single Claude Code plugin via GitHub-hosted marketplace. Zero third-party dependencies.
 >
-> Three-DD Methodology is the core contribution. 143 parallel personas is the unreasonable demo.
+> Three-DD Methodology is the core contribution. The Socratic interview anchors it. 143 parallel personas is the unreasonable demo.
 
-*Word count: 180*
+*Word count: 195*
 
 ### Option B — "143 agents" 데모 중심 (Most Creative Opus 4.7 겨냥)
 
@@ -78,7 +79,7 @@ before the spec' as its own DD cycle. That's a new place to point Claude."
 - [ ] Apache-2.0 license present at repo root
 - [ ] Claude Opus 4.7 attribution in NOTICE + commits
 - [ ] First LESSON from real run committed (proves self-learning claim)
-- [ ] Final run tag `v1.0.0` or `v1.1.0` on main
+- [ ] Final run tag `v1.10.x` (or successor) on main — release-please auto-bumps via Conventional Commits
 
 ## Day-of-submission timeline (2026-04-26)
 

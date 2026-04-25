@@ -48,16 +48,17 @@
 
 - **참조**: `runs/r-20260422-184337/chosen_preview.json` `selection_metadata.prior_stale_override_noted` 필드, blackboard 이벤트 `user-override 11:19:15`(외부) vs `chosen_preview.locked 11:43:17`(내부), commit이 반영된 `v1.2.0` 향후 hook 강화 TODO.
 
-### 0.7 Panel 추천 ≠ 사용자 의지 — Preview 선택은 사용자가 해야 (category 1 PreviewDD, 핵심 UX 결함)
+### 0.7 Panel 추천 ≠ 사용자 의지 — Preview 선택은 사용자가 해야 (category 1 PreviewDD, 핵심 UX 결함) ✅ **resolved v1.1.0 + reinforced v1.6.0+**
 - **문제**: v1.0.0의 PreviewDD는 4-Panel meta-tally로 1개 자동 선정 → `chosen_preview.json` 즉시 lock → Gate H1은 design tweak만. 사용자는 **선택 자체에 개입 불가**, "143 agent가 정해버린" 느낌. 실제 첫 run에서 composite 1위는 P02 Slack bot이었으나 사용자는 P19(legal depo paralegal, 소송 증언녹취 도구)를 의도적으로 선택 — 4 패널 어디에도 top-N 진입 못한 niche. panel 관점은 수량화 가능한 축을 재는 도구이지 사용자 의지의 대체물이 아님
-- **원인**: "인간의 2-click" 마케팅에 집중하다 보니 이상적 경로에서 Gate H1이 design-only가 됨. 하지만 26 advocate는 **디자인만 다른 게 아니라 target_persona·primary_surface·unique_value·killer_feature가 완전히 다른 제품** — 선택 = 제품 방향 결정
-- **해결**: v1.1.0에서 Gate H1을 **"Preview 선택 + Design tweak" 통합 AskUserQuestion**으로 재설계. 4 옵션 구성:
+- **원인**: "인간의 2-click" 마케팅에 집중하다 보니 이상적 경로에서 Gate H1이 design-only가 됨. 하지만 26 advocate는 **디자인만 다른 게 아니라 target_persona·primary_surface·unique_value·killer_feature가 완전히 다른 제품** — 선택 = 제품 방향 결정. 더 깊은 root cause: 26 advocate가 **사용자 의도를 모른 채 dispatch**되어 26개 모두 사용자가 원하지 않는 방향으로 갈 수 있음 (legal depo paralegal은 어떤 advocate에서도 top-N 진입 불가).
+- **해결 (1차, v1.1.0 — Gate H1 선택 가능)**: Gate H1을 **"Preview 선택 + Design tweak" 통합 AskUserQuestion**으로 재설계. 4 옵션 구성:
     1. **추천** (composite 1위, Recommended)
     2. **대안 A** (특정 panel 단독 우승자, 다른 축 강조)
     3. **대안 B** (다른 panel 단독 우승자)
     4. **전체 gallery** — 26 mockup HTML grid를 별도 브라우저로 열어 고르기
-  click 1번 안에 선택+진입 통합. 2-click narrative 유지
-- **참조**: `runs/r-20260422-184337/chosen_preview.panel-recommended.json` (P02 백업) vs `chosen_preview.json` (P19 override), v1.1.0 commit, 첫 실제 run 피드백 2026-04-22
+  click 1번 안에 선택+진입 통합. 2-click narrative 유지.
+- **해결 (2차 — root cause, v1.6.0+ Socratic interview)**: Gate H1에서 "원하지 않는 26개 중 하나" 고르는 것보다 **dispatch 전에 사용자 의도를 명시화**하는 게 더 근본 해결. v1.6.0의 I1 idea-clarifier가 `/pf:new` 직후 3-batch AskUserQuestion(10-12 필드)을 띄워 `idea.spec.json`(target_persona, primary_surface, jobs_to_be_done, killer_feature, must_have_constraints, non_goals 등)을 산출. 26 advocate는 이 ground truth를 받아 dispatch되며 `spec_alignment_notes`에 자기 해석 근거를 명시 (A-6, v1.7.0+ required) → 사용자 의도와의 alignment 가시성 확보. v1.7.0+ B-1로 12 → 4 required field로 부담 축소, B-3 "Skip interview"로 escape hatch 제공. 1차 해결(Gate H1 선택)과 2차 해결(spec ground truth)이 함께 작동: spec이 advocate의 발산을 사용자 의도 주변으로 묶고, Gate H1이 잔여 발산을 사용자가 골라내도록.
+- **참조**: `runs/r-20260422-184337/chosen_preview.panel-recommended.json` (P02 백업) vs `chosen_preview.json` (P19 override), v1.1.0 commit, 첫 실제 run 피드백 2026-04-22; v1.6.0+ I1 idea-clarifier (`agents/ideation/idea-clarifier.md`), v1.7.0 PR #51 (B-1/B-3/A-4), `schemas/idea-spec.schema.json`.
 
 ### 0.6 `claude --print` 서브프로세스는 /pf:new 자동 실행 불가 (category 6)
 - **문제**: 테스트 목적으로 `claude --print "/pf:new ..."`를 bash 서브프로세스로 실행 시도 시, Claude Code의 기본 권한 정책이 모든 Bash/Edit/Write 호출마다 사용자 승인을 요구. 143 agent 파이프라인 중간에서 정지
