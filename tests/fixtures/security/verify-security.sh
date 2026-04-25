@@ -234,25 +234,38 @@ exit 0
 SHIM
 chmod +x "$tmp_t13/fake-bin/powershell.exe"
 
-# Strategy: keep the host PATH (so python3 / realpath / their pyenv
-# wrappers keep resolving) and PREPEND fake-bin. Because fake-bin
-# contains powershell.exe but NOT open or xdg-open, we'd still be
-# beaten to the punch by a host-provided `open` (macOS) or xdg-open
-# (some Linux desktops). Detect that condition and skip with an A-5-
-# style non-fatal message — this is by design a Linux-runner-only test.
+# Strategy: keep host PATH (so python3 / realpath / grep / sed / tr keep
+# resolving — pyenv shims especially need /usr/bin in PATH) and OVERRIDE
+# `open` / `xdg-open` with shims in fake-bin that exit non-zero. Because
+# open-browser.sh chains opener invocations with `&& exit 0`, a non-zero
+# exit from `open` makes the script FALL THROUGH to `xdg-open`, then to
+# `powershell.exe` — which is our recorder. fake-bin comes first in PATH,
+# so our shims win the `command -v` lookup over real /usr/bin/open etc.
+#
+# Codex P1 (this PR): an earlier draft skipped the test whenever
+# `command -v open` succeeded, which on a macOS host where `open` exists
+# but might fail (headless / no DISPLAY) would still fall through to the
+# powershell branch in real use — i.e. the test would silently skip the
+# very codepath it claims to guard. The shim-override approach below
+# unconditionally drives the script into the powershell branch, so the
+# argv invariant is exercised on every runner (Linux CI, macOS dev).
+for shim_name in open xdg-open; do
+  cat > "$tmp_t13/fake-bin/$shim_name" <<SHIM_OUTER
+#!/bin/sh
+# T-13 shim: force fall-through to powershell.exe branch by exiting !=0.
+exit 7
+SHIM_OUTER
+  chmod +x "$tmp_t13/fake-bin/$shim_name"
+done
 t13_path="$tmp_t13/fake-bin:$PATH"
-# Detect host-provided `open` or `xdg-open` that would win before
-# powershell.exe under THIS PATH (so detection matches what the inner
-# bash invocation will see).
+# Sanity check that our shims actually win the command -v lookup.
 host_open=$(PATH="$t13_path" command -v open 2>/dev/null || true)
 host_xdg=$(PATH="$t13_path" command -v xdg-open 2>/dev/null || true)
-# Filter out the bash builtin / our own fake-bin from open/xdg-open
-# results. `command -v` returns the path; if it's our shim or empty,
-# treat as absent. (We never put open/xdg-open into fake-bin.)
 case "$host_open" in "$tmp_t13/fake-bin/"*) host_open="";; esac
 case "$host_xdg"  in "$tmp_t13/fake-bin/"*) host_xdg="";;  esac
 if [ -n "$host_open" ] || [ -n "$host_xdg" ]; then
-  pass "T-13 skipped — host PATH still surfaces \`${host_open:-}${host_xdg:+ }${host_xdg:-}\` before powershell.exe (Linux-runner-only test)"
+  # Should be impossible (fake-bin is first in PATH) but guard anyway.
+  pass "T-13 skipped — shim override failed: \`${host_open:-}${host_xdg:+ }${host_xdg:-}\` still wins"
 else
   # ---- Sub-test 1: safe URL reaches powershell.exe with expected argv shape.
   safe_target="$tmp_t13/safe.html"
