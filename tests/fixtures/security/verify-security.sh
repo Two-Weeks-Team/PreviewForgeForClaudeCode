@@ -25,7 +25,7 @@ echo
 
 # ----- S-1 : poisoned previews -------------------------------------------
 echo "[S-1] generate-gallery mockup_path guard"
-for fixture in poisoned-previews-traversal.json poisoned-previews-url-scheme.json; do
+for fixture in poisoned-previews-traversal.json poisoned-previews-url-scheme.json poisoned-previews-uppercase.json poisoned-previews-underscore.json poisoned-previews-numeric-prefix.json; do
   # Synthesize a minimal run-dir: <tmp>/previews.json + one dummy mockup
   # HTML so generate-gallery takes the iframe code path (otherwise it
   # falls through to the cache-hit placeholder branch that never runs
@@ -45,6 +45,106 @@ for fixture in poisoned-previews-traversal.json poisoned-previews-url-scheme.jso
   fi
   rm -rf "$tmp_run"
 done
+
+# ----- I-7 : regex weakening probes & per-cap matrix (PR W1.3, #69) -----
+echo
+echo "[I-7] open-browser.sh URL gate — injection matrix"
+url_inj_fails=0
+matrix_total=$(python3 -c "import json;print(len(json.load(open('$FIXTURES_DIR/url-injection-matrix.json'))))")
+# NUL-separated emit so URLs containing literal \n / \r (which the
+# matrix deliberately includes) survive the pipeline intact. bash 3.2
+# (still default on macOS) has no `mapfile`, so we use `while IFS= read
+# -r -d ''` which is portable back to 3.x.
+while IFS= read -r -d '' url; do
+  rc=0
+  bash "$REPO_ROOT/scripts/open-browser.sh" "$url" >/dev/null 2>&1 || rc=$?
+  # The URL gate must REJECT (exit 1). Any other rc means the gate
+  # silently widened: either it accepted the dangerous char (rc=0) or
+  # it crashed in a different code path so the regression signal is
+  # muddled. We require strict rc=1.
+  if [[ "$rc" -ne 1 ]]; then
+    fail "I-7 URL matrix accepted dangerous URL (rc=$rc): $(printf '%q' "$url")"
+    url_inj_fails=$((url_inj_fails + 1))
+  fi
+done < <(python3 -c "import json,sys
+for u in json.load(open('$FIXTURES_DIR/url-injection-matrix.json')):
+    sys.stdout.write(u)
+    sys.stdout.write('\x00')")
+if [[ "$url_inj_fails" -eq 0 ]]; then
+  pass "url-injection-matrix.json — all $matrix_total dangerous URLs rejected (rc=1)"
+fi
+
+echo
+echo "[I-7] open-browser.sh URL gate — positive matrix (must NOT over-narrow)"
+pos_fails=0
+pos_total=$(python3 -c "import json;print(len(json.load(open('$FIXTURES_DIR/url-injection-positives.json'))))")
+# Same NUL-separated portable pattern as the negative matrix above.
+while IFS= read -r -d '' url; do
+  rc=0
+  # We test the S-2 gate in isolation: the URL must NOT trigger the
+  # gate's exit-1 rejection path. rc=0 (opener succeeded) or rc=3 (no
+  # opener available — A-5 non-fatal in CI) both mean the URL passed
+  # the gate; only rc=1 indicates the over-narrowing regression we
+  # want to catch.
+  bash "$REPO_ROOT/scripts/open-browser.sh" "$url" >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -eq 1 ]]; then
+    fail "I-7 URL positives over-narrowed and rejected: $(printf '%q' "$url")"
+    pos_fails=$((pos_fails + 1))
+  fi
+done < <(python3 -c "import json,sys
+for u in json.load(open('$FIXTURES_DIR/url-injection-positives.json')):
+    sys.stdout.write(u)
+    sys.stdout.write('\x00')")
+if [[ "$pos_fails" -eq 0 ]]; then
+  pass "url-injection-positives.json — all $pos_total benign URLs accepted (rc!=1)"
+fi
+
+echo
+echo "[I-7] idea-spec.schema.json — per-cap matrix"
+python3 - <<PYEOF || fails=$((fails + 1))
+import json, sys
+try:
+    import jsonschema
+except ImportError:
+    print("  x jsonschema not installed - I-7 per-cap defenses cannot be verified.", file=sys.stderr)
+    sys.exit(1)
+schema = json.load(open("$REPO_ROOT/plugins/preview-forge/schemas/idea-spec.schema.json"))
+
+# (fixture filename, expected JSON-pointer prefix, expected validator name)
+#   - oversized-non-goals-value : items[0] is 501 chars -> maxLength on non_goals/0
+#   - oversized-non-goals-array : 21 items -> maxItems on non_goals
+#   - oversized-type-field      : type='X'*60 -> enum on must_have_constraints/0/type
+#     (the schema enforces enum, not maxLength, on `type`; the cap that
+#     REJECTS oversized type strings IS the enum, so that's the right
+#     field+validator pair to assert.)
+cases = [
+    ("oversized-non-goals-value.json",  ["non_goals", 0],                         "maxLength"),
+    ("oversized-non-goals-array.json",  ["non_goals"],                            "maxItems"),
+    ("oversized-type-field.json",       ["must_have_constraints", 0, "type"],     "enum"),
+]
+
+regressions = 0
+for fixture, expected_path, expected_validator in cases:
+    payload = json.load(open(f"$FIXTURES_DIR/{fixture}"))
+    try:
+        jsonschema.validate(payload, schema)
+        print(f"  x {fixture} - REGRESSION: schema accepted oversized payload", file=sys.stderr)
+        regressions += 1
+        continue
+    except jsonschema.ValidationError as e:
+        actual_path = list(e.absolute_path)
+        actual_validator = e.validator
+        if actual_path[:len(expected_path)] == expected_path and actual_validator == expected_validator:
+            print(f"  ok {fixture} - rejected ({actual_validator} on {actual_path})")
+        else:
+            print(f"  x {fixture} - rejected on WRONG cap: got "
+                  f"validator={actual_validator} path={actual_path}, "
+                  f"expected validator={expected_validator} path={expected_path}", file=sys.stderr)
+            regressions += 1
+
+if regressions:
+    sys.exit(1)
+PYEOF
 
 # ----- T-4 : generate-gallery XSS escape (Phase 3 Test & CI) ----------
 echo
@@ -149,7 +249,14 @@ printf '<!doctype html><html><body>stub</body></html>' > "$target_html"
 # Strip macOS-provided `open` and any real `xdg-open` so the fake is
 # first. `command -v open` must fail for the test to exercise the
 # xdg-open branch.
-t6_path="$tmp_t6/fake-bin:/usr/bin:/bin"
+t6_path="$tmp_t6/fake-bin:/bin"   # I-7 fix: drop /usr/bin (was
+                                    # "$tmp_t6/fake-bin:/usr/bin:/bin") so the
+                                    # macOS-provided /usr/bin/open is no longer
+                                    # reachable and the fake xdg-open shim
+                                    # actually wins. /bin is kept so bash / sh
+                                    # / cat / etc. still resolve. Without this
+                                    # fix the T-6 shim assertion dead-skipped
+                                    # on Darwin.
 t6_log="$tmp_t6/xdg-open.log"
 rc=0
 PATH="$t6_path" XDG_OPEN_LOG="$t6_log" \

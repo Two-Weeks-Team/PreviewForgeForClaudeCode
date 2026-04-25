@@ -1,0 +1,28 @@
+{
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 0.5,
+  "idea_summary": "I-7 per-cap matrix: non_goals array exceeds maxItems=20.",
+  "non_goals": [
+    "goal-0",
+    "goal-1",
+    "goal-2",
+    "goal-3",
+    "goal-4",
+    "goal-5",
+    "goal-6",
+    "goal-7",
+    "goal-8",
+    "goal-9",
+    "goal-10",
+    "goal-11",
+    "goal-12",
+    "goal-13",
+    "goal-14",
+    "goal-15",
+    "goal-16",
+    "goal-17",
+    "goal-18",
+    "goal-19",
+    "goal-20"
+  ]
+}
