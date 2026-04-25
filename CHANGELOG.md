@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.11.0...v1.11.1) (2026-04-25)
+
+
+### Bug Fixes
+
+* **cache:** atomic strong+weak alias via hardlink to eliminate concurrent put race ([#70](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/70)) ([#81](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/81)) ([798ae02](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/798ae02a6f3e54d62140fd99505d9f52269066c8))
+* hygiene bundle — verify-plugin schema count + idea_summary cap + macOS dup gitignore ([#63](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/63) [#65](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/65) [#68](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/68)) ([#83](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/83)) ([93123ec](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/93123ec09b8211d79e1744f0825f08a43972330a))
+* **security:** SHELL_BYPASSES coverage + regex weakening probes ([#64](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/64) [#69](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/69)) ([#85](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/85)) ([9a2413b](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/9a2413b847820f022d75bcf3e62b6f5a90c20e83))
+
 ## [1.11.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.10.0...v1.11.0) (2026-04-25)
 
 
