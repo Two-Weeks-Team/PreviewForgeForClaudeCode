@@ -1,0 +1,67 @@
+[
+  {
+    "id": "regulatory-with-inline",
+    "input": "regulatory (PII/HIPAA/SOC2)",
+    "expected": {"type": "regulatory", "value": "PII/HIPAA/SOC2"}
+  },
+  {
+    "id": "budget-tier-bare",
+    "input": "budget tier",
+    "expected": {"type": "budget", "value": "tier-not-specified"}
+  },
+  {
+    "id": "latency-sla-bare",
+    "input": "latency SLA",
+    "expected": {"type": "latency", "value": "SLA-not-specified"}
+  },
+  {
+    "id": "latency-with-inline",
+    "input": "latency (<500ms p95)",
+    "expected": {"type": "latency", "value": "<500ms p95"}
+  },
+  {
+    "id": "team-size-bare",
+    "input": "team size",
+    "expected": {"type": "team_size", "value": "not-specified"}
+  },
+  {
+    "id": "data-residency-bare",
+    "input": "data residency",
+    "expected": {"type": "data_residency", "value": "not-specified"}
+  },
+  {
+    "id": "platform-lockin",
+    "input": "platform lock-in (AWS)",
+    "expected": {"type": "platform", "value": "AWS"}
+  },
+  {
+    "id": "freeform-other",
+    "input": "air-gapped deployment",
+    "expected": {"type": "other", "value": "air-gapped deployment"}
+  },
+  {
+    "id": "freeform-korean",
+    "input": "벤더 X 사용 강제",
+    "expected": {"type": "other", "value": "벤더 X 사용 강제"}
+  },
+  {
+    "id": "edge-empty",
+    "input": "",
+    "expected": {"type": "other", "value": ""}
+  },
+  {
+    "id": "edge-whitespace-only",
+    "input": "   ",
+    "expected": {"type": "other", "value": ""}
+  },
+  {
+    "id": "edge-mismatched-parens",
+    "input": "regulatory (PII",
+    "expected": {"type": "other", "value": "regulatory (PII"}
+  },
+  {
+    "id": "edge-canonical-uppercase",
+    "input": "REGULATORY",
+    "expected": {"type": "regulatory", "value": "not-specified"}
+  }
+]
