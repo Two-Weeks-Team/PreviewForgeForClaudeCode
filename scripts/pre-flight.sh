@@ -13,6 +13,44 @@ set -euo pipefail
 # Resolve paths
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
+# Optional idea text — when supplied, run the layer-1 size cap (#95
+# follow-up, deferred from PR #83) BEFORE any of the env checks below
+# return success. Two argv shapes are accepted so callers (CLI / M1
+# Run Supervisor / mock-bootstrap) can wire in cheaply:
+#
+#   scripts/pre-flight.sh --idea "<seed text>"
+#   scripts/pre-flight.sh --idea-file <path>     # reads file, supports >ARG_MAX
+#
+# Both invoke `scripts/validate-idea-input.sh` with the same exit-code
+# contract: 0 on pass, 2 on cap violation. A non-zero rc here surfaces
+# as a hard pre-flight failure (`exit 1` in the summary section), which
+# matches how the rest of `bad_count` is treated. Empty-string idea
+# (e.g. `--idea ""`) is rejected by validate-idea-input.sh's own empty-
+# check (parallels preview-cache.sh::cmd_key T-9.1), so callers who
+# accidentally pass unset-JSON-field text get a hard fail too.
+IDEA_TEXT_FILE=""
+IDEA_TEXT_FILE_OWNED=0   # 1 = we created it, must rm on exit
+cleanup_idea_tmp() {
+  if [[ "$IDEA_TEXT_FILE_OWNED" -eq 1 && -n "$IDEA_TEXT_FILE" && -f "$IDEA_TEXT_FILE" ]]; then
+    rm -f "$IDEA_TEXT_FILE"
+  fi
+}
+trap cleanup_idea_tmp EXIT
+
+if [[ "${1:-}" == "--idea" && -n "${2:-}" ]]; then
+  IDEA_TEXT_FILE="$(mktemp -t pf-preflight-idea-XXXXXX)"
+  IDEA_TEXT_FILE_OWNED=1
+  printf '%s' "$2" > "$IDEA_TEXT_FILE"
+  shift 2
+elif [[ "${1:-}" == "--idea-file" && -n "${2:-}" ]]; then
+  if [[ ! -f "$2" ]]; then
+    echo "pre-flight.sh: --idea-file path not found: $2" >&2
+    exit 1
+  fi
+  IDEA_TEXT_FILE="$2"
+  shift 2
+fi
+
 # Walk up from cwd looking for a plugin repo signature
 # (`.claude-plugin/marketplace.json` — this is any Claude Code plugin marketplace repo).
 # We deliberately don't restrict to "two-weeks-team" since forks, other marketplace
@@ -50,6 +88,28 @@ ok()   { echo "  ✓ $1"; }
 
 echo "=== Preview Forge pre-flight ==="
 echo
+
+# 0. Idea-input size cap (#95 follow-up, deferred from PR #83) — only
+# runs when the caller passed `--idea` / `--idea-file`. Skipped silently
+# for the legacy invocation `scripts/pre-flight.sh` with no args (env
+# check only). When triggered, this is the layer-1 gate that protects
+# the rest of the pipeline (idea.json write, cache key hash, Socratic
+# prompt expansion) from a >5000-code-point seed idea.
+if [[ -n "$IDEA_TEXT_FILE" ]]; then
+  echo "[0] Idea-input size cap (≤5000 code points)"
+  if [[ ! -x "$SCRIPT_DIR/validate-idea-input.sh" ]]; then
+    fail "validate-idea-input.sh missing or not executable at $SCRIPT_DIR/validate-idea-input.sh"
+  else
+    if "$SCRIPT_DIR/validate-idea-input.sh" - < "$IDEA_TEXT_FILE" >/dev/null 2>&1; then
+      ok "idea text within 5000-code-point cap"
+    else
+      validator_rc=$?
+      validator_err=$("$SCRIPT_DIR/validate-idea-input.sh" - < "$IDEA_TEXT_FILE" 2>&1 >/dev/null || true)
+      fail "idea text rejected by validate-idea-input.sh (rc=$validator_rc): ${validator_err}"
+    fi
+  fi
+  echo
+fi
 
 # 1. cwd hygiene
 CWD="$(pwd)"
