@@ -1,0 +1,14 @@
+[
+  "http://example.com/path'quote",
+  "http://example.com/path`backtick",
+  "http://example.com/path\\backslash",
+  "http://example.com/path with space",
+  "http://example.com/path;semicolon",
+  "http://example.com/path<lt",
+  "http://example.com/path>gt",
+  "http://example.com/path\nnewline",
+  "http://example.com/path\rcr",
+  "http://example.com/path$dollar",
+  "http://example.com/path(paren",
+  "http://example.com/path\\\\twoslash"
+]

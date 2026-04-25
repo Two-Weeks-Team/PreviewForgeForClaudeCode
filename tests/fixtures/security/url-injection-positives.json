@@ -1,0 +1,7 @@
+[
+  "https://example.com/path?a=1&b=2",
+  "https://example.com/search?q=foo+bar",
+  "https://example.com/~user/page",
+  "https://example.com/path?key=value",
+  "https://example.com/path%20encoded"
+]

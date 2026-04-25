@@ -1,0 +1,11 @@
+[
+  {
+    "id": "P01",
+    "advocate": "the-contrarian",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "I-7 regex weakening probe — uppercase letter in the slug must be rejected by MOCKUP_PAT='^P\\d{2}-[a-z0-9-]+\\.html$'.",
+    "spec_alignment_notes": "If MOCKUP_PAT were weakened to the case-insensitive [A-Za-z0-9-] charset, this fixture would slip through. The lowercase-only constraint is what stops attacker-controlled tool tags like 'P01-FOO.html' from co-existing with attacker-uploaded sibling files.",
+    "mockup_path": "P01-FOO.html"
+  }
+]

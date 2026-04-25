@@ -1,0 +1,11 @@
+[
+  {
+    "id": "P01",
+    "advocate": "the-contrarian",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "I-7 regex weakening probe — missing 'P' prefix. MOCKUP_PAT requires '^P\\d{2}-...'; '01-foo.html' has no leading P and must be rejected.",
+    "spec_alignment_notes": "Defends against MOCKUP_PAT being relaxed to '^\\d{2}-...' or anchored without the 'P' literal.",
+    "mockup_path": "01-foo.html"
+  }
+]

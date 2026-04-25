@@ -1,0 +1,11 @@
+[
+  {
+    "id": "P01",
+    "advocate": "the-contrarian",
+    "target_persona": "tester",
+    "primary_surface": "web",
+    "one_liner_pitch": "I-7 regex weakening probe — underscore in the slug is NOT in [a-z0-9-]; MOCKUP_PAT must reject.",
+    "spec_alignment_notes": "If MOCKUP_PAT were weakened to allow `_` (e.g. \\w which matches [A-Za-z0-9_]), this slug would slip past. We assert the strict charset stays strict.",
+    "mockup_path": "P01-a_b.html"
+  }
+]

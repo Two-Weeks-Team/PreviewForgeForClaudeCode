@@ -46,12 +46,29 @@ BLOCKED_BASH = [
      "force push to main/master blocked"),
 ]
 
-# Shell expansion bypass detection (Rule 6 reinforcement)
+# Shell expansion bypass detection (Rule 6 reinforcement).
+# Issue #64 I-2: prior implementation used BLOCKED_BASH[:4] (the first 4
+# patterns) inside $()/backtick alternations, leaving 6 destructive
+# patterns at index ≥4 (DELETE FROM, rm -rf, vercel deploy --prod,
+# gh release create, kubectl prod, git push --force) bypassable via
+# command substitution. We now alternate over the FULL list.
+_ALL_BASH_PATTERNS = "|".join(p for p, _ in BLOCKED_BASH)
 SHELL_BYPASSES = [
-    r"\$\([^)]*(?:" + "|".join([p for p, _ in BLOCKED_BASH[:4]]) + r")",
-    r"`[^`]*(?:" + "|".join([p for p, _ in BLOCKED_BASH[:4]]) + r")",
-    r"\beval\s+[\"']?\$",
+    r"\$\([^)]*(?:" + _ALL_BASH_PATTERNS + r")",
+    r"`[^`]*(?:" + _ALL_BASH_PATTERNS + r")",
+    # Any `eval` call is suspicious — eval is the canonical shell-bypass
+    # primitive for re-executing dynamically-built strings.
+    r"\beval\s+",
 ]
+
+# Issue #64 I-2 — nested-shell detection: `bash -c "<inner>"` /
+# `sh -c '<inner>'` would otherwise hide BLOCKED_BASH patterns from the
+# outer scan (the outer command is just `bash -c …` which matches no
+# rule). We extract the inner string and re-scan it.
+NESTED_SHELL_RE = re.compile(
+    r"""\b(?:bash|sh)\s+-c\s+(?P<q>["'])(?P<inner>.*?)(?P=q)""",
+    re.DOTALL,
+)
 
 # Rule 3 — memory paths only M3 can edit (but auto-retro trigger bypass is
 # allowed via a sentinel env var set by auto-retro-trigger.py).
@@ -102,6 +119,17 @@ def check_bash(command: str) -> tuple[bool, str]:
     for bypass in SHELL_BYPASSES:
         if re.search(bypass, command, re.IGNORECASE):
             return True, "Layer-0 Rule 6 — shell expansion bypass attempt detected"
+    # Issue #64 I-2: nested-shell — `bash -c "<inner>"` / `sh -c '<inner>'`.
+    # Re-scan the inner string against BLOCKED_BASH so destructive
+    # patterns can't hide one shell level down.
+    for m in NESTED_SHELL_RE.finditer(command):
+        inner = m.group("inner")
+        for pattern, reason in BLOCKED_BASH:
+            if re.search(pattern, inner, re.IGNORECASE):
+                return True, (
+                    f"Layer-0 Rule 6 — nested shell ({m.group(0)[:3].strip()} -c) "
+                    f"hides: {reason}"
+                )
     return False, ""
 
 
