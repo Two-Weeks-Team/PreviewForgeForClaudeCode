@@ -2,16 +2,20 @@
 """Capture the v1.6 gallery-hero screenshot used in README.md (#67).
 
 Source: runs/r-clean-20260425-max/mockups/gallery.html (26-card profile —
-maximum visual density per hackathon-judge JTBD).
+maximum visual density per hackathon-judge JTBD). The W4.10 evidence
+artifact is committed to the repo, so re-running this script produces
+the same PNG without needing to regenerate the gallery.
 
 Output: docs/assets/v1.6-gallery-hero.png
 
-Mode: full-page capture, then trimmed/rendered at 1600 wide. Picked over
-viewport-only because the wow-factor of the gallery is "lots of tiles
-side-by-side"; cropping above the fold loses that.
+Mode: viewport-only capture at 1600x1100 with device_scale_factor=2
+(retina), giving a 3200x2200 PNG. Picked over full-page because
+full_page captures the entire 26-card vertical strip (~3200x8200) which
+renders as a comically tall banner in the README; viewport-only shows
+the "lots of tiles side-by-side" wow factor in a normal banner ratio.
 
-Determinism: fonts loaded, animations disabled, viewport pinned, file:// URL.
-Re-running on the same gallery.html produces a byte-stable PNG.
+Determinism: fonts loaded, animations disabled, viewport pinned, file://
+URI. Re-running on the same gallery.html produces a byte-stable PNG.
 """
 from __future__ import annotations
 
@@ -68,9 +72,9 @@ def main() -> int:
         page.goto(src.as_uri(), wait_until="networkidle")
         # Disable animations + transitions deterministically.
         page.add_style_tag(content="*, *::before, *::after { animation: none !important; transition: none !important; }")
-        # Wait for fonts (gallery uses system stack but some browsers still
-        # fire after a tick) and any deferred iframe layout.
-        page.wait_for_load_state("networkidle")
+        # Wait for web-fonts to actually rasterise (gemini #3 — networkidle
+        # doesn't cover document.fonts state on every browser).
+        page.evaluate("document.fonts.ready")
         page.screenshot(path=str(out), full_page=args.full_page)
         browser.close()
 
