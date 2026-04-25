@@ -1,0 +1,196 @@
+{
+  "run_id": "case-low-confidence",
+  "spec_filled_ratio": 0.15,
+  "advocate_alignments": [
+    {
+      "advocate_id": "P01",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P02",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P03",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P04",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P05",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P06",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P07",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P08",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P09",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P10",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P11",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P12",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P13",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P14",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P15",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P16",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P17",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P18",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P19",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P20",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P21",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P22",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P23",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P24",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P25",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    },
+    {
+      "advocate_id": "P26",
+      "spec_field_interpretations": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+      "framework_choice": "react",
+      "matches_spec_persona": false,
+      "matches_spec_surface": false
+    }
+  ],
+  "convergence_metrics": {
+    "framework_jaccard": 1.0,
+    "persona_distinct_count": 1,
+    "surface_distinct_count": 1,
+    "diverged_advocates": [],
+    "convergence_threshold": 3
+  },
+  "low_confidence": true
+}

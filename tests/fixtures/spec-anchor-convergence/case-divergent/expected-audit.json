@@ -1,0 +1,199 @@
+{
+  "run_id": "case-divergent",
+  "spec_filled_ratio": 0.5,
+  "advocate_alignments": [
+    {
+      "advocate_id": "P01",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P02",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P03",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P04",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P05",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P06",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P07",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P08",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P09",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P10",
+      "spec_field_interpretations": "Building a React SPA front-end for the Web PWA target",
+      "framework_choice": "react",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P11",
+      "spec_field_interpretations": "Next.js SSR for the Web PWA primary_surface",
+      "framework_choice": "nextjs",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P12",
+      "spec_field_interpretations": "Next.js SSR for the Web PWA primary_surface",
+      "framework_choice": "nextjs",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P13",
+      "spec_field_interpretations": "Next.js SSR for the Web PWA primary_surface",
+      "framework_choice": "nextjs",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P14",
+      "spec_field_interpretations": "Next.js SSR for the Web PWA primary_surface",
+      "framework_choice": "nextjs",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P15",
+      "spec_field_interpretations": "Next.js SSR for the Web PWA primary_surface",
+      "framework_choice": "nextjs",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P16",
+      "spec_field_interpretations": "Next.js SSR for the Web PWA primary_surface",
+      "framework_choice": "nextjs",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P17",
+      "spec_field_interpretations": "Next.js SSR for the Web PWA primary_surface",
+      "framework_choice": "nextjs",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P18",
+      "spec_field_interpretations": "Next.js SSR for the Web PWA primary_surface",
+      "framework_choice": "nextjs",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P19",
+      "spec_field_interpretations": "Plain Svelte for the Web PWA, lighter bundle",
+      "framework_choice": "svelte",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P20",
+      "spec_field_interpretations": "Plain Svelte for the Web PWA, lighter bundle",
+      "framework_choice": "svelte",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P21",
+      "spec_field_interpretations": "Plain Svelte for the Web PWA, lighter bundle",
+      "framework_choice": "svelte",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P22",
+      "spec_field_interpretations": "Plain Svelte for the Web PWA, lighter bundle",
+      "framework_choice": "svelte",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P23",
+      "spec_field_interpretations": "Plain Svelte for the Web PWA, lighter bundle",
+      "framework_choice": "svelte",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P24",
+      "spec_field_interpretations": "Vue.js for the Web PWA \u2014 team familiarity",
+      "framework_choice": "vue",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P25",
+      "spec_field_interpretations": "Vue.js for the Web PWA \u2014 team familiarity",
+      "framework_choice": "vue",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    },
+    {
+      "advocate_id": "P26",
+      "spec_field_interpretations": "Vue.js for the Web PWA \u2014 team familiarity",
+      "framework_choice": "vue",
+      "matches_spec_persona": true,
+      "matches_spec_surface": true
+    }
+  ],
+  "convergence_metrics": {
+    "framework_jaccard": 0.3846,
+    "persona_distinct_count": 1,
+    "surface_distinct_count": 1,
+    "diverged_advocates": [
+      "P24",
+      "P25",
+      "P26"
+    ],
+    "convergence_threshold": 3
+  }
+}

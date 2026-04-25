@@ -1,0 +1,15 @@
+{
+  "idea_summary": "Vague seed",
+  "target_persona": {
+    "profile": null,
+    "primary_pain": null,
+    "usage_frequency": null
+  },
+  "primary_surface": {
+    "platform": null,
+    "sync_model": null,
+    "offline_capable": null
+  },
+  "_filled_ratio": 0.15,
+  "_schema_version": "1.7.0"
+}

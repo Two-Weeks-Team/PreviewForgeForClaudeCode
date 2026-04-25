@@ -1,0 +1,12 @@
+{
+  "advocate": "fixture-advocate",
+  "framing": "Mock framing for spec-anchor-audit fixture, \u226520 chars.",
+  "target_persona": "solo founder",
+  "primary_surface": "Web PWA",
+  "opus_4_7_capability": "code-generation",
+  "mvp_scope": "demo",
+  "one_liner_pitch": "Mock pitch.",
+  "mockup_path": "mockups/P15-fixture.html",
+  "spec_alignment_notes": "spec persona unknown \u2192 assumed solo founder; using React for Web PWA",
+  "id": "P15"
+}
