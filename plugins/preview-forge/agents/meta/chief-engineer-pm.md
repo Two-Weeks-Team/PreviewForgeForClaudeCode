@@ -109,9 +109,9 @@ esac
 
 `design-approved.json`이 잠금된 직후 (= `chosen_preview.json.lock` + `design-approved.json` 모두 존재), M3는 **사용자 추가 입력 없이 즉시** SpecDD 사이클을 dispatch한다. 이는 README의 "human clicks twice" 약속의 핵심 — H1과 H2 외에는 자동 진행이어야 한다.
 
-검증 스크립트:
+검증 스크립트 (다른 §3 helper와 동일한 plugin-root 절대 경로 형태 — 사용자 workspace에서 `scripts/`가 없을 때도 동작):
 ```bash
-bash scripts/dispatch-spec-cycle.sh runs/<id>/
+bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/dispatch-spec-cycle.sh" runs/<id>/
 # exit 0 + JSON {"action":"dispatch",...} → 즉시 다음 단계
 # exit 2 → 락 산출물 누락; 사용자에게 H1 미완료 보고
 ```
