@@ -57,8 +57,19 @@ SHELL_BYPASSES = [
     r"\$\([^)]*(?:" + _ALL_BASH_PATTERNS + r")",
     r"`[^`]*(?:" + _ALL_BASH_PATTERNS + r")",
     # Any `eval` call is suspicious — eval is the canonical shell-bypass
-    # primitive for re-executing dynamically-built strings.
-    r"\beval\s+",
+    # primitive for re-executing dynamically-built strings. Issue #95: the
+    # prior `\beval\s+` form required whitespace after `eval`, which
+    # missed bypass shapes that use a non-whitespace token boundary —
+    # `eval$IFS$1` (IFS-separator trick), `eval"…"` / `eval'…'` (quoted
+    # literal), `eval(…)` (paren grouping), `eval;cmd` (semicolon
+    # chaining), and bare `eval` at EOF. We now require only word-boundary
+    # on both sides via `\beval\b`, which still excludes substrings like
+    # `evaluate`, `preeval`, `myeval`, `eval_x` (since `_` and word chars
+    # don't satisfy `\b`). Word boundary at the start also catches
+    # `\eval` (backslash-escape, alias-bypass) and `command eval` (the
+    # `command` builtin prefix) because each leaves `eval` as a whole
+    # word.
+    r"\beval\b",
 ]
 
 # Issue #64 I-2 — nested-shell detection: `bash -c "<inner>"` /
