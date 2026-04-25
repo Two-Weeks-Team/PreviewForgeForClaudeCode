@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
-# I-8 / issue #70 (W1.4) — Option C self-heal fixture.
+# I-8 / issue #70 (W1.4) — Option C self-heal fixture (codex R2).
 #
-# Sets up a cache directory that contains ONLY the strong-key file (the
-# bug-state a legacy v1.6.1 entry, or a selective `invalidate weak`,
-# would leave behind), invokes `get-fallback STRONG WEAK`, and asserts:
-#   1. Exit 0 with the strong-key JSON returned on stdout.
-#   2. The weak alias file is restored after the call.
-#   3. Strong and weak share the same inode (hardlink invariant).
-#
-# Then runs the inverse case: only weak-key file present, expect
-# strong to be repaired from weak.
+# Asserts get-fallback semantics, narrowed after the codex P2 review:
+#   - Strong-only seeded:  get-fallback streams strong, AND restores
+#                          the weak alias as a hardlink to the same
+#                          inode. After the call both files exist and
+#                          share inode.
+#   - Weak-only seeded:    get-fallback streams weak (soft hit), but
+#                          MUST NOT recreate the strong key. weak_key
+#                          intentionally omits idea_spec_hash, so a
+#                          strong rebuilt from weak could carry stale
+#                          spec content; caller is expected to treat
+#                          this as "Socratic skip OK, regen previews".
 
 set -u
 
@@ -30,68 +32,115 @@ export PF_CACHE_DIR="$tmp_cache"
 fails=0
 PAYLOAD='{"profile":"pro","previews":[{"id":"P1"}]}'
 
-run_case() {
-  local label="$1"
-  local seed_name="$2"      # which file we pre-create
-  local strong="$3"
-  local weak="$4"
+# Set up a permissive profile stub once (cmd_get otherwise treats
+# ttl=0 as "caching disabled" → miss).
+stub_root="$tmp_cache/stub"
+mkdir -p "$stub_root/profiles"
+printf '{"caching":{"ttl_seconds":3600}}' > "$stub_root/profiles/pro.json"
 
+# Case A — strong-only seeded; expect weak alias restored.
+run_strong_only() {
+  local label="strong-only seeded → weak restored"
+  local strong="strongAAAAAAAAAA" weak="weakBBBBBBBBBBBB"
   rm -f "$tmp_cache"/*.json
-  printf '%s' "$PAYLOAD" > "$tmp_cache/${seed_name}.json"
-
-  # Confirm the missing-side really is missing before the call.
-  local probe_missing
-  if [[ "$seed_name" == "$strong" ]]; then probe_missing="$weak"; else probe_missing="$strong"; fi
-  if [[ -f "$tmp_cache/${probe_missing}.json" ]]; then
-    echo "  [$label] FAIL: probe pre-state — '${probe_missing}.json' should be absent" >&2
+  printf '%s' "$PAYLOAD" > "$tmp_cache/${strong}.json"
+  if [[ -f "$tmp_cache/${weak}.json" ]]; then
+    echo "  [$label] FAIL: pre-state weak should be absent" >&2
     fails=$((fails + 1)); return
   fi
-
-  # Self-healing get must succeed even though one side is missing.
-  # Note: cmd_get enforces TTL via profile lookup; without
-  # CLAUDE_PLUGIN_ROOT set, ttl=0 → the entry would be treated as
-  # "caching disabled" and miss. Point PLUGIN_ROOT at a tmp profiles
-  # dir with a permissive TTL so cmd_get sees the entry as fresh.
-  local stub_root="$tmp_cache/stub"
-  mkdir -p "$stub_root/profiles"
-  printf '{"caching":{"ttl_seconds":3600}}' > "$stub_root/profiles/pro.json"
 
   local got rc
   got=$(CLAUDE_PLUGIN_ROOT="$stub_root" bash "$CACHE_SCRIPT" get-fallback "$strong" "$weak"); rc=$?
 
   if [[ "$rc" -ne 0 ]]; then
-    echo "  [$label] FAIL: get-fallback exit=$rc (expected 0)" >&2
-    fails=$((fails + 1)); return
+    echo "  [$label] FAIL: exit=$rc (expected 0)" >&2; fails=$((fails + 1)); return
   fi
   if [[ "$got" != "$PAYLOAD" ]]; then
-    echo "  [$label] FAIL: stdout mismatch" >&2
-    echo "    expected: $PAYLOAD" >&2
-    echo "    got:      $got" >&2
-    fails=$((fails + 1)); return
-  fi
-  if [[ ! -f "$tmp_cache/${strong}.json" ]]; then
-    echo "  [$label] FAIL: strong '${strong}.json' not present after self-heal" >&2
-    fails=$((fails + 1)); return
+    echo "  [$label] FAIL: stdout mismatch (got: $got)" >&2; fails=$((fails + 1)); return
   fi
   if [[ ! -f "$tmp_cache/${weak}.json" ]]; then
-    echo "  [$label] FAIL: weak '${weak}.json' not restored after self-heal" >&2
-    fails=$((fails + 1)); return
+    echo "  [$label] FAIL: weak alias not restored" >&2; fails=$((fails + 1)); return
   fi
   local s_ino w_ino
   s_ino=$($STAT_INODE "$tmp_cache/${strong}.json")
   w_ino=$($STAT_INODE "$tmp_cache/${weak}.json")
   if [[ "$s_ino" != "$w_ino" ]]; then
-    echo "  [$label] FAIL: inode mismatch after self-heal (strong=$s_ino weak=$w_ino)" >&2
-    fails=$((fails + 1)); return
+    echo "  [$label] FAIL: inode mismatch (strong=$s_ino weak=$w_ino)" >&2; fails=$((fails + 1)); return
   fi
   echo "  [$label] OK (inode=$s_ino shared)"
 }
 
+# Case B — weak-only seeded; soft hit (exit 2), strong MUST stay missing.
+run_weak_only() {
+  local label="weak-only seeded → soft hit exit 2, strong NOT recreated"
+  local strong="strongAAAAAAAAAA" weak="weakBBBBBBBBBBBB"
+  rm -f "$tmp_cache"/*.json
+  printf '%s' "$PAYLOAD" > "$tmp_cache/${weak}.json"
+  if [[ -f "$tmp_cache/${strong}.json" ]]; then
+    echo "  [$label] FAIL: pre-state strong should be absent" >&2; fails=$((fails + 1)); return
+  fi
+
+  local got rc
+  set +e
+  got=$(CLAUDE_PLUGIN_ROOT="$stub_root" bash "$CACHE_SCRIPT" get-fallback "$strong" "$weak")
+  rc=$?
+  set -e
+
+  if [[ "$rc" -ne 2 ]]; then
+    echo "  [$label] FAIL: exit=$rc (expected 2 — codex R3 P2-B soft-hit signal)" >&2
+    fails=$((fails + 1)); return
+  fi
+  if [[ "$got" != "$PAYLOAD" ]]; then
+    echo "  [$label] FAIL: stdout mismatch (got: $got)" >&2; fails=$((fails + 1)); return
+  fi
+  if [[ -f "$tmp_cache/${strong}.json" ]]; then
+    echo "  [$label] FAIL: strong was rebuilt from weak (codex R2 P2 — must NOT happen; spec_hash safety)" >&2
+    fails=$((fails + 1)); return
+  fi
+  echo "  [$label] OK (exit=2 soft hit; strong intentionally absent)"
+}
+
+# Case C — full miss; exit 1.
+run_full_miss() {
+  local label="both missing → exit 1"
+  local strong="strongAAAAAAAAAA" weak="weakBBBBBBBBBBBB"
+  rm -f "$tmp_cache"/*.json
+  set +e
+  CLAUDE_PLUGIN_ROOT="$stub_root" bash "$CACHE_SCRIPT" get-fallback "$strong" "$weak" >/dev/null 2>&1
+  local rc=$?
+  set -e
+  if [[ "$rc" -eq 0 ]]; then
+    echo "  [$label] FAIL: exit=$rc (expected non-zero)" >&2; fails=$((fails + 1)); return
+  fi
+  echo "  [$label] OK (exit=$rc)"
+}
+
+# Case D — byte-equivalence: get-fallback stdout must equal the
+# on-disk file byte-for-byte (codex P3, trailing newline preservation).
+run_byte_equivalence() {
+  local label="strong hit → byte-equivalent stream (newline preserved)"
+  local strong="strongAAAAAAAAAA" weak="weakBBBBBBBBBBBB"
+  rm -f "$tmp_cache"/*.json
+  # Payload deliberately ends with a trailing newline (typical jq/python output).
+  printf '%s\n' "$PAYLOAD" > "$tmp_cache/${strong}.json"
+
+  local got_md src_md
+  got_md=$(CLAUDE_PLUGIN_ROOT="$stub_root" bash "$CACHE_SCRIPT" get-fallback "$strong" "$weak" \
+           | shasum -a 256 | awk '{print $1}')
+  src_md=$(shasum -a 256 < "$tmp_cache/${strong}.json" | awk '{print $1}')
+
+  if [[ "$got_md" != "$src_md" ]]; then
+    echo "  [$label] FAIL: stdout sha256 ($got_md) != file sha256 ($src_md)" >&2
+    fails=$((fails + 1)); return
+  fi
+  echo "  [$label] OK"
+}
+
 echo "test-self-heal.sh:"
-run_case "strong-only seeded → weak restored" \
-  "strongAAAAAAAAAA" "strongAAAAAAAAAA" "weakBBBBBBBBBBBB"
-run_case "weak-only seeded   → strong restored" \
-  "weakBBBBBBBBBBBB" "strongAAAAAAAAAA" "weakBBBBBBBBBBBB"
+run_strong_only
+run_weak_only
+run_full_miss
+run_byte_equivalence
 
 if [[ "$fails" -gt 0 ]]; then
   echo "test-self-heal.sh: $fails failure(s)" >&2
