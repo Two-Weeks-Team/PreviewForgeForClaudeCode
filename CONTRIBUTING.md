@@ -4,12 +4,52 @@ Preview Forge introduces the **3-DD Methodology** (PreviewDD → SpecDD → Test
 Contributions that strengthen any one of the three cycles, or that close
 failure loops observed in real runs, are most welcome.
 
+## Commit message convention
+
+This repo uses **release-please** with [Conventional Commits](https://www.conventionalcommits.org/).
+release-please **autobumps** semver from the commit history on every merge to
+`main`, so version-prefix scopes (`feat(v1.7.0): …`) are redundant — and they
+also make the resulting `CHANGELOG.md` harder to read because every entry
+collapses under one synthetic version scope instead of the actual subsystem.
+
+**Use semantic scope, NOT version prefix:**
+
+```
+Good:   feat(security): reject traversal mockup_path + URL injection
+        fix(cache): cmd_key empty-idea reject (T-9.1)
+        docs(readme): add v1.6+ Socratic interview section
+        refactor(advocates): extract py_sha256_file helper
+        test(e2e): macOS CI matrix for verify-seed-expectations
+
+Avoid:  feat(v1.7.0): Phase 8 — Q-9 / Q-1 / Q-2
+        fix(v1.X.Y): preview-cache hardening
+```
+
+**Allowed types** (release-please default ruleset):
+
+- `feat` — new behavior (minor bump)
+- `fix` — bug fix (patch bump)
+- `docs`, `refactor`, `test`, `chore`, `perf`, `ci`, `build` — no version bump
+
+**Suggested scopes** (semantic, subsystem-oriented):
+
+`security`, `cache`, `ideation`, `gallery`, `hooks`, `schema`, `advocates`,
+`monitors`, `bootstrap`, `panels`, `e2e`, `agents`, `memory`, `ci`,
+`profiles`, `scripts`, `commands`, `methodology`.
+
+When a change cuts across many subsystems and a single scope is misleading,
+prefer no scope (`feat: …`) over a version scope.
+
+**Breaking changes**: append `!` to the type/scope (`feat(profiles)!: …`)
+or include a `BREAKING CHANGE:` footer — release-please will pick it up
+for the major bump.
+
 ## Local setup
 
 ```bash
 git clone https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode
 cd PreviewForgeForClaudeCode
-bash scripts/verify-plugin.sh   # 34 checks
+bash scripts/verify-plugin.sh   # 57 checks (Pass: 57 / Fail: 0)
 ```
 
 Install the plugin under development locally:
@@ -78,13 +118,16 @@ fix the code, not the proposal (or justify the divergence in the PR).
 
 ## PR checklist (auto-enforced by CI)
 
-- [ ] `bash scripts/verify-plugin.sh` passes (all 34 checks)
-- [ ] Agent count still 143, or CHANGELOG + proposal updated explicitly
+- [ ] `bash scripts/verify-plugin.sh` passes (all 57 checks)
+- [ ] Agent count still 144, or CHANGELOG + proposal updated explicitly
 - [ ] All agents use `model: opus` (no Sonnet/Haiku mixing)
 - [ ] No 3rd-party service dependencies introduced
 - [ ] Layer-0 rules respected (`plugins/preview-forge/methodology/global.md`)
-- [ ] Version bumped if release-worthy (both manifests)
-- [ ] `CHANGELOG.md` entry
+- [ ] Conventional Commit message with **semantic scope** (release-please
+      autobumps semver — do **not** hand-edit version in manifests or root
+      `CHANGELOG.md`)
+- [ ] `plugins/preview-forge/CHANGELOG.md` entry (the hand-maintained
+      plugin changelog; root `CHANGELOG.md` is release-please generated)
 
 ## Code of conduct
 
@@ -94,13 +137,25 @@ should treat each other as collaborators, not as Devil's Advocates.
 
 ## Release process
 
-1. PR merged to `main`
-2. `version` bumped in both `.claude-plugin/marketplace.json` and
-   `plugins/preview-forge/.claude-plugin/plugin.json`
-3. `CHANGELOG.md` entry added under `## [X.Y.Z]`
-4. `git tag vX.Y.Z && git push origin vX.Y.Z`
-5. GitHub Actions `release.yml` automatically creates the GitHub Release
-   with notes extracted from CHANGELOG
+Releases are automated via **release-please**. Contributors do **not**
+hand-bump versions or hand-tag releases.
+
+1. PR with Conventional Commit messages (semantic scope) merges to `main`.
+2. release-please opens / updates a `chore(main): release X.Y.Z` PR that
+   accumulates pending bumps from the commit history.
+3. When that release PR is merged, release-please:
+   - bumps `version` in `.claude-plugin/marketplace.json` and
+     `plugins/preview-forge/.claude-plugin/plugin.json`,
+   - regenerates the **root** `CHANGELOG.md`,
+   - creates the `vX.Y.Z` git tag, and
+   - publishes the GitHub Release with notes extracted from the changelog.
+4. `plugins/preview-forge/CHANGELOG.md` is **hand-maintained** in feature
+   PRs — add an entry under `## [X.Y.Z]` describing the user-visible
+   change. release-please does not touch this file.
+
+If your change is release-worthy, the only contributor action is writing
+a clean Conventional Commit and updating
+`plugins/preview-forge/CHANGELOG.md`.
 
 ## Questions
 
