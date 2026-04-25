@@ -4,6 +4,46 @@ Preview Forge introduces the **3-DD Methodology** (PreviewDD → SpecDD → Test
 Contributions that strengthen any one of the three cycles, or that close
 failure loops observed in real runs, are most welcome.
 
+## Commit message convention
+
+This repo uses **release-please** with [Conventional Commits](https://www.conventionalcommits.org/).
+release-please **autobumps** semver from the commit history on every merge to
+`main`, so version-prefix scopes (`feat(v1.7.0): …`) are redundant — and they
+also make the resulting `CHANGELOG.md` harder to read because every entry
+collapses under one synthetic version scope instead of the actual subsystem.
+
+**Use semantic scope, NOT version prefix:**
+
+```
+Good:   feat(security): reject traversal mockup_path + URL injection
+        fix(cache): cmd_key empty-idea reject (T-9.1)
+        docs(readme): add v1.6+ Socratic interview section
+        refactor(advocates): extract py_sha256_file helper
+        test(e2e): macOS CI matrix for verify-seed-expectations
+
+Avoid:  feat(v1.7.0): Phase 8 — Q-9 / Q-1 / Q-2
+        fix(v1.X.Y): preview-cache hardening
+```
+
+**Allowed types** (release-please default ruleset):
+
+- `feat` — new behavior (minor bump)
+- `fix` — bug fix (patch bump)
+- `docs`, `refactor`, `test`, `chore`, `perf`, `ci`, `build` — no version bump
+
+**Suggested scopes** (semantic, subsystem-oriented):
+
+`security`, `cache`, `ideation`, `gallery`, `hooks`, `schema`, `advocates`,
+`monitors`, `bootstrap`, `panels`, `e2e`, `agents`, `memory`, `ci`,
+`profiles`, `scripts`, `commands`, `methodology`.
+
+When a change cuts across many subsystems and a single scope is misleading,
+prefer no scope (`feat: …`) over a version scope.
+
+**Breaking changes**: append `!` to the type/scope (`feat(profiles)!: …`)
+or include a `BREAKING CHANGE:` footer — release-please will pick it up
+for the major bump.
+
 ## Local setup
 
 ```bash
