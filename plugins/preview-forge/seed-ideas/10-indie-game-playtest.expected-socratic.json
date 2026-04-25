@@ -1,33 +1,33 @@
 {
-  "idea_summary": "인디 게임 플레이테스트 빌드 배포 + 피드백 수집",
+  "_schema_version": "1.0.0",
+  "_filled_ratio": 1.0,
+  "idea_summary": "인디 게임 개발자의 플레이테스트 피드백 수집",
   "target_persona": {
-    "profile": "1-2인 인디 게임 개발자 (Steam·itch.io)",
-    "primary_pain": "빌드 배포는 itch.io, 피드백은 Discord, 플레이 영상은 OBS — 도구 분산",
+    "profile": "1-2인 인디 게임 개발자 (Steam·itch.io 출시 준비 중)",
+    "primary_pain": "플레이테스트 피드백이 Discord 채널·트위터·구글폼에 분산되어 어떤 이슈가 우선순위인지 알기 어려움",
     "usage_frequency": "weekly"
   },
   "primary_surface": {
-    "platform": "desktop",
+    "platform": "web",
     "sync_model": "batch",
     "offline_capable": false
   },
   "jobs_to_be_done": {
-    "functional": "빌드 배포 + 플레이테스터 피드백 수집 + 플레이 영상 자동 capture",
-    "emotional": "자신감 — 데이터 기반 개선",
-    "social": "커뮤니티에 진척 빠르게 공유"
+    "functional": "테스터로부터 플레이 영상 + 텍스트 피드백을 받아 카테고리(버그·UX·밸런스)로 자동 분류하고 우선순위화",
+    "emotional": "자신감 — 데이터 기반으로 다음 빌드 우선순위 결정",
+    "social": "커뮤니티에 'v0.4 → v0.5에서 이런 피드백을 어떻게 반영했는지' 변경 로그 공유"
   },
-  "killer_feature": "플레이테스트 영상 자동 녹화 + 피드백 시점 매핑",
+  "killer_feature": "플레이 영상의 특정 시점에 매핑된 피드백 댓글 (타임라인 마커) — 텍스트만으로 묘사하기 힘든 버그를 영상-시점으로 묶음",
   "must_have_constraints": [
     {
       "type": "data_residency",
-      "value": "빌드 파일 비공개 — URL 만료 + 토큰 인증"
+      "value": "테스트 빌드는 비공개 토큰 인증, 영상은 NDA 옵션 가능"
     }
   ],
   "non_goals": [
-    "배포 플랫폼 (Steam 대체)",
-    "결제 처리"
+    "배포 플랫폼 자체 (Steam·itch.io 대체 X)",
+    "인앱 결제 처리"
   ],
   "monetization_model": "freemium",
-  "success_metric": "빌드당 피드백 수 + 영상 분석 retention",
-  "_schema_version": "1.0.0",
-  "_filled_ratio": 1.0
+  "success_metric": "빌드당 수집된 피드백 수 + 카테고리 자동 분류 정확도"
 }

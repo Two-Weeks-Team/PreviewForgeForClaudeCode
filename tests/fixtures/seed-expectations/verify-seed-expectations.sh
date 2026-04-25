@@ -6,6 +6,9 @@
 #   2. Asserts the file's `_filled_ratio` matches the reference computed
 #      by `scripts/compute-filled-ratio.py` (i.e. self-consistency).
 #   3. Asserts the file pairs with an existing `<seed>.md` (no orphan).
+#   4. Asserts `idea_summary` matches the partner `.md`'s `**One-liner**:`
+#      line verbatim — catches the drift codex flagged on PR #55 R1
+#      (08/10 expected-socratic shifted to a different product than the .md).
 #
 # Q-8 (interview-tree.json) consumes this data. CI fails if any seed's
 # annotation drifts from schema or self-reported ratio.
@@ -65,10 +68,39 @@ reference = float(sys.argv[2])
 print('1' if abs(declared - reference) < 0.0001 else '0')
 " "$declared" "$reference")
 
-  if [[ "$match" == "1" ]]; then
-    echo "  OK   [$base] schema valid, ratio=$declared (self-consistent)"
-  else
+  if [[ "$match" != "1" ]]; then
     echo "  FAIL [$base] declared=$declared but compute-filled-ratio.py says $reference"
+    fails=$((fails + 1))
+    continue
+  fi
+
+  # 4. idea_summary matches partner .md `**One-liner**:` (drift catcher)
+  alignment=$(python3 - "$partner_md" "$path" <<'PY'
+import json, re, sys
+
+md_text = open(sys.argv[1], encoding="utf-8").read()
+spec = json.load(open(sys.argv[2], encoding="utf-8"))
+declared_summary = (spec.get("idea_summary") or "").strip()
+
+# Extract the .md one-liner (markdown bold form). Strip any wrapping bold
+# markers from the captured group so '**X**' and 'X' both compare equal.
+m = re.search(r"\*\*One-liner\*\*\s*:\s*(.+)", md_text)
+if not m:
+    print("ERR no_oneliner_in_md")
+    sys.exit(0)
+
+md_oneliner = m.group(1).strip().rstrip("*").lstrip("*").strip()
+if md_oneliner == declared_summary:
+    print("OK")
+else:
+    print(f"MISMATCH md=[{md_oneliner}] json=[{declared_summary}]")
+PY
+)
+
+  if [[ "$alignment" == "OK" ]]; then
+    echo "  OK   [$base] schema valid, ratio=$declared, idea_summary aligned with .md"
+  else
+    echo "  FAIL [$base] idea_summary drift: $alignment"
     fails=$((fails + 1))
   fi
 done
