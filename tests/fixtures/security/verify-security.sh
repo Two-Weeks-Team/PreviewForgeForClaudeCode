@@ -349,6 +349,162 @@ else
 fi
 rm -rf "$tmp_t6"
 
+# ----- T-13 : open-browser PowerShell argv invariant (Linux-runner mock for #66) -----
+#
+# Issue #66 / I-4: scripts/open-browser.sh has an 80-line rationale block
+# (lines ~12-28, ~157-176) explaining why the PowerShell invocation uses a
+# specific shape: `& { param($u) Start-Process -FilePath $u } '<url>'` with
+# the URL embedded INSIDE a PowerShell single-quoted string literal. That
+# shape relies on the S-2 URL gate forbidding `'` in URLs so the literal
+# cannot be closed-and-escaped by attacker input.
+#
+# Because the CI matrix has no windows-latest runner (Option A excluded by
+# user), every line of that rationale is currently UNTESTED — a future
+# refactor could revert to e.g. a trailing positional URL or an
+# unquoted/double-quoted interpolation and CI would stay green.
+#
+# This test (Option B from the issue body) injects a fake `powershell.exe`
+# shim into PATH on the Linux runner, strips `open`/`xdg-open` so the
+# Windows branch is reached, and asserts:
+#   1. argv is exactly 3 tokens: -NoProfile, -Command, <command-string>, with
+#      no extra trailing positional URL token (defends against PS 5.1
+#      append-to-command-text reparsing of trailing `&`).
+#   2. The command-string contains the exact required call-operator +
+#      script-block shape with the URL inside SINGLE-QUOTED literal form.
+#   3. The S-2 URL gate rejects URLs containing `'`, `;`, backtick, or
+#      whitespace BEFORE PowerShell is ever invoked (shim is NOT touched).
+#
+# Mechanism: Option (b) — strip `open`/`xdg-open` from PATH, put fake
+# `powershell.exe` first. No edit to open-browser.sh required.
+echo
+echo "[T-13] open-browser PowerShell argv invariant (Linux mock)"
+tmp_t13="$(mktemp -d -t pf-t13-psmock-XXXXXX)"
+mkdir -p "$tmp_t13/fake-bin"
+record_file="$tmp_t13/ps-argv.log"
+# Shim records each argv on its own line, prefixed with a sentinel so we
+# can reliably split argv tokens that themselves contain newlines (they
+# shouldn't, but defense-in-depth on the assertion side).
+cat > "$tmp_t13/fake-bin/powershell.exe" <<SHIM
+#!/bin/sh
+: > "$record_file"
+for a in "\$@"; do
+  printf '<<ARG>>%s\n' "\$a" >> "$record_file"
+done
+exit 0
+SHIM
+chmod +x "$tmp_t13/fake-bin/powershell.exe"
+
+# Strategy: keep host PATH (so python3 / realpath / grep / sed / tr keep
+# resolving — pyenv shims especially need /usr/bin in PATH) and OVERRIDE
+# `open` / `xdg-open` with shims in fake-bin that exit non-zero. Because
+# open-browser.sh chains opener invocations with `&& exit 0`, a non-zero
+# exit from `open` makes the script FALL THROUGH to `xdg-open`, then to
+# `powershell.exe` — which is our recorder. fake-bin comes first in PATH,
+# so our shims win the `command -v` lookup over real /usr/bin/open etc.
+#
+# Codex P1 (this PR): an earlier draft skipped the test whenever
+# `command -v open` succeeded, which on a macOS host where `open` exists
+# but might fail (headless / no DISPLAY) would still fall through to the
+# powershell branch in real use — i.e. the test would silently skip the
+# very codepath it claims to guard. The shim-override approach below
+# unconditionally drives the script into the powershell branch, so the
+# argv invariant is exercised on every runner (Linux CI, macOS dev).
+for shim_name in open xdg-open; do
+  cat > "$tmp_t13/fake-bin/$shim_name" <<SHIM_OUTER
+#!/bin/sh
+# T-13 shim: force fall-through to powershell.exe branch by exiting !=0.
+exit 7
+SHIM_OUTER
+  chmod +x "$tmp_t13/fake-bin/$shim_name"
+done
+t13_path="$tmp_t13/fake-bin:$PATH"
+# Sanity check that our shims actually win the command -v lookup.
+host_open=$(PATH="$t13_path" command -v open 2>/dev/null || true)
+host_xdg=$(PATH="$t13_path" command -v xdg-open 2>/dev/null || true)
+case "$host_open" in "$tmp_t13/fake-bin/"*) host_open="";; esac
+case "$host_xdg"  in "$tmp_t13/fake-bin/"*) host_xdg="";;  esac
+if [ -n "$host_open" ] || [ -n "$host_xdg" ]; then
+  # Should be impossible (fake-bin is first in PATH) but guard anyway.
+  pass "T-13 skipped — shim override failed: \`${host_open:-}${host_xdg:+ }${host_xdg:-}\` still wins"
+else
+  # ---- Sub-test 1: safe URL reaches powershell.exe with expected argv shape.
+  safe_target="$tmp_t13/safe.html"
+  printf '<!doctype html><html></html>' > "$safe_target"
+  rc=0
+  PATH="$t13_path" bash "$REPO_ROOT/scripts/open-browser.sh" "$safe_target" \
+    >/dev/null 2>&1 || rc=$?
+  if [ "$rc" -ne 0 ]; then
+    fail "T-13 safe-URL: open-browser exited $rc (expected 0 — shim returns 0)"
+  elif [ ! -f "$record_file" ]; then
+    fail "T-13 safe-URL: powershell.exe shim was never invoked (record file missing)"
+  else
+    # Parse argv tokens (each line is "<<ARG>>" + token).
+    argv_count=$(grep -c '^<<ARG>>' "$record_file" || true)
+    # Expected: -NoProfile, -Command, <command-string>  → 3 tokens.
+    if [ "$argv_count" -ne 3 ]; then
+      fail "T-13 argv count: expected 3, got $argv_count (extra trailing positional URL = PS 5.1 append-to-command reparse risk)"
+      sed 's/^/    /' "$record_file" >&2
+    else
+      arg1=$(sed -n '1s/^<<ARG>>//p' "$record_file")
+      arg2=$(sed -n '2s/^<<ARG>>//p' "$record_file")
+      arg3=$(sed -n '3s/^<<ARG>>//p' "$record_file")
+      shape_fails=0
+      [ "$arg1" = "-NoProfile" ] || { fail "T-13 argv[0]: expected '-NoProfile', got '$arg1'"; shape_fails=$((shape_fails+1)); }
+      [ "$arg2" = "-Command" ]   || { fail "T-13 argv[1]: expected '-Command', got '$arg2'"; shape_fails=$((shape_fails+1)); }
+      # arg3 must contain the call-operator + script-block + single-
+      # quoted URL literal. We assert structural substrings rather than
+      # exact-equality so harmless whitespace tweaks don't break.
+      case "$arg3" in
+        *"& { param("*"Start-Process"*"-FilePath"*"} '"*"'"*) ;;
+        *)
+          fail "T-13 argv[2] shape mismatch: missing '& { param(... Start-Process -FilePath ... } '<url>'' pattern. Got: $arg3"
+          shape_fails=$((shape_fails+1))
+          ;;
+      esac
+      # The URL must appear inside the trailing single-quoted literal,
+      # NOT as a separate argv token. Safe URL is file://… form.
+      case "$arg3" in
+        *"'file://"*"'"*) ;;
+        *)
+          fail "T-13 argv[2] URL not embedded inside PS single-quoted literal. Got: $arg3"
+          shape_fails=$((shape_fails+1))
+          ;;
+      esac
+      if [ "$shape_fails" -eq 0 ]; then
+        pass "T-13 safe-URL: argv = [-NoProfile, -Command, '& { param(\$u) Start-Process -FilePath \$u } <single-quoted-url>'] (3 tokens, URL embedded)"
+      fi
+    fi
+  fi
+
+  # ---- Sub-test 2: malicious URLs are rejected by S-2 BEFORE PowerShell.
+  # The S-2 charset forbids `'`, `;`, `&` (raw, unencoded outside the
+  # allowed query subset), `` ` ``, whitespace. If the rationale block
+  # ever weakens (e.g. allows raw `'`), this assertion catches it.
+  s2_fails=0
+  for bad_url in \
+      "file:///path/with/'quote.html" \
+      "file:///path/with;semicolon.html" \
+      "file:///path/with\`backtick.html" \
+      "file:///path/with space.html"; do
+    : > "$record_file"   # clear so we can detect "shim was invoked" leak
+    rc=0
+    PATH="$t13_path" bash "$REPO_ROOT/scripts/open-browser.sh" "$bad_url" \
+      >/dev/null 2>&1 || rc=$?
+    if [ "$rc" -ne 1 ]; then
+      fail "T-13 S-2 bypass: '$bad_url' should exit 1 (gate reject) but got rc=$rc"
+      s2_fails=$((s2_fails+1))
+    fi
+    if [ -s "$record_file" ]; then
+      fail "T-13 S-2 bypass: '$bad_url' reached powershell.exe (shim recorded argv) — gate let it through"
+      s2_fails=$((s2_fails+1))
+    fi
+  done
+  if [ "$s2_fails" -eq 0 ]; then
+    pass "T-13 S-2 gate: 4 malicious URLs (quote / semicolon / backtick / space) all rejected before PowerShell"
+  fi
+fi
+rm -rf "$tmp_t13"
+
 # ----- T-9.2 : preview-cache Korean UTF-8 hash ---------------------------
 echo
 echo "[T-9.2] preview-cache Korean UTF-8 key"
