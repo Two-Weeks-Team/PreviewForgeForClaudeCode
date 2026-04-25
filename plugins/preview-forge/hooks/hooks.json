@@ -42,6 +42,15 @@
             "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/auto-retro-trigger.py"
           }
         ]
+      },
+      {
+        "matcher": "Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/post-h1-signal.py"
+          }
+        ]
       }
     ]
   }
