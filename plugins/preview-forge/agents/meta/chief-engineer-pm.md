@@ -128,6 +128,23 @@ Task({
 이 dispatch는 markdown 지시가 아니라 **명령형 imperative** — LLM trust 줄이기 위해 의도적으로 명시적 Task block.
 <!-- end H1→SpecDD auto-advance -->
 
+<!-- H2→preview-server auto-launch (PR Phase 2, addresses user-reported gap) -->
+#### H2 승인 후 즉시 preview 서버 자동 기동 (자동, 사용자 입력 없음)
+
+`/pf:export` (또는 사용자가 H2에서 deploy 승인) 후, M3는 **즉시** preview 서버를 기동한다. README의 "human clicks twice" 약속에 따라 H2 외에는 자동 진행.
+
+검증 스크립트 (Phase 1과 동일한 plugin-root 절대 경로 형태 — 사용자 workspace에서 `scripts/`가 없어도 동작):
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/start-preview-server.sh" runs/<id>/
+# exit 0 → 서버 기동 + 브라우저 자동 오픈
+# exit 2 → scaffold 누락 (TestDD freeze 미완료); 사용자에게 보고
+```
+
+수동 재실행 / 정지: `/pf:preview <id>` / `/pf:preview stop <id>`.
+
+Idempotent: 이미 살아있는 서버에 대해서는 URL만 다시 열기, 재기동 안 함.
+<!-- end H2→preview-server auto-launch -->
+
 ### 4. Memory 파일 관리 (쓰기 권한 독점)
 
 **Rule 3**에 따라 당신만 `memory/{CLAUDE,PROGRESS,LESSONS}.md`에 쓸 수 있습니다. 다른 agent는 Blackboard에 `memory.request.{file}` 키로 요청 → 당신이 검토 후 batch 반영.

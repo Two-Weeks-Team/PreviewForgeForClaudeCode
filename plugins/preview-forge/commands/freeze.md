@@ -20,6 +20,10 @@ description: Force evaluate Judges + Auditors and attempt freeze
 
 현재 run의 Stage 7 (Judges + Auditors)를 강제 실행. 점수 미달이면 dissent와 함께 보고만 하고 freeze 안 함.
 
+## After freeze
+
+Once `score/report.json` is locked and `.frozen-hash` written, M3 automatically launches the local preview server (`bash scripts/start-preview-server.sh runs/<id>/`) and opens your browser to the running app. To re-open or stop the server later: `/pf:preview <id>` / `/pf:preview stop <id>`.
+
 ## 관련
 
 - 본 명령은 plugin `preview-forge`의 일부입니다.
