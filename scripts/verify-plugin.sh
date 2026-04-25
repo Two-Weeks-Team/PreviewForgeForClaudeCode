@@ -5,7 +5,7 @@
 # Checks:
 #   1. Manifest JSON syntax (marketplace.json + plugin.json)
 #   2. All 144 agents present with valid frontmatter
-#   3. 14 slash commands present
+#   3. 15 slash commands present
 #   4. 3 hooks + hooks.json valid
 #   5. Memory seed + methodology + assets + schemas + seeds present
 
@@ -75,10 +75,10 @@ exit(1 if non_opus else 0)
 PYEOF
 echo
 
-echo "[3/5] Slash commands (14 target)"
+echo "[3/5] Slash commands (15 target)"
 cmd_count=$(find "$PLUGIN_DIR/commands" -maxdepth 1 -name "*.md" | wc -l | tr -d ' ')
-[[ "$cmd_count" -eq 14 ]] && ok "command count: 14" || bad "command count: $cmd_count"
-for cmd in bootstrap budget design export freeze gallery help lessons new panel replay retry seed status; do
+[[ "$cmd_count" -eq 15 ]] && ok "command count: 15" || bad "command count: $cmd_count"
+for cmd in bootstrap budget design export freeze gallery help lessons new panel preview replay retry seed status; do
   [[ -f "$PLUGIN_DIR/commands/$cmd.md" ]] && ok "/pf:$cmd" || bad "/pf:$cmd missing"
 done
 echo

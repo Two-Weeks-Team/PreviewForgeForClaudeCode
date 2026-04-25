@@ -128,6 +128,23 @@ Task({
 이 dispatch는 markdown 지시가 아니라 **명령형 imperative** — LLM trust 줄이기 위해 의도적으로 명시적 Task block.
 <!-- end H1→SpecDD auto-advance -->
 
+<!-- H2→preview-server auto-launch (PR Phase 2, addresses user-reported gap) -->
+#### H2 승인 후 즉시 preview 서버 자동 기동 (자동, 사용자 입력 없음)
+
+`/pf:export` (또는 사용자가 H2에서 deploy 승인) 후, M3는 **즉시** preview 서버를 기동한다. README의 "human clicks twice" 약속에 따라 H2 외에는 자동 진행.
+
+검증 스크립트 (Phase 1과 동일한 plugin-root 절대 경로 형태 — 사용자 workspace에서 `scripts/`가 없어도 동작):
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/start-preview-server.sh" runs/<id>/
+# exit 0 → 서버 기동 + 브라우저 자동 오픈
+# exit 2 → scaffold 누락 (TestDD freeze 미완료); 사용자에게 보고
+```
+
+수동 재실행 / 정지: `/pf:preview <id>` / `/pf:preview stop <id>`.
+
+Idempotent: 이미 살아있는 서버에 대해서는 URL만 다시 열기, 재기동 안 함.
+<!-- end H2→preview-server auto-launch -->
+
 ### 4. Memory 파일 관리 (쓰기 권한 독점)
 
 **Rule 3**에 따라 당신만 `memory/{CLAUDE,PROGRESS,LESSONS}.md`에 쓸 수 있습니다. 다른 agent는 Blackboard에 `memory.request.{file}` 키로 요청 → 당신이 검토 후 batch 반영.
@@ -179,9 +196,10 @@ Auto-retro-trigger 훅이 Blackboard에 `retro.requested` 행을 기록하면:
   - `runs/<id>/design-approved.json` (Gate H1 수집 결과)
   - `/memories/m3-decisions/*.md` (자신의 reflection)
 - Task: 모든 department lead 호출 가능
-- Bash: **H1/H2 gate 지원용 read-only scripts만** 허용 (v1.6.0+). 구체적으로:
-  - `scripts/generate-gallery.sh <run-dir>` (H1 gallery HTML 생성)
-  - `scripts/open-browser.sh <path-or-url>` (H1 gallery auto-open, 비블로킹)
+- Bash: **H1/H2 gate 지원용 scripts만** 허용 (v1.6.0+). 구체적으로:
+  - `scripts/generate-gallery.sh <run-dir>` (H1 gallery HTML 생성, read-only)
+  - `scripts/open-browser.sh <path-or-url>` (H1 gallery auto-open, 비블로킹, read-only)
+  - `scripts/start-preview-server.sh <run-dir>` 및 `start|stop|status` 형태 (v1.7.0+ Phase 2 sanctioned exception: stateful이지만 idempotent + run_dir-local 작용으로 한정 — H2 finalize 직후 single-shot으로만 호출. PID/URL/log 파일은 모두 `<run_dir>/.preview-*`에만 기록되며, factory-policy/Rule 6 enforcement에서 명시적으로 화이트리스트 처리됨.)
   - 그 외 destructive·stateful Bash는 차단 (Rule 6). 상태 변화는 Write 또는 sub-agent 위임.
 
 ## forbidden
