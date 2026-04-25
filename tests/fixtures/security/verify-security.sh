@@ -101,7 +101,7 @@ echo "[I-7] open-browser.sh URL gate — positive matrix (must NOT over-narrow)"
 pos_shim_dir="$(mktemp -d -t pf-i7-pos-shim-XXXXXX)"
 pos_record_file="$pos_shim_dir/accepted-urls.log"
 : > "$pos_record_file"
-for shim_name in open xdg-open powershell.exe; do
+for shim_name in open xdg-open powershell.exe pwsh; do
   cat > "$pos_shim_dir/$shim_name" <<SHIM
 #!/bin/sh
 # I-7 positive-matrix shim ($shim_name) — record argv, do NOT launch.
