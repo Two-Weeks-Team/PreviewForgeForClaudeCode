@@ -21,10 +21,10 @@ fi
 echo "=== T-2 _filled_ratio verify ==="
 echo
 
-python3 -c "import json; json.load(open('$FIXTURES_DIR/cases.json'))" >/dev/null \
+python3 -c "import json, sys; json.load(open(sys.argv[1]))" "$FIXTURES_DIR/cases.json" >/dev/null \
   || { echo "x cases.json malformed" >&2; exit 1; }
 
-case_count=$(python3 -c "import json; print(len(json.load(open('$FIXTURES_DIR/cases.json'))))")
+case_count=$(python3 -c "import json, sys; print(len(json.load(open(sys.argv[1]))))" "$FIXTURES_DIR/cases.json")
 
 fails=0
 for i in $(seq 0 $((case_count - 1))); do
