@@ -249,6 +249,51 @@ cmd_get() {
     return 1
   fi
 
+  # Defense-in-depth size check (umbrella #95 follow-up, deferred from PR #83).
+  # If the cached payload is `idea.spec.json`-shaped (has a top-level
+  # `idea_summary` string field), treat any value > 5000 code points as
+  # cache poison and report a miss so the caller regenerates against a
+  # freshly-validated spec.
+  #
+  # Why belt-and-suspenders: the schema gate at S-3 already rejects
+  # oversized `idea_summary`. But a cache replay path that reads
+  # `idea.spec.json` from disk and short-circuits validation (e.g. weak-
+  # alias hit + Socratic skip) would bypass that gate entirely if the
+  # on-disk file was mutated after the original write. A length check
+  # here closes that bypass.
+  #
+  # Why "treat as miss" not "fail loudly": cache reads are non-
+  # authoritative by design (TTL expiry, Socratic spec change → both
+  # already cause a benign miss). Returning 1 here lets the caller
+  # regenerate, mirroring the existing TTL-expiry path. No data loss —
+  # just a forced re-validate. This matches the existing W1-W4 cache
+  # safety posture (get-fallback exit 2, etc).
+  #
+  # Why python3 (not jq / shell parsing): zero-third-party-dep policy
+  # (LESSON 0.4); python3 is already a hard dep here (see py_read_json
+  # / py_file_age helpers above). The script handles the not-spec-shaped
+  # case (e.g. a raw `previews.json` array) by simply skipping the check
+  # — only spec-shaped payloads with a string `idea_summary` are gated.
+  local oversize_check
+  oversize_check=$(python3 -c "
+import json, sys
+try:
+    d = json.load(open(sys.argv[1], encoding='utf-8'))
+except Exception:
+    print('skip')
+    sys.exit(0)
+if isinstance(d, dict):
+    summary = d.get('idea_summary')
+    if isinstance(summary, str) and len(summary) > 5000:
+        print('poison')
+        sys.exit(0)
+print('ok')
+" "$file" 2>/dev/null || echo "skip")
+  if [[ "$oversize_check" == "poison" ]]; then
+    echo "preview-cache.sh: cached payload at '$file' has idea_summary > 5000 chars — treating as poisoned cache, reporting miss" >&2
+    return 1
+  fi
+
   cat "$file"
 }
 

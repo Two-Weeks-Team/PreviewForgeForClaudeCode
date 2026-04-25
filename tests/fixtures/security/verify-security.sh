@@ -690,6 +690,248 @@ fi
 unset PF_CACHE_DIR
 rm -rf "$tmp_put"
 
+# ----- #95 follow-up: defense-in-depth layer 1 (input-path) --------------
+# Umbrella #95, deferred from PR #83. The S-3 schema gate already caps
+# `idea_summary` at 5000 chars; this section verifies the LAYER-1 pre-
+# schema gate (`scripts/validate-idea-input.sh`) cited from
+# `plugins/preview-forge/commands/new.md`. Negative (5001 reject), positive
+# (5000 boundary accept), Unicode (codepoint-not-byte counting), and stdin
+# `-` sentinel parity must all hold.
+echo
+echo "[#95-L1] validate-idea-input.sh — input-path size cap"
+input_validator="$REPO_ROOT/scripts/validate-idea-input.sh"
+input_fails=0
+if [[ ! -x "$input_validator" ]]; then
+  fail "#95-L1: $input_validator missing or not executable"
+  input_fails=$((input_fails + 1))
+else
+  # 5001 chars via stdin → exit 2 + stderr.
+  rc=0
+  err=$(python3 -c "import sys; sys.stdout.write('x'*5001)" \
+    | bash "$input_validator" - 2>&1 >/dev/null) || rc=$?
+  if [[ "$rc" -ne 2 ]]; then
+    fail "#95-L1: 5001-char input expected exit 2, got rc=$rc"
+    input_fails=$((input_fails + 1))
+  elif [[ "$err" != *"exceeds 5000-character cap"* ]]; then
+    fail "#95-L1: 5001-char input rejected with wrong stderr: '$err'"
+    input_fails=$((input_fails + 1))
+  fi
+
+  # 5000 chars via stdin → exit 0, stdout = unchanged input.
+  rc=0
+  out_size=$(python3 -c "import sys; sys.stdout.write('x'*5000)" \
+    | bash "$input_validator" - 2>/dev/null | wc -c | tr -d ' ') || rc=$?
+  if [[ "$rc" -ne 0 ]]; then
+    fail "#95-L1: 5000-char boundary input expected exit 0, got rc=$rc"
+    input_fails=$((input_fails + 1))
+  elif [[ "$out_size" -ne 5000 ]]; then
+    fail "#95-L1: 5000-char boundary stdout size=$out_size (expected 5000)"
+    input_fails=$((input_fails + 1))
+  fi
+
+  # 5001 chars via argv → exit 2.
+  rc=0
+  bash "$input_validator" "$(python3 -c "import sys; sys.stdout.write('x'*5001)")" \
+    >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -ne 2 ]]; then
+    fail "#95-L1: argv form 5001-char input expected exit 2, got rc=$rc"
+    input_fails=$((input_fails + 1))
+  fi
+
+  # Empty input → exit 2 (parallels preview-cache.sh::cmd_key empty-idea).
+  rc=0
+  printf '' | bash "$input_validator" - >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -ne 2 ]]; then
+    fail "#95-L1: empty input expected exit 2, got rc=$rc"
+    input_fails=$((input_fails + 1))
+  fi
+
+  # Unicode codepoint counting (NOT byte counting): 2500 Korean chars =
+  # 5000 codepoints (~7500 UTF-8 bytes) → must accept. 2501 Korean
+  # chars = 5002 codepoints → must reject. This matches JSON Schema
+  # `maxLength` semantics so the layer-1 gate aligns with the schema gate.
+  rc=0
+  python3 -c "import sys; sys.stdout.write('한글'*2500)" \
+    | bash "$input_validator" - >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -ne 0 ]]; then
+    fail "#95-L1: 5000-codepoint Korean input expected exit 0, got rc=$rc (byte-counting bug?)"
+    input_fails=$((input_fails + 1))
+  fi
+  rc=0
+  python3 -c "import sys; sys.stdout.write('한글'*2501)" \
+    | bash "$input_validator" - >/dev/null 2>&1 || rc=$?
+  if [[ "$rc" -ne 2 ]]; then
+    fail "#95-L1: 5002-codepoint Korean input expected exit 2, got rc=$rc"
+    input_fails=$((input_fails + 1))
+  fi
+
+  # Truncate mode: 5001 chars → exit 0, stdout exactly 5000 bytes (ASCII).
+  rc=0
+  trunc_size=$(python3 -c "import sys; sys.stdout.write('x'*5001)" \
+    | bash "$input_validator" --truncate - 2>/dev/null | wc -c | tr -d ' ') || rc=$?
+  if [[ "$rc" -ne 0 || "$trunc_size" -ne 5000 ]]; then
+    fail "#95-L1: --truncate mode rc=$rc size=$trunc_size (expected rc=0 size=5000)"
+    input_fails=$((input_fails + 1))
+  fi
+
+  if [[ "$input_fails" -eq 0 ]]; then
+    pass "#95-L1: validate-idea-input.sh — 5001 reject / 5000 accept / Unicode codepoint / argv+stdin parity / --truncate"
+  fi
+fi
+
+# Wire-up: pre-flight.sh --idea / --idea-file MUST surface the layer-1
+# rejection as a hard pre-flight failure (exit 1). This is the actual
+# integration point cited from `commands/new.md` step 8 + run-supervisor.md
+# step 11 — without this wiring the layer-1 defense lives only as a
+# helper script, not a gate.
+echo
+echo "[#95-L1-wire] scripts/pre-flight.sh --idea integration"
+wire_fails=0
+tmp_pf_idea=$(mktemp -t pf-idea-bigXXXXXX)
+python3 -c "import sys; sys.stdout.write('x'*5001)" > "$tmp_pf_idea"
+rc=0
+out=$(bash "$REPO_ROOT/scripts/pre-flight.sh" --idea-file "$tmp_pf_idea" 2>&1) || rc=$?
+# A 5001-char idea must trigger exit 1 (hard failure) since the [0]
+# size-cap section calls `fail`. exit 2 (warn-only) here would mean the
+# size cap was downgraded to a warning, which would defeat the gate.
+if [[ "$rc" -ne 1 ]]; then
+  fail "#95-L1-wire: pre-flight.sh --idea-file with 5001 chars expected exit 1, got rc=$rc"
+  wire_fails=$((wire_fails + 1))
+fi
+if [[ "$out" != *"idea text rejected"* && "$out" != *"exceeds 5000-character cap"* ]]; then
+  fail "#95-L1-wire: stderr did not surface validator's rejection message: $out"
+  wire_fails=$((wire_fails + 1))
+fi
+rm -f "$tmp_pf_idea"
+
+# Positive: a small idea must NOT cause pre-flight to fail FOR THIS REASON.
+# (Other env checks may still warn — that's a separate concern. We just
+# verify the [0] section doesn't add a `fail` for a 200-char idea.)
+small_idea_out=$(bash "$REPO_ROOT/scripts/pre-flight.sh" --idea "small idea text" 2>&1 || true)
+if [[ "$small_idea_out" == *"idea text rejected"* ]]; then
+  fail "#95-L1-wire: small idea (15 chars) was incorrectly rejected by [0] gate"
+  wire_fails=$((wire_fails + 1))
+fi
+if [[ "$small_idea_out" != *"idea text within 5000-code-point cap"* ]]; then
+  fail "#95-L1-wire: small idea did not see the [0] pass message — section may not be running: $small_idea_out"
+  wire_fails=$((wire_fails + 1))
+fi
+if [[ "$wire_fails" -eq 0 ]]; then
+  pass "#95-L1-wire: pre-flight.sh --idea/--idea-file enforces 5000-char cap as hard fail (exit 1)"
+fi
+
+# ----- #95 follow-up: defense-in-depth layer 3 (read-path) --------------
+# Cache replay loader must treat an on-disk `idea.spec.json`-shaped
+# payload with `idea_summary > 5000` chars as cache poison and report
+# miss (exit 1). Negative + positive boundary required.
+echo
+echo "[#95-L3] preview-cache.sh cmd_get — read-path defense-in-depth"
+read_fails=0
+tmp_l3=$(mktemp -d -t pf-95-l3-XXXXXX)
+export PF_CACHE_DIR="$tmp_l3/cache"
+mkdir -p "$PF_CACHE_DIR"
+
+# Profile context for cmd_get's TTL lookup. Use `pro` and arrange a
+# fresh mtime so TTL doesn't independently force a miss.
+poisoned_key="poisoned-spec-key"
+clean_key="clean-spec-key"
+boundary_key="boundary-spec-key"
+
+# Write a poisoned cached spec (idea_summary 5001 chars).
+python3 -c "
+import json, sys
+payload = {
+  '_schema_version': '1.0.0',
+  '_filled_ratio': 0.0,
+  'idea_summary': 'x' * 5001,
+  'profile': 'pro',
+}
+json.dump(payload, open(sys.argv[1], 'w'))
+" "$PF_CACHE_DIR/$poisoned_key.json"
+
+# Write a clean cached spec (idea_summary 200 chars).
+python3 -c "
+import json, sys
+payload = {
+  '_schema_version': '1.0.0',
+  '_filled_ratio': 0.0,
+  'idea_summary': 'x' * 200,
+  'profile': 'pro',
+}
+json.dump(payload, open(sys.argv[1], 'w'))
+" "$PF_CACHE_DIR/$clean_key.json"
+
+# Boundary: exactly 5000 chars must be accepted (the gate is "> 5000",
+# matching the schema's maxLength: 5000 inclusive).
+python3 -c "
+import json, sys
+payload = {
+  '_schema_version': '1.0.0',
+  '_filled_ratio': 0.0,
+  'idea_summary': 'x' * 5000,
+  'profile': 'pro',
+}
+json.dump(payload, open(sys.argv[1], 'w'))
+" "$PF_CACHE_DIR/$boundary_key.json"
+
+# Negative: poisoned entry returns exit 1 + stderr warn.
+rc=0
+err=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" get "$poisoned_key" 2>&1 >/dev/null) || rc=$?
+if [[ "$rc" -ne 1 ]]; then
+  fail "#95-L3: poisoned cache entry expected exit 1 (miss), got rc=$rc"
+  read_fails=$((read_fails + 1))
+elif [[ "$err" != *"poisoned cache"* && "$err" != *"idea_summary > 5000"* ]]; then
+  fail "#95-L3: poisoned cache entry rejected with wrong stderr: '$err'"
+  read_fails=$((read_fails + 1))
+fi
+
+# Positive: clean entry must still hit (exit 0).
+rc=0
+out=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" get "$clean_key" 2>/dev/null) || rc=$?
+if [[ "$rc" -ne 0 ]]; then
+  fail "#95-L3: clean (200-char) cache entry expected exit 0 hit, got rc=$rc (over-narrowing regression?)"
+  read_fails=$((read_fails + 1))
+elif ! python3 -c "import json,sys; d=json.loads(sys.argv[1]); sys.exit(0 if len(d['idea_summary'])==200 else 1)" "$out"; then
+  fail "#95-L3: clean cache entry stdout corrupted"
+  read_fails=$((read_fails + 1))
+fi
+
+# Boundary: 5000-char idea_summary must still hit (gate is strict >).
+rc=0
+out=$(CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" get "$boundary_key" 2>/dev/null) || rc=$?
+if [[ "$rc" -ne 0 ]]; then
+  fail "#95-L3: 5000-char boundary cache entry expected exit 0 hit, got rc=$rc (cap is too tight)"
+  read_fails=$((read_fails + 1))
+elif ! python3 -c "import json,sys; d=json.loads(sys.argv[1]); sys.exit(0 if len(d['idea_summary'])==5000 else 1)" "$out"; then
+  fail "#95-L3: boundary cache entry stdout corrupted"
+  read_fails=$((read_fails + 1))
+fi
+
+# Non-spec-shaped payload (e.g. previews.json array) must NOT be gated
+# by this check — cmd_get is reused for cached `previews.json` arrays
+# where the top-level is a list, not a dict with idea_summary.
+arr_key="array-previews-key"
+python3 -c "
+import json, sys
+json.dump([{'id': 'P01', 'mockup_path': 'mockups/P01.html'}], open(sys.argv[1], 'w'))
+" "$PF_CACHE_DIR/$arr_key.json"
+rc=0
+CLAUDE_PLUGIN_ROOT="$REPO_ROOT/plugins/preview-forge" \
+  bash "$REPO_ROOT/scripts/preview-cache.sh" get "$arr_key" >/dev/null 2>&1 || rc=$?
+if [[ "$rc" -ne 0 ]]; then
+  fail "#95-L3: non-spec-shaped (array) payload incorrectly gated by L3 check, rc=$rc"
+  read_fails=$((read_fails + 1))
+fi
+
+if [[ "$read_fails" -eq 0 ]]; then
+  pass "#95-L3: cmd_get — poison reject (5001) / clean accept (200) / boundary accept (5000) / array passthrough"
+fi
+unset PF_CACHE_DIR
+rm -rf "$tmp_l3"
+
 # ----- S-5 : ledger symlink refusal --------------------------------------
 echo
 echo "[S-5] escalation-ledger _lockfile O_NOFOLLOW"

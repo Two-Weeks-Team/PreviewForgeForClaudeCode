@@ -47,8 +47,9 @@ model: opus
    - `action == "hint"`: prompt 생략, `/pf:status` 출력에 "💡 Consider --profile=pro next time"로 정적 힌트만
    - `action == "none"`: no-op
 10. **Blackboard 초기화**: `runs/r-<ts>/blackboard.db` 생성 + 초기 row: `(run.pre_flight_passed, ts, cwd, cli_ver, profile, surface, escalation_action)`.
+11. **Idea-input size cap** (umbrella #95 follow-up, deferred from PR #83 — defense-in-depth layer 1): supervisor MUST run `scripts/validate-idea-input.sh "<idea>"` (positional-arg form; or pipe via `printf '%s' "<idea>" | scripts/validate-idea-input.sh -`; or `scripts/pre-flight.sh --idea "<idea>"`) on the raw seed text **BEFORE** §0.4 (`runs/<id>/idea.json` write), §0.8 (`scripts/detect-surface.sh`), §0.9 (`scripts/recommend-profile.sh`), and any cache-key hashing (§4 weak-key probe / §6 strong-key lookup in `commands/new.md`). Validator exits 0 if `len ≤ 5000` Unicode code points, exits 2 otherwise. On exit 2, abort the run and surface the validator's stderr to the user — never silently truncate. The schema's `idea_summary.maxLength: 5000` is the canonical authority; this gate is belt-and-suspenders so a multi-megabyte seed idea cannot inflate the Socratic system prompt or sha256 keyspace before validation fires. **Do NOT use a bash here-string (`<<< "<idea>"`)** — bash here-strings append a trailing newline and would inflate the count by 1, falsely rejecting seeds at exactly 5000 code points. Note: `<idea>` / `<id>` / `<ts>` placeholders must be replaced with actual runtime values.
 
-CLI에서 `scripts/pre-flight.sh` 또는 `pf check`가 동일 검증을 수동으로 제공. 이 스크립트의 로직을 system prompt 상에서 모방하되, 실제 파일 system 접근은 Bash tool로 수행.
+CLI에서 `scripts/pre-flight.sh` 또는 `pf check`가 동일 검증을 수동으로 제공. 이 스크립트의 로직을 system prompt 상에서 모방하되, 실제 파일 system 접근은 Bash tool로 수행. 아이디어 size cap까지 포함해 한 줄로 돌리려면 `scripts/pre-flight.sh --idea "<seed>"`.
 
 ### 1. Run 생명주기 관장
 - **Post-Socratic escalation re-check** (v1.7.0+ A-2): I1 idea-clarifier가 `runs/<id>/idea.spec.json` Write를 끝낸 **직후**, pre-flight §0.9와 동일한 `scripts/recommend-profile.sh`를 한 번 더 호출한다. 호출 형태 (§0.9과 대칭):
