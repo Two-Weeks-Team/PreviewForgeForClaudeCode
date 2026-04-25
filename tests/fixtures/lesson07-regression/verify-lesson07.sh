@@ -10,7 +10,7 @@
 # not on the panel composite_winner — the regression LESSON 0.7
 # warns about.
 
-set -u
+set -euo pipefail
 
 FIXTURES_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$FIXTURES_DIR/../../.." && pwd)"

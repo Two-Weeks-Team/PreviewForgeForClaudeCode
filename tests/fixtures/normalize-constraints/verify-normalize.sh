@@ -4,7 +4,7 @@
 # For each case in cases.json, run scripts/normalize-constraints.py with
 # the input label and assert the output JSON matches expected.
 
-set -u
+set -euo pipefail
 
 FIXTURES_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$FIXTURES_DIR/../../.." && pwd)"

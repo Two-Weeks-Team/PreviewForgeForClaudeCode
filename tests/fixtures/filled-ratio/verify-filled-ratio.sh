@@ -7,7 +7,7 @@
 #
 # Exit 0 = all cases match. Exit 1 = at least one mismatch (CI-blocking).
 
-set -u
+set -euo pipefail
 
 FIXTURES_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(cd "$FIXTURES_DIR/../../.." && pwd)"
