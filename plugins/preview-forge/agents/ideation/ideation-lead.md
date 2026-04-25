@@ -34,7 +34,7 @@ model: opus
   | `≥ 0.7` | **high** | 정상 dispatch, spec을 ground truth로 사용 | `IDEA_SPEC_CONFIDENCE: high` |
   | `0.4 ≤ ratio < 0.7` | **medium** | 정상 dispatch, spec을 hint로 사용 (자유 해석 허용 폭 ↑) | `IDEA_SPEC_CONFIDENCE: medium` |
   | `0.2 ≤ ratio < 0.4` | **low** | 정상 dispatch + Blackboard `ideation.spec_confidence_tier=low` (이전 `low_spec_quality`의 후계) | `IDEA_SPEC_CONFIDENCE: low` |
-  | `< 0.2` | **fallback** | **v1.5.4 path**: advocate dispatch 시 `idea.spec.json`을 **전달하지 않음** (`IDEA_SPEC: <not provided>`). Blackboard `ideation.spec_fallback_v1_5_4=true` 기록. B-3 "Skip interview" 선택자가 자동으로 이 경로 진입 (ratio ≈ 0.11) | spec 미전달 |
+  | `< 0.2` | **fallback** | **v1.5.4 path**: advocate dispatch 시 `idea.spec.json`을 **전달하지 않음** (`IDEA_SPEC: <not provided — fallback v1.5.4 path>` — `<...>` 플레이스홀더는 리터럴이 아니라 실제 런타임 substitution 결과; 아래 §2 dispatch template과 동일 형식). Blackboard `ideation.spec_fallback_v1_5_4=true` 기록. B-3 "Skip interview" 선택자가 자동으로 이 경로 진입 (ratio ≈ 0.11) | spec 미전달 |
 
   hard gate 없음 — 해커톤 데모 UX 우선. weak-replay short-circuit이 먼저 걸러졌다면 이 경로에는 도달하지 않는다. I_LEAD는 Bash 도구가 없으므로 stderr 대신 Blackboard로 기록.
 
