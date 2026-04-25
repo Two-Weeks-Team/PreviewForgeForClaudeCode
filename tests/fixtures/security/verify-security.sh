@@ -206,7 +206,7 @@ rm -rf "$tmp_t6"
 # This test (Option B from the issue body) injects a fake `powershell.exe`
 # shim into PATH on the Linux runner, strips `open`/`xdg-open` so the
 # Windows branch is reached, and asserts:
-#   1. argv is exactly 4 tokens: -NoProfile, -Command, <command-string>, with
+#   1. argv is exactly 3 tokens: -NoProfile, -Command, <command-string>, with
 #      no extra trailing positional URL token (defends against PS 5.1
 #      append-to-command-text reparsing of trailing `&`).
 #   2. The command-string contains the exact required call-operator +
