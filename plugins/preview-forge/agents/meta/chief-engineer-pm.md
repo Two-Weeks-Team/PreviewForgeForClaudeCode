@@ -104,6 +104,30 @@ esac
 `mode=inline`은 정상 분기이며 helper는 exit 0을 반환한다 (swap은 에러가 아니라 기대된 alternative path). `mode=error`만 helper 자체가 비-0 exit code로 propagate한다. 회귀 테스트: `tests/fixtures/h1-modal-swap/verify.sh`가 PATH-stripped 환경(`open`/`xdg-open`/`powershell.exe`/`pwsh` 부재)에서 byte-equal `{"mode":"inline",...}` 출력을, 가짜 `open` shim 환경에서 byte-equal `{"mode":"browser",...}` 출력을 어설션한다.
 <!-- end A-5 -->
 
+<!-- H1→SpecDD auto-advance (PR Phase 1, addresses user-reported gap) -->
+#### §3.9 — H1 잠금 직후 SpecDD 자동 dispatch (필수, 자동, 사용자 입력 없음)
+
+`design-approved.json`이 잠금된 직후 (= `chosen_preview.json.lock` + `design-approved.json` 모두 존재), M3는 **사용자 추가 입력 없이 즉시** SpecDD 사이클을 dispatch한다. 이는 README의 "human clicks twice" 약속의 핵심 — H1과 H2 외에는 자동 진행이어야 한다.
+
+검증 스크립트 (다른 §3 helper와 동일한 plugin-root 절대 경로 형태 — 사용자 workspace에서 `scripts/`가 없을 때도 동작):
+```bash
+bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/dispatch-spec-cycle.sh" runs/<id>/
+# exit 0 + JSON {"action":"dispatch",...} → 즉시 다음 단계
+# exit 2 → 락 산출물 누락; 사용자에게 H1 미완료 보고
+```
+
+dispatch JSON이 출력되면 M3는 즉시 다음 Task를 호출한다:
+```
+Task({
+  subagent_type: "pf:spec:spec-lead",
+  description: "SpecDD cycle start (post-H1 auto)",
+  prompt: "runs/<id>/ 락 산출물(chosen_preview.json.lock + design-approved.json + idea.spec.json)을 입력으로 OpenAPI v1을 작성한다. SC1-SC7 7개 critic을 순차 dispatch하여 합의된 spec을 specs/openapi.yaml + .lock으로 잠근다."
+})
+```
+
+이 dispatch는 markdown 지시가 아니라 **명령형 imperative** — LLM trust 줄이기 위해 의도적으로 명시적 Task block.
+<!-- end H1→SpecDD auto-advance -->
+
 ### 4. Memory 파일 관리 (쓰기 권한 독점)
 
 **Rule 3**에 따라 당신만 `memory/{CLAUDE,PROGRESS,LESSONS}.md`에 쓸 수 있습니다. 다른 agent는 Blackboard에 `memory.request.{file}` 키로 요청 → 당신이 검토 후 batch 반영.
