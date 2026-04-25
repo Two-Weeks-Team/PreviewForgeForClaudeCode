@@ -1,5 +1,9 @@
 # 3-Minute Demo Storyboard — Preview Forge v1.7+ (gallery-first)
 
+![Gate H1 gallery hero — 26 mockups](assets/v1.6-gallery-hero.png)
+
+> 0:50–1:02 cut: this is the screenshot judges see in the demo.
+
 > 해카톤 제출용 데모 영상. 180초 타깃, 170–190초 허용. 첫 5초가 고정적으로
 > "PreviewDD 이게 뭔데?" 후크. 마지막 10초는 저장소·라이선스 박제.
 > v1.7 ship 이후: **gallery-first** 톤 — Socratic 질문(4개)에서 바로 26 mockup

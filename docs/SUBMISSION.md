@@ -1,5 +1,10 @@
 # Hackathon Submission Package
 
+![Preview Forge gallery — 26 advocate-generated mockups at Gate H1](assets/v1.6-gallery-hero.png)
+
+> 26 mockups, side-by-side, in your browser. Pick the card that matches
+> your intent — that picture becomes the spec.
+
 > 해카톤 제출 폼에 넣을 준비 완료 텍스트 + 체크리스트.
 > 마감: 2026-04-26 20:00 EST.
 > Version: v1.10+ (Phase 9 — Business-panel UX shipped: Socratic interview 4-required + Skip-interview + tiered fallback).
