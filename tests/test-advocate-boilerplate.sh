@@ -20,6 +20,18 @@
 # together with the template change (intentional friction — that PR is
 # also the PR that should re-sync the boilerplate).
 #
+# v1.11.0+ (#95 / #87): the personalized-frontmatter stripper is now
+# YAML-frontmatter-scope-aware. Specifically, `description:` (and the
+# other per-persona keys) may legally wrap to subsequent indented or
+# folded-scalar lines (YAML supports `description: >`, `description: |`,
+# and continuation lines indented under the key). The previous
+# line-pattern-only filter kept those continuation lines in the stripped
+# stream, which would create a hash-drift false-positive the moment any
+# advocate's blurb wrapped. We now drop the entire frontmatter block
+# (between the leading `---` and the closing `---`) field-by-field, with
+# proper continuation handling, then re-inject a canonical placeholder
+# block so the rest of the file's hash is still compared faithfully.
+#
 # Usage:
 #   bash tests/test-advocate-boilerplate.sh                # full lint
 #   bash tests/test-advocate-boilerplate.sh --normalize FILE
@@ -47,9 +59,13 @@ fi
 
 # normalize <file>: emit a stripped/canonicalized stream to stdout
 # Stripped/replaced (these are the personalized regions per advocate):
-#   - frontmatter `name:` line             (per-persona slug)
-#   - frontmatter `description:` line      (per-persona blurb)
-#   - frontmatter `bias:` line if present  (forward-compat)
+#   - YAML frontmatter:
+#       * `name:` field (per-persona slug)
+#       * `description:` field — INCLUDING multi-line continuations
+#         (folded `>` / literal `|` / plain-scalar indented continuations).
+#         #95/#87: previous line-only filter left continuation lines in
+#         the stream and would false-positive when a description wrapped.
+#       * `bias:` field if present (forward-compat)
 #   - H1 header `# P\d\d — ...`            (per-persona title)
 #   - `**핵심 편향**:` line                 (per-persona bias)
 #   - `**voice**:` line                    (per-persona voice)
@@ -65,10 +81,46 @@ fi
 # Linux GNU userland (T-12 macOS-CI parity).
 normalize() {
   awk '
-    # Drop personalized lines outright.
-    /^name:[[:space:]]/                      { next }
-    /^description:[[:space:]]/               { next }
-    /^bias:[[:space:]]/                      { next }
+    BEGIN {
+      in_fm     = 0   # 1 while between leading --- and closing ---
+      fm_seen   = 0   # 1 once we have CONSUMED the frontmatter block
+      fm_skip   = 0   # 1 while we are inside a personalized-key block
+                      # (waiting for the next sibling key or list item)
+    }
+    # Frontmatter open/close handling. The advocate template starts with
+    # `---` on line 1, so we recognise the open by its very first line.
+    NR == 1 && /^---[[:space:]]*$/ {
+      in_fm = 1
+      print
+      next
+    }
+    in_fm && /^---[[:space:]]*$/ {
+      in_fm = 0
+      fm_seen = 1
+      fm_skip = 0
+      print
+      next
+    }
+    # Inside frontmatter: detect personalized keys. A key line is of the
+    # form `<key>:` at column 0 (no indent). When we hit one of the
+    # personalized keys we drop the line AND every following continuation
+    # line until we see the next sibling top-level key (column 0 + `:`)
+    # or the closing `---`.
+    in_fm {
+      if (match($0, /^[A-Za-z_][A-Za-z0-9_-]*:/)) {
+        key = substr($0, 1, RLENGTH - 1)
+        if (key == "name" || key == "description" || key == "bias") {
+          fm_skip = 1
+          next
+        } else {
+          fm_skip = 0
+        }
+      }
+      if (fm_skip) { next }
+      print
+      next
+    }
+    # Body lines: same regex-based stripping as before.
     /^# P[0-9]+ —/                           { print "# PXX — <PERSONA> (Tier 3 · Preview Advocate)"; next }
     /^\*\*핵심 편향\*\*:/                     { next }
     /^\*\*voice\*\*:/                        { next }
@@ -128,15 +180,35 @@ if [[ "$distinct" -ne 1 ]]; then
   echo "per-file normalized hashes:" >&2
   printf '  %s\n' "${HASHES[@]}" | sort >&2
   echo "" >&2
-  echo "Hint: identify two files with different hashes above, then diff" >&2
-  echo "      their normalized streams to see the exact drifting line(s):" >&2
+  # Pick the two files at the boundary of the largest cluster split — that
+  # gives reviewers a concrete, copy-pasteable diff command (#95/#87 P3).
+  # We sort hashes, then pick the first file from the smallest distinct
+  # hash bucket and contrast it with the first file of the largest bucket.
+  pivot_a=$(printf '%s\n' "${HASHES[@]}" | sort | awk 'NR==1 {print $2}')
+  pivot_b=""
+  pivot_a_hash=$(printf '%s\n' "${HASHES[@]}" | sort | awk 'NR==1 {print $1}')
+  for entry in "${HASHES[@]}"; do
+    h=$(echo "$entry" | awk '{print $1}')
+    name=$(echo "$entry" | awk '{print $2}')
+    if [[ "$h" != "$pivot_a_hash" ]]; then
+      pivot_b="$name"
+      break
+    fi
+  done
+  if [[ -z "$pivot_b" ]]; then
+    pivot_b="$pivot_a"   # defensive — should never happen with distinct>1
+  fi
+  pivot_a_path="$ADVOCATES_DIR/$pivot_a"
+  pivot_b_path="$ADVOCATES_DIR/$pivot_b"
+  this_script="$ROOT/tests/test-advocate-boilerplate.sh"
+  echo "Hint: copy-paste this command to see the exact drifting line(s)" >&2
+  echo "      between two files whose normalized hashes diverge:" >&2
   echo "" >&2
-  echo "  diff \\" >&2
-  echo "    <(bash tests/test-advocate-boilerplate.sh --normalize <FILE_A>) \\" >&2
-  echo "    <(bash tests/test-advocate-boilerplate.sh --normalize <FILE_B>)" >&2
+  echo "  diff <(bash \"$this_script\" --normalize \"$pivot_a_path\") \\" >&2
+  echo "       <(bash \"$this_script\" --normalize \"$pivot_b_path\")" >&2
   echo "" >&2
-  echo "  (replace <FILE_A> / <FILE_B> with two paths from $ADVOCATES_DIR" >&2
-  echo "   whose hashes diverge in the table above.)" >&2
+  echo "  (other pairs from the per-file hash table above are also valid;" >&2
+  echo "   pick any two files whose hash columns differ.)" >&2
   exit 1
 fi
 
