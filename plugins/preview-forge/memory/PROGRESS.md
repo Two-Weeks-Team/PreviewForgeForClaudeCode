@@ -7,7 +7,7 @@
 
 ## 현재 상태 (Last Updated: 2026-04-25, Plugin v1.10.0 released)
 
-- **Plugin 개발 단계**: v1.7.0 audit phases 7/8 완료 (P4·P1·P2·P3 Part A·P7·P6·P5 Part A·P9). 잔여: P5 Part B (W-1/W-2/W-3/W-8/W-9/W-10/W-13 + B-2), P3 Part C (T-2/T-3/T-7/T-8/T-12), P8 Requirements Expansion.
+- **Plugin 개발 단계**: "v1.7 audit" umbrella(#29–#37) 7/9 phase 완료 (P4·P1·P2·P3 Part A·P7·P6·P5 Part A·P9). 잔여: P5 Part B (W-1/W-2/W-3/W-8/W-9/W-10/W-13 + B-2), P3 Part C (T-2/T-3/T-7/T-8/T-12), P8 Requirements Expansion. 주의: "v1.7 audit"은 feature umbrella 이름이고 실제 semver release tag는 release-please가 Conventional Commits로 자동 부여 (Phase 9 → v1.10.0).
 - **Released versions**: v1.0.0 → v1.1.0 (LESSON 0.7 1차 해결) → v1.2.0 → v1.3.0 → v1.4.0 (standard-first) → v1.5.x (build chain integrity + permission ergonomics) → v1.6.0 (I1 Socratic interview, LESSON 0.7 2차 해결) → v1.6.1 (weak-alias cache replay) → v1.7.0 → v1.8.0 → v1.8.1 → v1.9.0 → **v1.10.0 (Phase 9 — Business-panel UX: B-1 4-required + B-3 Skip-interview + A-4 tiered fallback)**
 - **다음 작업**: P5 Part B (이 PR), P3 Part C (테스트 fixture 보강), P8 Requirements Expansion.
 - **e2e run 수**: r-20260422-184337 (Phase 16 첫 실제 run, LESSON 0.7 발견) · r-20260423-093527 (LESSON 11.1 build chain integrity 발견, score 451/500).

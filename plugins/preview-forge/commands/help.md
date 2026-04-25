@@ -20,9 +20,11 @@ _(인자 없음)_
 
 14 명령어 요약 + 자주 묻는 질문 (FAQ).
 
-## What's new (v1.6+ / v1.7)
+## What's new (audit umbrellas v1.6 / v1.7 — shipped through semver v1.10.0)
 
-`/pf:new` 흐름이 v1.6부터 크게 바뀌었다 — README의 "What's new" 섹션 요약:
+> "v1.6 audit" · "v1.7 audit"은 ComBba feature umbrella 이름이고, 실제 release tag는 release-please가 Conventional Commits로 자동 부여한 v1.6.0·v1.10.0 등 semver. 자세한 매핑은 [CHANGELOG.md](../../../CHANGELOG.md) 참조.
+
+`/pf:new` 흐름이 v1.6.0(semver)부터 크게 바뀌었다 — README의 "What's new" 섹션 요약:
 
 - **v1.6 — I1 Socratic interview**: `/pf:new` 직후 3개의 `AskUserQuestion` 모달이 떠서 `idea.spec.json`(target_persona / primary_surface / jobs_to_be_done / killer_feature / must_have_constraints / non_goals 등)을 먼저 짠다. 26 advocate가 이 ground truth를 받아 dispatch되므로 LESSON 0.7 (panel 추천이 사용자 의도와 어긋남)이 근본적으로 해소.
 - **v1.7 (B-1)** — 필수 답변은 4개(persona / platform / killer_feature / constraint), 나머지 5–8개는 _optional_. **Best path: 4 클릭으로 gallery 도달**.

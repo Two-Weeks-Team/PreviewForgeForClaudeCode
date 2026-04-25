@@ -110,7 +110,9 @@ Categorical scoring (not raw keyword count) means `"audit logging feature"` in a
 - **Rule 9 idea-drift detector** (`hooks/idea-drift-detector.py`) catches the failure where Gate H1 picks product A but SpecDD/Engineering drift to product B. Containment coefficient over token sets (no external ML deps). Block threshold 0.3, warn at 0.4.
 - **P0-B cost-regression sentinel** (`hooks/cost-regression.py`) compares `cost-snapshot.json` against the active profile's P95/hard ceiling every 30s. Hard breach triggers auto-pause + AskUserQuestion handoff.
 
-## What's new (v1.6+ / v1.7)
+## What's new (audit umbrellas v1.6 / v1.7 — shipped progressively through semver v1.10.0)
+
+> **Terminology**: "v1.6 audit" / "v1.7 audit" are *feature umbrella* names (issue #28 family / #29–#37). Each PR within an umbrella ships under its own [release-please](https://github.com/googleapis/release-please) semver tag based on Conventional Commits — so the v1.6 schema landed in semver **v1.6.0**, B-1/B-3/A-4 (Phase 9, PR #51) landed in semver **v1.10.0**, etc. See [CHANGELOG.md](CHANGELOG.md) for the per-tag mapping.
 
 The biggest UX shift since v1.0.0: **the gallery comes first**, before any spec or code is written. You don't pick a feature flag matrix; you pick a picture.
 
