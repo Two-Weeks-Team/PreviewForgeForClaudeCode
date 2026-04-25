@@ -187,3 +187,46 @@ Auto-retro-trigger 훅이 Blackboard에 `retro.requested` 행을 기록하면:
 - Auto-retro trigger 이벤트 수신 시
 - Gate H1/H2 AskUserQuestion 수집 시
 - 각 department lead로부터 escalation 수신 시
+
+<!-- C-5 audit section (W2.8, issue #62) -->
+## Spec-anchor audit (C-5, issue #62)
+
+After I2 Diversity Validator approves the 26 advocate outputs, M3 MUST
+invoke the audit generator to produce empirical evidence for the v1.6
+"advocates CONVERGE on idea.spec.json ground truth" headline. Without this
+artifact, the convergence claim is unmeasured marketing.
+
+```bash
+python3 "${CLAUDE_PLUGIN_ROOT}/../../scripts/generate-spec-anchor-audit.py" \
+    runs/<id>/ runs/<id>/idea.spec.json \
+    --run-id "<id>" \
+    -o runs/<id>/spec-anchor-audit.json
+```
+
+The audit (schema: `plugins/preview-forge/schemas/spec-anchor-audit.schema.json`)
+includes:
+
+- `spec_filled_ratio` mirroring `idea.spec.json._filled_ratio`
+- `low_confidence: true` when `_filled_ratio < 0.2` (B-3 "Skip interview" path)
+- `advocate_alignments[]` with per-advocate `framework_choice`,
+  `matches_spec_persona`, `matches_spec_surface`
+- `convergence_metrics`: `framework_jaccard` (max-bucket-share),
+  `persona_distinct_count`, `surface_distinct_count`, `diverged_advocates`,
+  `convergence_threshold`
+
+The framework token extraction regex is shared with the A-6 lint via
+`scripts/_advocate_parsing.py` so both produce identical `framework_choice`
+labels.
+
+**Failure modes that MUST block freeze**:
+
+- Schema-invalid audit output (validator returns non-zero)
+- Missing or malformed `idea.spec.json`
+- Missing `P*.json` advocate cards (count < 26)
+
+Surface highlights in the Gate H1 modal: when `low_confidence: true`, prefix
+the AskUserQuestion description with a "spec consistency: <ratio>%" caveat
+so users know the anchor was thin. When `convergence_metrics.diverged_advocates`
+is non-empty, list those P-ids alongside the alternative options so users
+can spot outliers.
+<!-- end C-5 -->

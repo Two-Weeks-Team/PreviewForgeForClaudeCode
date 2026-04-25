@@ -1,0 +1,12 @@
+{
+  "advocate": "fixture-advocate",
+  "framing": "Mock framing for spec-anchor-audit fixture, \u226520 chars.",
+  "target_persona": "solo founder",
+  "primary_surface": "Web PWA",
+  "opus_4_7_capability": "code-generation",
+  "mvp_scope": "demo",
+  "one_liner_pitch": "Mock pitch.",
+  "mockup_path": "mockups/P21-fixture.html",
+  "spec_alignment_notes": "Plain Svelte for the Web PWA, lighter bundle",
+  "id": "P21"
+}
