@@ -392,21 +392,45 @@ cmd_get_with_fallback() {
   # Output is byte-equivalent to cmd_get (cmd_get streams via `cat`;
   # no command-substitution capture, so trailing newlines are
   # preserved — codex R2 P3).
-  local strong="$1"
-  local weak="$2"
+  #
+  # PR #81 review (gemini HIGH P1, P3): defence-in-depth path safety on
+  # the self-heal path mirrors cmd_put's posture.
+  #   - keys are sanitised with the same `[:alnum:]._-` allowlist used
+  #     in cmd_put before they are interpolated into $CACHE_DIR paths
+  #     (P1 — path traversal hardening even though our own callers only
+  #     emit 16-hex hashes).
+  #   - weak alias repair stages into a private tmp file and renames
+  #     into place via mv -f (P3 — atomicity parity with cmd_put). A
+  #     concurrent reader can no longer observe a half-copied alias.
+  local strong_in="$1"
+  local weak_in="${2:-}"
+  local strong weak
+  strong=$(printf '%s' "$strong_in" | tr -dc '[:alnum:]._-')
+  if [[ -z "$strong" ]]; then
+    echo "preview-cache.sh: refusing get-fallback with empty/unsafe strong key: '$strong_in'" >&2
+    return 2
+  fi
+  weak=$(printf '%s' "$weak_in" | tr -dc '[:alnum:]._-')
   if cmd_get "$strong"; then
-    # Stream completed; now heal the weak alias if missing. Use plain
-    # `ln` (no -f) — a concurrent fresh put that has already published
-    # the alias wins, and we don't clobber it. cp fallback for
-    # filesystems without hardlink support (codex R3 P2-A symmetry).
+    # Stream completed; now heal the weak alias if missing. Stage into
+    # a private tmp first, then rename(2) into place — same atomicity
+    # contract as cmd_put. A concurrent fresh put that has already
+    # published the alias wins via the `[[ ! -f ... ]]` precheck; the
+    # `mv -f` final swap is still atomic and only clobbers a
+    # simultaneously-staged tmp peer (which we created here).
     if [[ -n "$weak" && "$weak" != "$strong" && ! -f "$CACHE_DIR/$weak.json" ]]; then
-      ln "$CACHE_DIR/$strong.json" "$CACHE_DIR/$weak.json" 2>/dev/null \
-        || cp "$CACHE_DIR/$strong.json" "$CACHE_DIR/$weak.json" 2>/dev/null \
-        || true
+      local heal_tmp="$CACHE_DIR/.heal-${weak}.$$.tmp"
+      rm -f "$heal_tmp"
+      if ln "$CACHE_DIR/$strong.json" "$heal_tmp" 2>/dev/null \
+         || cp "$CACHE_DIR/$strong.json" "$heal_tmp" 2>/dev/null; then
+        mv -f "$heal_tmp" "$CACHE_DIR/$weak.json" 2>/dev/null || rm -f "$heal_tmp"
+      else
+        rm -f "$heal_tmp"
+      fi
     fi
     return 0
   fi
-  if cmd_get "$weak"; then
+  if [[ -n "$weak" ]] && cmd_get "$weak"; then
     # Soft hit. Do NOT repair strong (codex R2 P2: weak may carry
     # payload generated for a different idea_spec_hash). Distinct
     # exit code so callers can branch on "Socratic skip OK, previews
