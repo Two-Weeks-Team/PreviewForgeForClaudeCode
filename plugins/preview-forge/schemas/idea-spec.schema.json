@@ -8,8 +8,9 @@
   "properties": {
     "idea_summary": {
       "type": "string",
-      "description": "Original one-liner from /pf:new, verbatim.",
-      "minLength": 1
+      "description": "Original one-liner from /pf:new, verbatim. S-3 cap (#65, v1.7.0+ hardening): bounded to 5000 chars so a poisoned idea.spec.json cannot blow up advocate prompt size / Rule 9 containment budget.",
+      "minLength": 1,
+      "maxLength": 5000
     },
     "target_persona": {
       "type": "object",

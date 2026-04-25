@@ -24,6 +24,25 @@ runs/
 .DS_Store
 Thumbs.db
 
+# macOS Finder/iCloud duplicates (#68 — block patterns like
+# "idea-spec.schema 2.json", "README.md copy", "report copy 3.pdf"
+# that Finder/iCloud silently spawn on conflict).
+# Cover both single- and double-digit suffixes (Finder uses sequential
+# numbers; >9 conflicts is rare but possible — gitignore is cheap, the
+# 26-advocate scan that picks up `*.md` is not). The bare `* copy` /
+# `* copy N` forms (no extension) are emitted by Finder when copying
+# extension-less files like LICENSE.
+*\ [0-9]
+*\ [0-9].*
+*\ [0-9][0-9]
+*\ [0-9][0-9].*
+*\ copy
+*\ copy.*
+*\ copy\ [0-9]
+*\ copy\ [0-9].*
+*\ copy\ [0-9][0-9]
+*\ copy\ [0-9][0-9].*
+
 # editor
 .vscode/
 .idea/
