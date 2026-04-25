@@ -1,0 +1,21 @@
+# T-7 mock-bootstrap trace
+profile=max
+previews_count=26
+filled_ratio_mode=ground-truth
+iframe_count=26
+framework_lint_rc=0
+h1_pick=P19
+timestamp_utc=2026-04-25T10:01:10Z
+run_id=r-clean-20260425-max
+out_dir_mode=committed
+
+# Steps executed (deterministic-script subset of /pf:new pipeline)
+step_1=materialize_idea_spec
+step_2=filled_ratio_gate
+step_3=synthesize_advocate_cards_+_previews_json
+step_4=generate_gallery_html
+step_5=h1_modal_helper_dual_branch
+step_6=chosen_preview_lock
+step_7=framework_convergence_lint
+step_8=spec_anchor_audit
+step_9=artifact_presence_check

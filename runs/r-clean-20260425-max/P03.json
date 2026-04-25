@@ -1,0 +1,12 @@
+{
+  "id": "P03",
+  "advocate": "E2E-mock-advocate-P03",
+  "framing": "Mock framing for P03 — covers persona/surface verbatim from idea.spec.json.",
+  "target_persona": "litigation paralegal at small US law firm",
+  "primary_surface": "Desktop App",
+  "opus_4_7_capability": "code-generation",
+  "mvp_scope": "demo",
+  "one_liner_pitch": "P03: deterministic e2e mock pitch.",
+  "mockup_path": "mockups/P03-mock.html",
+  "spec_alignment_notes": "all fields populated, followed spec verbatim — using react for the Desktop App stack"
+}

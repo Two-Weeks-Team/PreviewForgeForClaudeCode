@@ -15,7 +15,11 @@ build/
 !.env.example
 
 # claude / plugin runtime
-runs/
+# Local /pf:new runs are ignored; clean-room evidence runs (W4.10 / issue #58)
+# are committed under runs/r-clean-*/ — see tests/fixtures/ASSESSMENT.md
+# (the broad re-include negate lives at the bottom of this file so it wins
+#  over later patterns like '*.log').
+runs/*
 .claude/cache/
 **/memory/agents/
 **/trace.jsonl
@@ -66,3 +70,9 @@ coverage/
 
 # misc
 .turbo
+
+# clean-room evidence runs (W4.10 / issue #58) — re-include AFTER all earlier
+# patterns so '*.log' / 'runs/*' do not strip the committed artifacts. Order
+# matters: in .gitignore the *last* matching pattern wins.
+!runs/r-clean-*/
+!runs/r-clean-*/**

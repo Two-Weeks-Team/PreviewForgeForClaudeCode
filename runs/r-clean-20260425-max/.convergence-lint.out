@@ -1,0 +1,12 @@
+{
+  "advocate_count": 26,
+  "frameworks_detected": {
+    "react": 24,
+    "nextjs": 1,
+    "svelte": 1
+  },
+  "distinct_count": 3,
+  "convergence_threshold": 3,
+  "warning": false,
+  "diverged_advocates": []
+}
