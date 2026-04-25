@@ -1,0 +1,30 @@
+# Dev-only Python dependencies for Preview Forge tooling.
+#
+# Install:
+#   python3 -m pip install -r requirements-dev.txt
+#
+# Browser binaries for Playwright (one-off, after the pip install above):
+#   python3 -m playwright install --with-deps firefox chromium
+#
+# Preview Forge is NOT a Python package (no installable source / __init__.py).
+# These pins exist so the handful of Python *scripts* and *tools* that the
+# repo ships are reproducible without ambient pip state. JS-side tooling
+# stays in package.json / pnpm-workspace.yaml.
+
+# ---------------------------------------------------------------------------
+# Hero screenshot helper
+#   tools/capture-gallery-hero.py — regenerates docs/assets/v1.6-gallery-hero.png
+#   (the README/SUBMISSION above-the-fold gallery hero, #67 / #94).
+# ---------------------------------------------------------------------------
+playwright>=1.54,<2.0
+
+# ---------------------------------------------------------------------------
+# JSON Schema validation (used by several verify-* shell harnesses that
+# embed `python3 -c "import jsonschema; ..."`):
+#   - scripts/verify-plugin.sh                       (profiles schema check)
+#   - tests/fixtures/security/verify-security.sh     (I-7 / S-3 defenses)
+#   - tests/fixtures/seed-expectations/verify-seed-expectations.sh
+#   - tests/e2e/mock-bootstrap.sh                    (previews schema, fail-closed in CI)
+#   - scripts/generate-spec-anchor-audit.py          (optional; degrades gracefully)
+# ---------------------------------------------------------------------------
+jsonschema>=4.0,<5.0

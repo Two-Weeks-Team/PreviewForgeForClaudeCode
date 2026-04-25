@@ -60,6 +60,36 @@ claude --plugin-dir ./plugins/preview-forge
 
 Inside Claude Code, try `/pf:help` to see the 14 commands.
 
+### Python dev setup (optional, for tooling / verify-\* scripts)
+
+Preview Forge is primarily JavaScript / Markdown, but a handful of Python
+scripts and tools ship with the repo (hero screenshot helper, schema
+validators embedded in `verify-*` shell harnesses, hooks under
+`plugins/preview-forge/hooks/`). Two third-party packages are pinned in
+[`requirements-dev.txt`](./requirements-dev.txt):
+
+- **`playwright`** — used by `tools/capture-gallery-hero.py` to regenerate
+  `docs/assets/v1.6-gallery-hero.png` (#67 / #94).
+- **`jsonschema`** — used by `scripts/verify-plugin.sh`,
+  `tests/fixtures/security/verify-security.sh`,
+  `tests/fixtures/seed-expectations/verify-seed-expectations.sh`, and
+  `tests/e2e/mock-bootstrap.sh` for schema validation.
+
+Install (once, ideally in a venv):
+
+```bash
+python3 -m venv .venv && source .venv/bin/activate   # optional but recommended
+python3 -m pip install -r requirements-dev.txt
+
+# Only if you need to regenerate the hero screenshot:
+python3 -m playwright install --with-deps firefox chromium
+```
+
+The repo is **not** a Python package — there is no `pyproject.toml` /
+`setup.py`. `requirements-dev.txt` documents the contract; nothing is
+installed by `bash scripts/verify-plugin.sh` itself (it degrades gracefully
+when `jsonschema` is missing, except in CI where it is fail-closed).
+
 ## Contribution types
 
 ### 1. 📚 LESSON (most welcome)
