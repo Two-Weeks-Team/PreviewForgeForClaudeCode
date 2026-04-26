@@ -57,12 +57,12 @@ different direction. You see what could be built. You select one.
 |---|---|
 | 🎥 **Demo video** | [https://www.youtube.com/watch?v=_xHL8SZqfyI](https://www.youtube.com/watch?v=_xHL8SZqfyI) (2:59) — full walkthrough, problem statement through frozen app |
 | 💻 **Repository** | [Two-Weeks-Team/PreviewForgeForClaudeCode](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode) |
-| 📝 **Written summary (100–200 words)** | See [TL;DR for evaluators](#tldr-for-evaluators) below |
+| 📝 **Written summary (100–200 words)** | See [TL;DR](#tldr) below |
 | 📜 **License** | [Apache-2.0](LICENSE) — fully open-source per hackathon rules |
 | 👥 **Team** | [Two-Weeks-Team](https://github.com/Two-Weeks-Team) (≤2 members per rules) |
 | 🆕 **New work only** | Built from scratch during the hackathon window (Apr 21–28, 2026). See [CHANGELOG](CHANGELOG.md). |
 
-## TL;DR for evaluators
+## TL;DR
 
 > **Preview Forge** turns one line of idea into a frozen, deployable full-stack app
 > — by inverting the order of software development.
@@ -110,12 +110,6 @@ flowchart LR
 
 All three cycles follow **diverge → aggregate → lock**. Two human gates, otherwise autonomous.
 [Full v8.0 specification](preview-forge-proposal.html) — 2,100+ lines, single HTML file.
-
-<!-- AI-PARSEABLE FLOW
-idea -> I1 socratic (4Q) -> idea.spec.json -> PreviewDD (26 mockups) -> H1 design pick
-     -> SpecDD (OpenAPI + nestia) -> TestDD (judges/auditors >= 499/500)
-     -> H2 ship -> frozen app
--->
 
 ## From one prompt to a gallery — in 4 questions
 
@@ -172,47 +166,6 @@ recent additions: Rule 9 idea-drift, Rule 10 English-only output).
 10. **Output language English** — every artifact in the repo is English. Korean and other languages are permitted only as visual subtitles in the captured video.
 
 [Full Layer-0 specification](plugins/preview-forge/methodology/global.md) — gates, scope, drift, output policy.
-
-## Why this wins
-
-> **Problem statement.** Preview Forge answers **"Build For What's Next"** —
-> an interface that doesn't yet have a name (mockup-first ideation), a workflow
-> from a few years out when AI agents handle the spec/test/build loop end-to-end.
-> Easier to demo than to explain.
-
-### 🏆 Most Creative Opus 4.7 Exploration
-
-**144 parallel Opus 4.7 personas** — 26 advocates diverge previews, 4 panels
-(Tech / Business / UX / Risk, 10 members each + leads) vote, 7 spec critics
-evaluator-optimize, 5 judges + 5 auditors gate freeze. **Adaptive thinking +
-`xhigh` effort** is invoked wherever the action is one-shot and irreversible
-(Layer-0 Rule 7). All Opus 4.7 — zero Sonnet, zero Haiku.
-
-### 🏆 Best use of Claude Managed Agents
-
-**Hours-long autonomous build/test/correct cycles** inside a single managed
-session. Self-Correction Squad iterates 3–5× per profile and auto-extends when
-errors are decreasing. A 4-layer memory (`CLAUDE.md` · `PROGRESS.md` ·
-`LESSONS.md` · Anthropic Memory Tool) carries lessons across runs — the
-Reflexion pattern, end-to-end. Long-running, hand-off-able, ship-able.
-
-### 🏆 The Keep Thinking Prize
-
-**TDD drove code with tests. SpecDD drove code with specs. PreviewDD drives them
-both with pictures.** Eyes-first decision-making inverts the SaaS default of
-"configure then preview" — you answer 4 questions, see 9 / 18 / 26 mockups, pick
-one, and the rest of the pipeline only runs on what you approved.
-
-**Preview is all you need. The selection IS the spec.**
-
-## Judging criteria — evidence map
-
-| Criterion | Weight | How Preview Forge answers it | Evidence |
-|---|---|---|---|
-| **Impact** | 30% | Reframes how *every* software project starts. PreviewDD is a methodology, not a feature — it generalizes beyond this plugin. Maps to **"Build For What's Next"**: an interface that doesn't yet have a name. | [Full v8.0 spec](preview-forge-proposal.html) (2,100+ lines) · [3-DD methodology](#the-3-dd-methodology) |
-| **Demo** | 25% | Single-screen artifact (gallery of 9–26 mockups) that a non-technical viewer understands in 5 seconds. H2 now auto-launches the local preview server after ship approval. | [Gallery hero](docs/assets/lunchpull-gallery-hero.png) · final demo video URL in submission form |
-| **Opus 4.7 use** | 25% | 144 parallel Opus 4.7 personas, **all** Opus 4.7 (zero Sonnet, zero Haiku). Adaptive thinking + `xhigh` effort applied per Layer-0 irreversible-action policy. Self-critic + self-scorer + self-corrector loops are all Opus 4.7. | [Layer-0 rules](plugins/preview-forge/methodology/global.md) · [Agent organization](#agent-organization) |
-| **Depth & Execution** | 20% | 14 semver releases (v1.6 → v1.14) inside the hackathon window. Current verify-plugin suite passes locally. 4-layer memory (Reflexion). Idea-drift detector + cost-regression sentinel + escalation precedence + skip-interview escape hatch — all shipped. | [CHANGELOG](CHANGELOG.md) · [`scripts/verify-plugin.sh`](scripts/verify-plugin.sh) · [`plugins/preview-forge/hooks/`](plugins/preview-forge/hooks/) |
 
 ## Quick install
 
