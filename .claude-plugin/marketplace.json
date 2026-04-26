@@ -13,7 +13,7 @@
   "plugins": [
     {
       "name": "pf",
-      "description": "Preview Forge — 한 줄 아이디어 → 143명의 Opus 4.7 가상 엔지니어링 조직이 PreviewDD · SpecDD · TestDD 3 사이클로 풀스택 앱을 freeze까지. /pf:* 14 slash commands. 인간은 디자인·배포 2 클릭만.",
+      "description": "Preview Forge — PreviewDD → SpecDD → TestDD pipeline: 144 Opus 4.7 personas turn one-line ideas into frozen full-stack apps via 15 /pf:* slash commands; humans only touch the design and ship gates. Built with Opus 4.7 hackathon.",
       "version": "1.14.1",
       "author": {
         "name": "Two-Weeks-Team"
