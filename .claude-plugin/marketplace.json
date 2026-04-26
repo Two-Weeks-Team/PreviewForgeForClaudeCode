@@ -6,7 +6,7 @@
     "url": "https://github.com/Two-Weeks-Team"
   },
   "metadata": {
-    "description": "Two-Weeks-Team marketplace hosting the Preview Forge plugin — a 143-agent engineering swarm implementing the 3-DD Methodology (PreviewDD → SpecDD → TestDD) for Claude Code.",
+    "description": "Two-Weeks-Team marketplace hosting the Preview Forge plugin — a 144-agent engineering swarm implementing the 3-DD Methodology (PreviewDD → SpecDD → TestDD) for Claude Code.",
     "version": "1.14.1",
     "homepage": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode"
   },
