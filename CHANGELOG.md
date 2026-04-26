@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.13.0...v1.14.0) (2026-04-26)
+
+
+### Features
+
+* **methodology:** Rule 10 — Output language English (Layer-0) ([#107](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/107)) ([3dda141](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/3dda141443b705ca832be5c7d47c9533bfc96053))
+
 ## [1.13.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.12.1...v1.13.0) (2026-04-25)
 
 
