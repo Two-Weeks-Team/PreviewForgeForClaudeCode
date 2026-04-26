@@ -4,6 +4,16 @@ Preview Forge introduces the **3-DD Methodology** (PreviewDD → SpecDD → Test
 Contributions that strengthen any one of the three cycles, or that close
 failure loops observed in real runs, are most welcome.
 
+## Language
+
+All issues, PRs, commits, code, and documentation in this repo are written in
+**English**. This keeps the artifact archive uniform and accessible to
+non-Korean reviewers, and matches the standard already followed by every
+shipped commit, PR body, CHANGELOG entry, and code comment. Korean prompts
+during a Claude Code session are not a switch signal — agents should reply
+in English by default. Make exceptions only for explicit, single-turn user
+directives.
+
 ## Commit message convention
 
 This repo uses **release-please** with [Conventional Commits](https://www.conventionalcommits.org/).
