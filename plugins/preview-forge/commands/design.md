@@ -4,7 +4,7 @@ description: Gate H1 — Preview selection + Design tweak (unified AskUserQuesti
 
 # /pf:design — Gate H1
 
-**Layer-0**: Claude Code Pro/Max 기본 포함.
+**Layer-0**: Included with Claude Code Pro/Max.
 
 ## When this runs
 
@@ -30,50 +30,49 @@ bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/open-browser.sh"     runs/<id>/mockups
 
 ### Step 2 — AskUserQuestion (4 options)
 
-- **① 🏆 Recommended**: composite 1위 advocate
-  - `target_persona` · `primary_surface` · `one_line_pitch` · 4 panel 점수 표시
-  - → 이대로 Claude Design(or 내장 Studio)로 진입
+- **① 🏆 Recommended**: the composite #1 advocate.
+  - Show `target_persona`, `primary_surface`, `one_line_pitch`, and the four panel scores.
+  - → Proceed into Claude Design (or the bundled Studio) as-is.
 
-- **② 💡 Alternative A**: 특정 panel 단독 우승자 1
-  - 예: TP 단독 우승자가 Recommended와 다른 경우 (API-first · SDK angle)
+- **② 💡 Alternative A**: a single-panel winner.
+  - Example: a TP single-panel winner that differs from Recommended (API-first, SDK angle).
 
-- **③ 🔬 Alternative B**: 특정 panel 단독 우승자 2
-  - 예: RP 단독 우승자 (Privacy-focused · Offline-first angle)
+- **③ 🔬 Alternative B**: another single-panel winner.
+  - Example: an RP single-panel winner (privacy-focused, offline-first angle).
 
 - **④ 🎨 Pick from browser gallery**
-  - 이미 열려 있는 갤러리에서 보고 왔을 때. 두 번째 AskUserQuestion에 "방금 본 것 중 P번호 입력" free-form 옵션 포함.
+  - Use this when you have already viewed the gallery that just opened. The second AskUserQuestion includes a free-form "enter the P-number you just saw" option.
 
 ## What happens after the click
 
-| 사용자 선택 | 다음 동작 |
+| User selection | Next action |
 |---|---|
-| Option 1 (Recommended) | `chosen_preview.json`에 P<NN> lock + Claude Design / Studio로 진입 |
-| Option 2 / 3 (Alternative) | chosen_preview에 반영 + **기존 mitigations는 다른 제품 context이므로 MD(Mitigation Designer) 재생성 요청** → Claude Design / Studio |
-| Option 4 (Gallery pick) | 갤러리는 이미 Step 1에서 열려 있음 → 두 번째 AskUserQuestion으로 P번호 free-form 입력 → chosen_preview 반영 |
-| 모든 경우 | 2차 AskUserQuestion — "Claude Design에서 열까(Pro/Max) / 내장 Studio로 tweak" |
+| Option 1 (Recommended) | Lock P<NN> into `chosen_preview.json` and proceed to Claude Design / Studio. |
+| Option 2 / 3 (Alternative) | Apply to chosen_preview and **re-invoke MD (Mitigation Designer)** because the existing mitigations belong to a different product context. Then proceed to Claude Design / Studio. |
+| Option 4 (Gallery pick) | The gallery is already open from Step 1. The second AskUserQuestion takes a free-form P-number, which is then written to chosen_preview. |
+| All cases | Second AskUserQuestion — "Open in Claude Design (Pro/Max) or tweak in the bundled Studio?" |
 
 ## Override semantics
 
-사용자가 panel 추천 아닌 alternative 선택 시:
-- 원본 `chosen_preview.json`은 `chosen_preview.panel-recommended.json`으로 백업
-- 새 chosen_preview에 `chosen_via: "user_override"` + `selection_metadata.reason` 기록
-- Blackboard에 `user-override` 이벤트 추가 (tier 0, dept meta)
-- **Mitigations는 새 제품 context로 MD를 재호출**해서 재생성
-  (예: P02 Slack bot 대비 P19 desktop app은 보안·데이터 거주성 우선순위가 완전히 다름)
+When the user picks an alternative instead of the panel recommendation:
+- Back up the original `chosen_preview.json` to `chosen_preview.panel-recommended.json`.
+- Record `chosen_via: "user_override"` and `selection_metadata.reason` in the new chosen_preview.
+- Add a `user-override` event to the Blackboard (tier 0, dept meta).
+- **Re-invoke MD with the new product context to regenerate mitigations.**
+  (For example, P02 Slack bot vs. P19 desktop app have completely different security and data-residency priorities.)
 
-## allowed_scope (M3 Dev PM 관점)
+## allowed_scope (M3 Dev PM perspective)
 
-- Read: `runs/<id>/previews.json` · `panels/*.json` · `mockups/*.html` · `mitigations.json`
-- Write: `runs/<id>/{chosen_preview.json,chosen_preview.json.lock,chosen_preview.panel-recommended.json,design-approved.json}`
-- Task: MD (mitigations 재생성), Claude Design integration (optional)
+- Read: `runs/<id>/previews.json`, `panels/*.json`, `mockups/*.html`, `mitigations.json`.
+- Write: `runs/<id>/{chosen_preview.json,chosen_preview.json.lock,chosen_preview.panel-recommended.json,design-approved.json}`.
+- Task: MD (regenerate mitigations), Claude Design integration (optional).
 
 ## Fallback
 
-Claude Design API 장애 · 사용자가 offline 선택 시 → 내장 Design Studio
-(`plugins/preview-forge/design-studio/` Next.js route) 자동 전환.
+If the Claude Design API fails or the user chooses offline mode, fall back automatically to the bundled Design Studio (`plugins/preview-forge/design-studio/` Next.js route).
 
 ## Related
 
 - Panel outputs: `runs/<id>/panels/{tp,bp,up,rp}-tally.json`, `meta-tally.json`
 - 26 mockup files: `runs/<id>/mockups/P01-P26.html`
-- LESSON 0.7: "Panel 추천 ≠ 사용자 의지" (`memory/LESSONS.md`)
+- LESSON 0.7: "Panel recommendation ≠ user intent" (`memory/LESSONS.md`)

@@ -4,7 +4,7 @@ description: Manually trigger the 4-Panel decision vote
 
 # /pf:panel — Manually trigger the 4-Panel decision vote
 
-**Layer-0 정책**: Pro/Max 기본 포함. 별도 API 키 불필요.
+**Layer-0 policy**: Included with Claude Code Pro/Max. No separate API key required.
 
 ## Usage
 
@@ -12,15 +12,15 @@ description: Manually trigger the 4-Panel decision vote
 /pf:panel [--cycle preview|spec|test]
 ```
 
-## 인자
+## Arguments
 
-`--cycle test`면 freeze 전 재검토 용도.
+`--cycle test` is for re-review before freeze.
 
-## 동작
+## Behavior
 
-특정 cycle의 패널을 수동 호출. 기본: PreviewDD 4-Panel. 이미 vote가 있으면 revote 여부 확인.
+Manually invoke the panel for a specific cycle. Default: PreviewDD 4-Panel. If a vote already exists, confirm whether to revote.
 
-## 관련
+## Related
 
-- 본 명령은 plugin `preview-forge`의 일부입니다.
-- 상세 스펙: [preview-forge-proposal.html](../../../preview-forge-proposal.html)
+- This command is part of the `preview-forge` plugin.
+- Detailed spec: [preview-forge-proposal.html](../../../preview-forge-proposal.html)

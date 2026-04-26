@@ -4,7 +4,7 @@ description: Show current run state, agent progress, Blackboard, active profile 
 
 # /pf:status — Show current run state, agent progress, Blackboard
 
-**Layer-0 정책**: Pro/Max 기본 포함. 별도 API 키 불필요.
+**Layer-0 policy**: Included with Claude Code Pro/Max. No separate API key required.
 
 ## Usage
 
@@ -12,23 +12,23 @@ description: Show current run state, agent progress, Blackboard, active profile 
 /pf:status [run_id]
 ```
 
-## 인자
+## Arguments
 
-- `run_id` (optional): 특정 run의 상태. 생략 시 가장 최근 run.
+- `run_id` (optional): the run to inspect. If omitted, use the most recent run.
 
-## 동작
+## Behavior
 
-M1에 status 요청. 다음을 보고:
+Ask M1 for status. Report the following:
 
-1. **현재 run**: `runs/<id>/` 경로, 시작 시각, 경과 시간
-2. **Active profile** (v1.3+): `runs/<id>/.profile`에서 로드. standard/pro/max + 해당 profile의 budget ceiling
-3. **Cycle 진행 상황**: PreviewDD · SpecDD · TestDD 각각의 state (pending / in-progress / done)
-4. **진행 중인 agent**: 마지막 Blackboard `task.started` 이벤트 기준
-5. **Budget 누적 vs P95 baseline**: `cost-snapshot.json`의 token/time 집계와 profile의 ceiling 비교 (남은 예산 %)
-6. **Drift alerts** (v1.3+): `hooks/idea-drift-detector.py`가 발행한 `status.drift_warning` 또는 `status.drift_block` Blackboard row 표시
-7. **Cost alerts** (v1.3+): `hooks/cost-regression.py`가 발행한 P95 warn 또는 hard alert row 표시
+1. **Current run**: `runs/<id>/` path, start time, elapsed time.
+2. **Active profile** (v1.3+): loaded from `runs/<id>/.profile`. One of standard/pro/max plus the budget ceiling for that profile.
+3. **Cycle progress**: state of PreviewDD, SpecDD, and TestDD (pending / in-progress / done).
+4. **Active agent**: based on the latest Blackboard `task.started` event.
+5. **Budget vs P95 baseline**: token/time totals from `cost-snapshot.json` compared to the profile ceiling (remaining budget %).
+6. **Drift alerts** (v1.3+): show any `status.drift_warning` or `status.drift_block` Blackboard rows emitted by `hooks/idea-drift-detector.py`.
+7. **Cost alerts** (v1.3+): show any P95 warn or hard alert rows emitted by `hooks/cost-regression.py`.
 
-예시 출력:
+Example output:
 ```
 📊 PF Status — runs/r-20260423-221530/
   Profile: pro (18 previews, 3×5 eng, P95 250k tok / 70 min)
@@ -39,9 +39,9 @@ M1에 status 요청. 다음을 보고:
   Cost: ok (within P95)
 ```
 
-## 관련
+## Related
 
-- 프로파일 정의: [`profiles/{standard,pro,max}.json`](../profiles/)
-- 드리프트 탐지: [`hooks/idea-drift-detector.py`](../hooks/idea-drift-detector.py)
-- 비용 센티넬: [`hooks/cost-regression.py`](../hooks/cost-regression.py)
-- 상세 스펙: [preview-forge-proposal.html](../../../preview-forge-proposal.html)
+- Profile definitions: [`profiles/{standard,pro,max}.json`](../profiles/)
+- Drift detection: [`hooks/idea-drift-detector.py`](../hooks/idea-drift-detector.py)
+- Cost sentinel: [`hooks/cost-regression.py`](../hooks/cost-regression.py)
+- Detailed spec: [preview-forge-proposal.html](../../../preview-forge-proposal.html)

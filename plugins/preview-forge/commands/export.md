@@ -4,7 +4,7 @@ description: Package a frozen run as tarball or Claude Code plugin
 
 # /pf:export — Package a frozen run as tarball or Claude Code plugin
 
-**Layer-0 정책**: Pro/Max 기본 포함. 별도 API 키 불필요.
+**Layer-0 policy**: Included with Claude Code Pro/Max. No separate API key required.
 
 ## Usage
 
@@ -12,15 +12,15 @@ description: Package a frozen run as tarball or Claude Code plugin
 /pf:export <run_id>
 ```
 
-## 인자
+## Arguments
 
-- run_id 필수. freeze 상태여야 함.
+- `run_id` is required. The run must already be frozen.
 
-## 동작
+## Behavior
 
-Freeze된 run의 generated/ 디렉토리를 `tar.gz` 또는 별도 Claude Code plugin으로 패키징. 후자의 경우 새 marketplace.json 생성.
+Package the `generated/` directory of a frozen run as a `tar.gz` archive or as a standalone Claude Code plugin. In the plugin case, generate a fresh `marketplace.json`.
 
-## 관련
+## Related
 
-- 본 명령은 plugin `preview-forge`의 일부입니다.
-- 상세 스펙: [preview-forge-proposal.html](../../../preview-forge-proposal.html)
+- This command is part of the `preview-forge` plugin.
+- Detailed spec: [preview-forge-proposal.html](../../../preview-forge-proposal.html)

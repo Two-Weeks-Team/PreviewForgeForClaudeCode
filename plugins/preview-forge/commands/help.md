@@ -4,7 +4,7 @@ description: List all /pf:* commands
 
 # /pf:help — List all /pf:* commands
 
-**Layer-0 정책**: Pro/Max 기본 포함. 별도 API 키 불필요.
+**Layer-0 policy**: Included with Claude Code Pro/Max. No separate API key required.
 
 ## Usage
 
@@ -12,29 +12,35 @@ description: List all /pf:* commands
 /pf:help
 ```
 
-## 인자
+## Arguments
 
-_(인자 없음)_
+_(no arguments)_
 
-## 동작
+## Behavior
 
-14 명령어 요약 + 자주 묻는 질문 (FAQ).
+Summary of the 15 commands plus a frequently asked questions (FAQ) section.
 
-## What's new (audit umbrellas v1.6 / v1.7 — shipped through semver v1.10.0)
+## What's new (through semver v1.14.1)
 
-> "v1.6 audit" · "v1.7 audit"은 ComBba feature umbrella 이름이고, 실제 release tag는 release-please가 Conventional Commits로 자동 부여한 v1.6.0·v1.10.0 등 semver. 자세한 매핑은 [CHANGELOG.md](../../../CHANGELOG.md) 참조.
+> "v1.6 audit" / "v1.7 audit" are ComBba feature umbrella names; the actual release tags are the semver values that release-please assigns from Conventional Commits (v1.6.0, v1.10.0, v1.14.1, and so on). For the per-tag mapping see [CHANGELOG.md](../../../CHANGELOG.md).
 
-`/pf:new` 흐름이 v1.6.0(semver)부터 크게 바뀌었다 — README의 "What's new" 섹션 요약:
+The `/pf:new` flow has changed substantially from v1.6.0 onward — summary of the README "What's new" section:
 
-- **v1.6 — I1 Socratic interview**: `/pf:new` 직후 3개의 `AskUserQuestion` 모달이 떠서 `idea.spec.json`(target_persona / primary_surface / jobs_to_be_done / killer_feature / must_have_constraints / non_goals 등)을 먼저 짠다. 26 advocate가 이 ground truth를 받아 dispatch되므로 LESSON 0.7 (panel 추천이 사용자 의도와 어긋남)이 근본적으로 해소.
-- **v1.7 (B-1)** — 필수 답변은 4개(persona / platform / killer_feature / constraint), 나머지 5–8개는 _optional_. **Best path: 4 클릭으로 gallery 도달**.
-- **v1.7 (B-3)** — Batch A 첫 모달에 "Skip interview — use defaults" 옵션 추가. 한 클릭으로 인터뷰 abort, `_filled_ratio` ≈ 0.11 stub만 쓰고 v1.5.4 raw-idea path로 진입.
-- **v1.7 (A-4)** — `_filled_ratio` 4-tier fallback (`≥0.7` high / `0.4–0.7` medium / `0.2–0.4` low / `<0.2` fallback). hard gate 없음.
-- **v1.6.1 (A-1) — Weak-replay**: 같은 idea+profile로 다시 `/pf:new`를 돌리면 weak-alias cache hit으로 Socratic 모달을 사용자 선택으로 스킵 가능.
+- **v1.6 — I1 Socratic interview**: immediately after `/pf:new`, three `AskUserQuestion` modals build `idea.spec.json` (target_persona / primary_surface / jobs_to_be_done / killer_feature / must_have_constraints / non_goals, etc.) up front. The 26 advocates dispatch against this ground truth, which structurally resolves LESSON 0.7 (panel recommendation drifting from user intent).
+- **v1.7 (B-1)** — Required answers reduced to four (persona / platform / killer_feature / constraint); the remaining five to eight are _optional_. **Best path: reach the gallery in 4 clicks**.
+- **v1.7 (B-3)** — A "Skip interview — use defaults" option is added to the first Batch A modal. One click aborts the interview, writes a `_filled_ratio` ≈ 0.11 stub, and falls back to the v1.5.4 raw-idea path.
+- **v1.7 (A-4)** — `_filled_ratio` 4-tier fallback (`≥0.7` high / `0.4–0.7` medium / `0.2–0.4` low / `<0.2` fallback). No hard gate.
+- **v1.6.1 (A-1) — Weak-replay**: re-running `/pf:new` on the same idea+profile hits the weak-alias cache, so the user can opt to skip the Socratic modals.
+- **v1.11 — Defense-in-depth + regex hardening**: a cluster of 5×3 review fixes that close the remaining bypass paths in the validator and pre-flight gates.
+- **v1.12 — Cinematic preview + auto-rec + reference example**: ships the cinematic preview rendering, an auto-recommendation pass, and a packaged reference example.
+- **v1.13 — H1 → SpecDD auto-advance and H2 → preview-server auto-launch**: the post-H1 signal hook (`hooks/post-h1-signal.py`) advances the run into SpecDD without extra user input; H2 approval automatically launches the preview server. Also introduces the new `/pf:preview` slash command.
+- **v1.14 — Rule 10 (Layer-0 English-only output) and the default profile fix**: enforce English-only output as Rule 10, and fix the default profile so `standard` is genuinely used (instead of falling through to `pro`).
 
-자세한 schema는 `plugins/preview-forge/schemas/idea-spec.schema.json`, A-4 fallback 동작은 `agents/ideation/ideation-lead.md` §1 참조.
+For the schema details see `plugins/preview-forge/schemas/idea-spec.schema.json`; for the A-4 fallback behavior see `agents/ideation/ideation-lead.md` §1.
 
-## 관련
+This section is regenerated each release; see `CHANGELOG.md` for the canonical per-tag mapping.
 
-- 본 명령은 plugin `preview-forge`의 일부입니다.
-- 상세 스펙: [preview-forge-proposal.html](../../../preview-forge-proposal.html)
+## Related
+
+- This command is part of the `preview-forge` plugin.
+- Detailed spec: [preview-forge-proposal.html](../../../preview-forge-proposal.html)

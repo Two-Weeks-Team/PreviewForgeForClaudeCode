@@ -4,7 +4,7 @@ description: Initialize the plugin memory (CLAUDE/PROGRESS/LESSONS) AND seed wor
 
 # /pf:bootstrap — One-time per workspace
 
-**Layer-0 정책**: Pro/Max 기본 포함. 별도 API 키 불필요.
+**Layer-0 policy**: Included with Claude Code Pro/Max. No separate API key required.
 
 ## Usage
 
@@ -12,24 +12,24 @@ description: Initialize the plugin memory (CLAUDE/PROGRESS/LESSONS) AND seed wor
 /pf:bootstrap
 ```
 
-## 인자
+## Arguments
 
-_(인자 없음)_
+_(no arguments)_
 
-## 동작
+## Behavior
 
-Plugin 최초 설치 후 워크스페이스 1회 실행. **두 가지를 동시에 한다**:
+Run once per workspace after the plugin is installed. **Two things happen at the same time**:
 
-### 1. Memory seed (기존 동작)
-`plugins/preview-forge/memory/`의 seed 파일(CLAUDE.md, PROGRESS.md, LESSONS.md)을 사용자의 `~/.claude/preview-forge/memory/`로 복사. 이미 존재하면 건드리지 않음(`cp -n`).
+### 1. Memory seed (existing behavior)
+Copy the seed files (`CLAUDE.md`, `PROGRESS.md`, `LESSONS.md`) from `plugins/preview-forge/memory/` to the user's `~/.claude/preview-forge/memory/`. If a file already exists, leave it alone (`cp -n`).
 
-### 2. Workspace permission seeding (v1.5.2+ — "두 번 클릭" 보장)
+### 2. Workspace permission seeding (v1.5.2+ — to keep the "two clicks" promise)
 
-**왜 필요한가**: PreviewDD/SpecDD/TestDD 사이클은 수십 개의 `mkdir`/`cp`/`pnpm`/`npx`/`node` 등 Bash 호출을 요한다. Claude Code는 *settings allow list에 없는 모든 새 Bash 패턴*에 대해 사용자 승인 prompt를 띄운다. v1.5.1까지는 이 prompt들이 그대로 노출되어 README가 약속한 *"사람의 클릭은 G1·G2 단 두 번"*이 깨졌다.
+**Why this is needed**: a PreviewDD/SpecDD/TestDD cycle invokes dozens of Bash calls (`mkdir`, `cp`, `pnpm`, `npx`, `node`, and so on). Claude Code raises an approval prompt for *every new Bash pattern that is not in the settings allow list*. Through v1.5.1 those prompts surfaced unfiltered, breaking the README's promise of *"only two human clicks: G1 and G2"*.
 
-v1.5.2부터 `/pf:bootstrap`은 현재 워크스페이스의 `.claude/settings.local.json`에 plugin이 사용하는 Bash 패턴을 사전 허용으로 등록한다. 결과: 첫 `/pf:new` 이후 *진짜로 G1·G2 두 번만* 클릭한다.
+Starting with v1.5.2, `/pf:bootstrap` registers the Bash patterns the plugin uses as pre-approved entries in the current workspace's `.claude/settings.local.json`. Result: after the first `/pf:new`, the user really does click only twice for G1 and G2.
 
-**등록되는 allow list** (최소권한 원칙 — plugin이 실제 사용하는 read/build/test만):
+**Allow list registered** (least-privilege — only the read/build/test patterns the plugin actually uses):
 
 ```text
 Bash(mkdir:*)         Bash(cp:*)            Bash(echo:*)
@@ -49,24 +49,24 @@ Bash(open:*)          Bash(xdg-open:*)      Bash(start:*)
 
 > The two `Bash(bash *scripts/…)` entries are narrow by design: they only match the H1 helper invocations (`bash "${CLAUDE_PLUGIN_ROOT}/../../scripts/generate-gallery.sh …"` and the `open-browser.sh` counterpart) — NOT a broad `Bash(bash:*)` that would let `bash -c "rm -rf …"` slip through prompt-free. The browser-opener prefixes (`open` · `xdg-open` · `start`) let the shell delegate to the host OS without prompting.
 
-**의도적으로 허용하지 않는 destructive 명령** (사용자가 필요 시 명시적 opt-in으로 직접 추가):
+**Destructive commands intentionally excluded** (the user can opt in explicitly if needed):
 
-| 명령 | 이유 |
-|------|------|
-| `Bash(rm:*)` | 광범위 삭제 권한. agent 오작동·prompt injection 시 치명. plugin은 `rm` 직접 호출 안 함. |
-| `Bash(chmod:*)` | 권한 변경. plugin은 `bin/pf`만 chmod, 사용자 시스템엔 불필요. |
-| `Bash(mv:*)` | 광범위 이동. plugin은 `mv` 호출 안 함 (cp + 명시적 cleanup만 사용). |
-| `Bash(git push*)`, `Bash(git commit*)`, `Bash(git checkout*)` | 사용자의 의도적 결정 영역. plugin은 `git status/log/diff` 등 read-only만. |
+| Command | Reason |
+|---------|--------|
+| `Bash(rm:*)` | Broad delete authority. Fatal under agent malfunction or prompt injection. The plugin never calls `rm` directly. |
+| `Bash(chmod:*)` | Permission change. The plugin only `chmod`s `bin/pf`; no need on the user's system. |
+| `Bash(mv:*)` | Broad move authority. The plugin never calls `mv` (uses `cp` plus explicit cleanup only). |
+| `Bash(git push*)`, `Bash(git commit*)`, `Bash(git checkout*)` | Reserved for the user's intentional decisions. The plugin only runs read-only git (`status`/`log`/`diff`). |
 
-위 destructive 명령이 *agent 오작동* 시 trigger되면, 사용자가 *그 시점에서* 1회 권한 prompt를 받음 — 안전망 유지. 정말 필요하면 사용자가 본인 `.claude/settings.local.json`에 직접 추가 가능.
+If one of these destructive commands is triggered by an *agent malfunction*, the user receives a one-time permission prompt at that moment — the safety net stays in place. If the user genuinely needs them, they can add them to their own `.claude/settings.local.json`.
 
-**기존 settings.local.json 처리**:
-- 파일 없음 → 새로 생성 + 위 allow list 적재
-- 파일 있고 `permissions.allow` 키 있음 → **set union** (기존 항목 유지 + 누락된 plugin 항목만 추가)
-- 파일 있고 `permissions.allow` 없음 → key 추가 + 위 list 적재
-- 사용자 작성 항목은 **건드리지 않음** (read/manual edit 우선)
+**Handling an existing settings.local.json**:
+- File missing → create it and write the allow list above.
+- File exists with a `permissions.allow` key → **set union** (keep existing entries, append only the missing plugin entries).
+- File exists without `permissions.allow` → add the key and write the list above.
+- Entries authored by the user are **never modified** (read/manual edit takes priority).
 
-JSON merge 로직 (Python, defensive — empty file / wrong types 모두 graceful):
+JSON merge logic (Python, defensive — handles empty file and wrong types gracefully):
 ```bash
 python3 - <<'PY'
 import json, pathlib
@@ -131,11 +131,11 @@ PY
 ```
 
 ### 3. Verification (post-bootstrap)
-- `~/.claude/preview-forge/memory/{CLAUDE,PROGRESS,LESSONS}.md` 3개 파일 존재 확인
-- `.claude/settings.local.json`에 `Bash(pnpm:*)` 포함 확인
-- 미만족 시 사용자에게 명시적 안내
+- Confirm the three files exist: `~/.claude/preview-forge/memory/{CLAUDE,PROGRESS,LESSONS}.md`.
+- Confirm `.claude/settings.local.json` contains `Bash(pnpm:*)`.
+- If either check fails, surface an explicit message to the user.
 
-## 출력
+## Output
 
 ```text
 ✓ Memory seeded: ~/.claude/preview-forge/memory/{CLAUDE,PROGRESS,LESSONS}.md (3 files)
@@ -143,9 +143,9 @@ PY
 ✓ Bootstrap complete. /pf:new now respects the "two human gates" promise.
 ```
 
-## 관련
+## Related
 
-- 본 명령은 plugin `preview-forge`의 일부입니다.
-- 워크스페이스마다 1회 실행. 같은 워크스페이스에서 재실행 시 idempotent (set union).
-- 사용자가 직접 `.claude/settings.local.json` 수정 후 `/pf:bootstrap` 재실행 시 사용자 항목 보존.
-- 상세 스펙: [preview-forge-proposal.html](../../../preview-forge-proposal.html)
+- This command is part of the `preview-forge` plugin.
+- Run once per workspace. Re-running in the same workspace is idempotent (set union).
+- If the user edits `.claude/settings.local.json` directly and then re-runs `/pf:bootstrap`, user-authored entries are preserved.
+- Detailed spec: [preview-forge-proposal.html](../../../preview-forge-proposal.html)

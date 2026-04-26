@@ -4,7 +4,7 @@ description: Cost dashboard — per-run, per-cycle, per-agent, with profile base
 
 # /pf:budget — Cost dashboard
 
-**Layer-0 정책**: Pro/Max 기본 포함. 별도 API 키 불필요.
+**Layer-0 policy**: Included with Claude Code Pro/Max. No separate API key required.
 
 ## Usage
 
@@ -12,30 +12,30 @@ description: Cost dashboard — per-run, per-cycle, per-agent, with profile base
 /pf:budget [run_id]
 ```
 
-## 인자
+## Arguments
 
-- `run_id` (optional): 생략 시 현재 또는 가장 최근 run
+- `run_id` (optional): if omitted, use the current or most recent run.
 
-## 동작
+## Behavior
 
-M2 Cost Monitor의 현재 스냅샷을 표로 렌더 + profile baseline 비교. UI widget용 JSON도 함께.
+Render the M2 Cost Monitor's current snapshot as a table and compare against the profile baseline. Also emit JSON for the UI widget.
 
-### 출력 섹션
+### Output sections
 
 1. **Profile baseline** (v1.3+):
    - P95 tokens / hard tokens
    - P95 minutes / hard minutes
-   - 현재 사용량과 대비
+   - Current usage compared to both
 
-2. **Per-cycle**: PreviewDD · SpecDD · TestDD 토큰 집계
+2. **Per-cycle**: PreviewDD, SpecDD, and TestDD token totals.
 
-3. **Per-agent-tier**: Meta · Ideation · Panels · Spec · Engineering · QA · SCC · Judges 계층별 토큰
+3. **Per-agent-tier**: tokens per Meta, Ideation, Panels, Spec, Engineering, QA, SCC, and Judges layer.
 
 4. **Sentinel status** (v1.3+):
-   - `cost-regression.py`가 emit한 최근 3개 `qa.cost.*` Blackboard row
-   - ok / warn / alert 레벨
+   - The three most recent `qa.cost.*` Blackboard rows emitted by `cost-regression.py`
+   - ok / warn / alert level
 
-예시:
+Example:
 ```
 💰 PF Budget — runs/r-20260423-221530/ (pro profile)
   P95 baseline: 250,000 tok / 70 min
@@ -49,8 +49,8 @@ M2 Cost Monitor의 현재 스냅샷을 표로 렌더 + profile baseline 비교. 
   Per-tier:   Meta 3,200  Ideation 32,800  Panels 18,900  Spec 32,400
 ```
 
-## 관련
+## Related
 
-- 프로파일 ceiling: [`profiles/{standard,pro,max}.json`](../profiles/)
-- 센티넬 훅: [`hooks/cost-regression.py`](../hooks/cost-regression.py)
-- 상세 스펙: [preview-forge-proposal.html](../../../preview-forge-proposal.html)
+- Profile ceilings: [`profiles/{standard,pro,max}.json`](../profiles/)
+- Sentinel hook: [`hooks/cost-regression.py`](../hooks/cost-regression.py)
+- Detailed spec: [preview-forge-proposal.html](../../../preview-forge-proposal.html)

@@ -4,7 +4,7 @@ description: Force evaluate Judges + Auditors and attempt freeze
 
 # /pf:freeze — Force evaluate Judges + Auditors and attempt freeze
 
-**Layer-0 정책**: Pro/Max 기본 포함. 별도 API 키 불필요.
+**Layer-0 policy**: Included with Claude Code Pro/Max. No separate API key required.
 
 ## Usage
 
@@ -12,19 +12,19 @@ description: Force evaluate Judges + Auditors and attempt freeze
 /pf:freeze
 ```
 
-## 인자
+## Arguments
 
-스코어 ≥499 AND 5/5 Auditor PASS여야 freeze 성공.
+Freeze succeeds only when the score is ≥499 AND all 5/5 Auditors return PASS.
 
-## 동작
+## Behavior
 
-현재 run의 Stage 7 (Judges + Auditors)를 강제 실행. 점수 미달이면 dissent와 함께 보고만 하고 freeze 안 함.
+Force-run Stage 7 (Judges + Auditors) on the current run. If the score does not meet the threshold, report the result with the dissent and do not freeze.
 
 ## After freeze
 
 Once `score/report.json` is locked and `.frozen-hash` written, M3 automatically launches the local preview server (`bash scripts/start-preview-server.sh runs/<id>/`) and opens your browser to the running app. To re-open or stop the server later: `/pf:preview <id>` / `/pf:preview stop <id>`.
 
-## 관련
+## Related
 
-- 본 명령은 plugin `preview-forge`의 일부입니다.
-- 상세 스펙: [preview-forge-proposal.html](../../../preview-forge-proposal.html)
+- This command is part of the `preview-forge` plugin.
+- Detailed spec: [preview-forge-proposal.html](../../../preview-forge-proposal.html)
