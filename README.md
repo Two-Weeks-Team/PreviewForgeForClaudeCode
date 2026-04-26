@@ -55,7 +55,7 @@ different direction. You see what could be built. You select one.
 
 | Artifact | Link |
 |---|---|
-| 🎥 **3-min demo video** | Use the final Loom/YouTube URL in the hackathon form; do not claim a video link here until it is uploaded. |
+| 🎥 **Demo video** | [https://www.youtube.com/watch?v=_xHL8SZqfyI](https://www.youtube.com/watch?v=_xHL8SZqfyI) — `LunchPull` end-to-end run, "Asking When It Matters" thesis (10:30) |
 | 💻 **Repository** | [Two-Weeks-Team/PreviewForgeForClaudeCode](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode) |
 | 📝 **Written summary (100–200 words)** | See [TL;DR for evaluators](#tldr-for-evaluators) below |
 | 📜 **License** | [Apache-2.0](LICENSE) — fully open-source per hackathon rules |
