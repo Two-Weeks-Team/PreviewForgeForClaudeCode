@@ -43,7 +43,13 @@ def load_profile(name: str) -> dict | None:
 
 
 def load_active_profile(run_dir: Path) -> dict | None:
-    """Priority: run_dir/.profile → env PF_PROFILE → settings.defaultProfile → 'pro'."""
+    """Priority: run_dir/.profile → env PF_PROFILE → settings.defaultProfile → 'standard'.
+
+    v1.4+ default is 'standard' (was 'pro' in v1.3.0; flipped for demo-first
+    UX — see LESSON 0.10). settings.json ships with defaultProfile: standard;
+    the hard-coded fallbacks below match that so a missing/malformed
+    settings.json behaves consistently.
+    """
     marker = run_dir / ".profile"
     if marker.exists():
         name = marker.read_text(encoding="utf-8").strip()
@@ -52,11 +58,11 @@ def load_active_profile(run_dir: Path) -> dict | None:
         if not name and SETTINGS_PATH.exists():
             try:
                 s = json.load(SETTINGS_PATH.open(encoding="utf-8"))
-                name = s.get("pf", {}).get("defaultProfile", "pro")
+                name = s.get("pf", {}).get("defaultProfile", "standard")
             except (OSError, json.JSONDecodeError):
-                name = "pro"
+                name = "standard"
         if not name:
-            name = "pro"
+            name = "standard"
     return load_profile(name)
 
 

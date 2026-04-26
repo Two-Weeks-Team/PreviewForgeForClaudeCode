@@ -107,7 +107,7 @@ IDEA_SPEC: <not provided — fallback v1.5.4 path>
 먼저 **active profile을 resolve**:
 1. `runs/<id>/.profile` 파일 (M1이 /pf:new --profile 파싱 후 기록)
 2. env `PF_PROFILE`
-3. plugin `settings.json` → `pf.defaultProfile` (기본 `pro`)
+3. plugin `settings.json` → `pf.defaultProfile` (현재 `"standard"`; v1.3.0에서는 `"pro"`였으나 v1.4.0에서 데모-퍼스트 정책으로 flip — LESSON 0.10 참조). 최종 fallback도 `"standard"`.
 
 그리고 profile의 `previews.count`만큼 Advocate 선정:
 - **standard** (9): P01, P02, P05, P07, P10, P14, P17, P20, P24 — 가장 다양한 페르소나 스펙트럼

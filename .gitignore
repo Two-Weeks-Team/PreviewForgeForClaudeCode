@@ -76,3 +76,6 @@ coverage/
 # matters: in .gitignore the *last* matching pattern wins.
 !runs/r-clean-*/
 !runs/r-clean-*/**
+
+# Claude Code session locks (per-process state, not source)
+.claude/scheduled_tasks.lock
