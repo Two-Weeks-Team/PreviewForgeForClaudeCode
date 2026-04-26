@@ -83,10 +83,10 @@ for cmd in bootstrap budget design export freeze gallery help lessons new panel 
 done
 echo
 
-echo "[4/5] Hooks (v1.4+: 6 hooks)"
+echo "[4/5] Hooks (v1.14+: 7 hooks)"
 python3 -c "import json; d=json.load(open('$PLUGIN_DIR/hooks/hooks.json')); assert 'PreToolUse' in d['hooks'] and 'PostToolUse' in d['hooks']" && \
   ok "hooks.json schema" || bad "hooks.json invalid"
-for h in factory-policy askuser-enforcement auto-retro-trigger idea-drift-detector cost-regression escalation-ledger; do
+for h in factory-policy askuser-enforcement auto-retro-trigger idea-drift-detector cost-regression escalation-ledger post-h1-signal; do
   python3 -m py_compile "$PLUGIN_DIR/hooks/$h.py" && ok "hooks/$h.py compiles" || bad "hooks/$h.py syntax"
 done
 echo

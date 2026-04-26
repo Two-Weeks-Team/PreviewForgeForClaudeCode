@@ -140,7 +140,7 @@ points and warn — tracked separately.
 
 ## 모델 · effort 강제 정책
 
-- **모든 143 agent는 `claude-opus-4-7` 고정**
+- **모든 144 agent는 `claude-opus-4-7` 고정**
 - Sonnet/Haiku 등 다른 모델 사용 시도 시 훅이 경고 (hard block은 아님)
 - Effort 4-tier 정책은 `memory/CLAUDE.md` §3 참조
 
