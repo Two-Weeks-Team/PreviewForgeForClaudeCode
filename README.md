@@ -55,7 +55,7 @@ different direction. You see what could be built. You select one.
 
 | Artifact | Link |
 |---|---|
-| 🎥 **Demo video** | [https://www.youtube.com/watch?v=_xHL8SZqfyI](https://www.youtube.com/watch?v=_xHL8SZqfyI) — `LunchPull` end-to-end run, "Asking When It Matters" thesis (10:30) |
+| 🎥 **Demo video** | [https://www.youtube.com/watch?v=_xHL8SZqfyI](https://www.youtube.com/watch?v=_xHL8SZqfyI) (2:59) — full walkthrough, problem statement through frozen app |
 | 💻 **Repository** | [Two-Weeks-Team/PreviewForgeForClaudeCode](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode) |
 | 📝 **Written summary (100–200 words)** | See [TL;DR for evaluators](#tldr-for-evaluators) below |
 | 📜 **License** | [Apache-2.0](LICENSE) — fully open-source per hackathon rules |
