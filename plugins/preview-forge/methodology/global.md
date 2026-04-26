@@ -6,7 +6,7 @@
 
 ---
 
-## 7개 비협상 규칙 (Non-negotiable Rules)
+## Layer-0 비협상 규칙 (Non-negotiable Rules)
 
 ### Rule 1 — Gate 없이 진행 금지
 - PreviewDD → SpecDD 전환은 Gate H1 (인간 디자인 승인) 없이 불가
@@ -99,6 +99,43 @@ export PF_DRIFT_BYPASS=1 PF_DRIFT_REASON="SpecDD explicitly expanding to include
 - Gate H1 완료 전 (chosen_preview.json 없음) → no-op
 - 120자 미만 write → no-op (오타 수정 false positive 방지)
 
+### Rule 10 — Output language: English (v1.13+)
+
+All user-facing output produced by any of the 144 agents in this plugin
+**MUST be in English**, regardless of the language the user prompts in.
+This includes (non-exhaustive):
+
+- `AskUserQuestion` modal `question`, `header`, option `label` and
+  `description` fields
+- Console / chat prose responses to the user
+- Status messages, progress updates, standup summaries
+- Modal labels at Gate H1 and Gate H2
+- Error messages surfaced to the user
+- Generated artifacts that the user reads directly:
+  `mockups/gallery-text.md`, `score/report.json` summaries,
+  `runs/<id>/trace.log` user-facing lines
+
+**Why**: this plugin's archive (commits, PR bodies, root CHANGELOG, code,
+schemas) is English-only — see `CONTRIBUTING.md` "Language" section.
+A bilingual user surface defeats searchability for non-Korean reviewers
+and contradicts the documented policy. Korean prompts from the user are
+**not** a switch signal — agents reply in English by default.
+
+**Single-turn override**: only when the user issues an explicit per-turn
+directive such as *"reply in Korean for this answer"*. Once the turn
+ends, the next response returns to English.
+
+**Markdown of the agent files themselves**: the prose **inside**
+`agents/**/*.md` and `commands/*.md` may stay in Korean for maintenance
+(many existing agent prompts are in Korean). What's enforced is the
+*output the agent emits to the user*, not the language of the prompt
+the agent was authored in.
+
+**Enforcement**: this rule is Layer-0; `factory-policy.py` does not
+parse natural-language output, so enforcement is by agent compliance.
+A future hook may scan `AskUserQuestion` modal payloads for Hangul code
+points and warn — tracked separately.
+
 ---
 
 ## 모델 · effort 강제 정책
@@ -153,4 +190,4 @@ Per-call payload cap: 1-4 questions per AskUserQuestion call (Claude Code tool s
 
 ## 불변 원칙
 
-이 문서는 plugin v1.0.0 기준 7 rules를 정의합니다. v2.0.0 이전까지 **추가만 가능, 수정·삭제 불가**. v2.0.0에서 breaking change가 있을 경우에도 각 규칙의 의도는 유지되어야 합니다.
+이 문서는 plugin v1.0.0 기준 7 rules로 출발하여 점진적으로 확장되었습니다 (현재 Rule 10까지). v2.0.0 이전까지 **추가만 가능, 수정·삭제 불가**. v2.0.0에서 breaking change가 있을 경우에도 각 규칙의 의도는 유지되어야 합니다.
