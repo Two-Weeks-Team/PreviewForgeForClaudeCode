@@ -2,11 +2,11 @@
 
 # Preview Forge for Claude Code
 
-## Preview is all you need.
+## Preview is all you need!
 
 ### One line of idea → 26 AI-generated previews → pick with your eyes → frozen full-stack app.
 
-![Gate H1 gallery — 9 advocate-rendered mockups for the LunchPull demo run](docs/assets/lunchpull-gallery-hero.png)
+![Gate H1 gallery — 9 advocate-rendered mockups for the LunchPull demo run](assets/lunchpull-gallery-hero.png)
 
 > **The picture is the spec.** SpecDD and TestDD only run on the mockup you approved.
 > 144 Opus 4.7 agents · zero third-party services · two human clicks.
@@ -19,11 +19,11 @@
 [![Marketplace Validate](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/marketplace-validate.yml/badge.svg)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/marketplace-validate.yml)
 [![Pages](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/actions/workflows/pages.yml/badge.svg)](https://two-weeks-team.github.io/PreviewForgeForClaudeCode/)
 [![Release](https://img.shields.io/github/v/release/Two-Weeks-Team/PreviewForgeForClaudeCode?display_name=tag&sort=semver)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/releases)
-[![License: Apache 2.0](https://img.shields.io/github/license/Two-Weeks-Team/PreviewForgeForClaudeCode)](LICENSE)
+[![License: Apache 2.0](https://img.shields.io/github/license/Two-Weeks-Team/PreviewForgeForClaudeCode)](../LICENSE)
 
 [![Built with Opus 4.7](https://img.shields.io/badge/Built%20with-Claude%20Opus%204.7-d4a574?logo=anthropic&logoColor=white)](https://www.anthropic.com/claude/opus)
 [![Claude Code Plugin](https://img.shields.io/badge/Claude%20Code-Plugin-7aa6c2?logo=anthropic&logoColor=white)](https://code.claude.com/docs/en/plugins)
-[![144 Agents](https://img.shields.io/badge/Agents-144-84c984)](preview-forge-proposal.html)
+[![144 Agents](https://img.shields.io/badge/Agents-144-84c984)](../preview-forge-proposal.html)
 [![3-DD Methodology](https://img.shields.io/badge/Methodology-PreviewDD%20%E2%86%92%20SpecDD%20%E2%86%92%20TestDD-d4a574)](#the-3-dd-methodology)
 [![15 Slash Commands](https://img.shields.io/badge/%2Fpf%3A*-15%20commands-7aa6c2)](#slash-commands)
 [![Stars](https://img.shields.io/github/stars/Two-Weeks-Team/PreviewForgeForClaudeCode?style=social)](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/stargazers)
@@ -37,20 +37,6 @@ with only two human clicks.
 
 ---
 
-## The problem
-
-You start any project without knowing what will get built. Specs go stale.
-Wireframes lie. By demo day half the assumptions were wrong.
-
-**Preview-Driven Development (PDD) flips it.** Before any spec, before any
-code, the harness renders the project as **9 to 26 different mockups in
-parallel** — each by a different Opus 4.7 persona pulling your idea in a
-different direction. You see what could be built. You select one.
-
-**Preview is all you need.** The selection IS the spec.
-
----
-
 ## Submission — Built with Opus 4.7 hackathon
 
 | Artifact | Link |
@@ -58,9 +44,9 @@ different direction. You see what could be built. You select one.
 | 🎥 **3-min demo video** | Use the final Loom/YouTube URL in the hackathon form; do not claim a video link here until it is uploaded. |
 | 💻 **Repository** | [Two-Weeks-Team/PreviewForgeForClaudeCode](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode) |
 | 📝 **Written summary (100–200 words)** | See [TL;DR for evaluators](#tldr-for-evaluators) below |
-| 📜 **License** | [Apache-2.0](LICENSE) — fully open-source per hackathon rules |
+| 📜 **License** | [Apache-2.0](../LICENSE) — fully open-source per hackathon rules |
 | 👥 **Team** | [Two-Weeks-Team](https://github.com/Two-Weeks-Team) (≤2 members per rules) |
-| 🆕 **New work only** | Built from scratch during the hackathon window (Apr 21–28, 2026). See [CHANGELOG](CHANGELOG.md). |
+| 🆕 **New work only** | Built from scratch during the hackathon window (Apr 21–28, 2026). See [CHANGELOG](../CHANGELOG.md). |
 
 ## TL;DR for evaluators
 
@@ -82,8 +68,6 @@ different direction. You see what could be built. You select one.
 > **Built entirely on Anthropic-native primitives** — Opus 4.7, Managed Agents,
 > Memory Tool, Batch API, Files API, Context editing, Prompt caching, Claude
 > Design. **No third-party services in the plugin runtime.** Apache-2.0 licensed.
->
-> **Preview is all you need.**
 
 ## The 3-DD methodology
 
@@ -104,12 +88,12 @@ flowchart LR
 
 | Cycle | Drives | Locked artifact |
 |---|---|---|
-| ① **Preview-Driven Development (PreviewDD)** *(new)* | 26 mockups before any spec | `chosen_preview.json` + `mockups/chosen.html` |
-| ② **Spec-Driven Development (SpecDD)** | OpenAPI drives implementation | `specs/openapi.yaml` + SHA-256 `.lock` |
-| ③ **Test-Driven Development (TestDD)** | Score ≥499/500 to freeze | `score/report.json` + `.frozen-hash` |
+| ① **PreviewDD** *(new)* | 26 mockups before any spec | `chosen_preview.json` + `mockups/chosen.html` |
+| ② **SpecDD** | OpenAPI drives implementation | `specs/openapi.yaml` + SHA-256 `.lock` |
+| ③ **TestDD** | Score ≥499/500 to freeze | `score/report.json` + `.frozen-hash` |
 
 All three cycles follow **diverge → aggregate → lock**. Two human gates, otherwise autonomous.
-[Full v8.0 specification](preview-forge-proposal.html) — 2,100+ lines, single HTML file.
+[Full v8.0 specification](../preview-forge-proposal.html) — 2,100+ lines, single HTML file.
 
 <!-- AI-PARSEABLE FLOW
 idea -> I1 socratic (4Q) -> idea.spec.json -> PreviewDD (26 mockups) -> H1 design pick
@@ -125,7 +109,7 @@ You type one line. The plugin doesn't dispatch 26 advocates immediately — it a
 a structured **ground truth** every downstream agent honors.
 
 ```text
-"build a fun, cheerful lunch recommender for office workers"
+"회의록 자동 정리"
         │
         ▼
 ┌──────────────────────────────────────────────────┐
@@ -151,27 +135,6 @@ The contract is the picture selected at Gate H1. Drift is detected by the
 **Rule 9 idea-drift sentinel** (`hooks/idea-drift-detector.py`) — block
 threshold 0.3, warn at 0.4. If the build wanders away from the approved mockup,
 the run pauses.
-
-## Layer-0 — the ten non-negotiable rules
-
-The harness operates under ten contracts that no agent (including the
-supervisor) can override. They are enforced by Layer-0 hooks
-(`PreToolUse` / `PostToolUse` / `Stop` / `SubagentStop`). Layer-0 started at
-seven rules in v1.0.0 and has grown to ten as the harness shipped (most
-recent additions: Rule 9 idea-drift, Rule 10 English-only output).
-
-1. **Two human gates only** — H1 (design pick) and H2 (ship). Everything else is autonomous.
-2. **Scope discipline** — agents may not exceed their declared scope (department / file / phase).
-3. **Single source of truth per phase** — each phase locks one artifact (`idea.spec.json`, `chosen_preview.json`, `specs/openapi.yaml`, `score/report.json`).
-4. **Adaptive thinking + `xhigh` effort** wherever the action is one-shot and irreversible (freeze, deploy, schema lock).
-5. **Cost-regression sentinel** — `hooks/cost-regression.py` pauses the run when token usage crosses the active profile's hard ceiling.
-6. **Two ways to ask** — anchored gates the user knows are coming (H1, H2) and adaptive asks the harness fires on its own (Socratic, budget guard). Everything else: auto-decide.
-7. **Audit trail** — every agent decision writes to the SQLite blackboard; runs are deterministically replayable from `trace.jsonl`.
-8. **All Opus 4.7** — every agent fixed to `claude-opus-4-7`; no Sonnet or Haiku fallback for plugin runtime.
-9. **Idea-drift detection** — `hooks/idea-drift-detector.py` blocks runs where SpecDD wanders away from the H1 selection (block 0.3, warn 0.4).
-10. **Output language English** — every artifact in the repo is English. Korean and other languages are permitted only as visual subtitles in the captured video.
-
-[Full Layer-0 specification](plugins/preview-forge/methodology/global.md) — gates, scope, drift, output policy.
 
 ## Why this wins
 
@@ -201,18 +164,17 @@ Reflexion pattern, end-to-end. Long-running, hand-off-able, ship-able.
 **TDD drove code with tests. SpecDD drove code with specs. PreviewDD drives them
 both with pictures.** Eyes-first decision-making inverts the SaaS default of
 "configure then preview" — you answer 4 questions, see 9 / 18 / 26 mockups, pick
-one, and the rest of the pipeline only runs on what you approved.
-
-**Preview is all you need. The selection IS the spec.**
+one, and the rest of the pipeline only runs on what you approved. The picture is
+the spec.
 
 ## Judging criteria — evidence map
 
 | Criterion | Weight | How Preview Forge answers it | Evidence |
 |---|---|---|---|
-| **Impact** | 30% | Reframes how *every* software project starts. PreviewDD is a methodology, not a feature — it generalizes beyond this plugin. Maps to **"Build For What's Next"**: an interface that doesn't yet have a name. | [Full v8.0 spec](preview-forge-proposal.html) (2,100+ lines) · [3-DD methodology](#the-3-dd-methodology) |
-| **Demo** | 25% | Single-screen artifact (gallery of 9–26 mockups) that a non-technical viewer understands in 5 seconds. H2 now auto-launches the local preview server after ship approval. | [Gallery hero](docs/assets/lunchpull-gallery-hero.png) · final demo video URL in submission form |
-| **Opus 4.7 use** | 25% | 144 parallel Opus 4.7 personas, **all** Opus 4.7 (zero Sonnet, zero Haiku). Adaptive thinking + `xhigh` effort applied per Layer-0 irreversible-action policy. Self-critic + self-scorer + self-corrector loops are all Opus 4.7. | [Layer-0 rules](plugins/preview-forge/methodology/global.md) · [Agent organization](#agent-organization) |
-| **Depth & Execution** | 20% | 14 semver releases (v1.6 → v1.14) inside the hackathon window. Current verify-plugin suite passes locally. 4-layer memory (Reflexion). Idea-drift detector + cost-regression sentinel + escalation precedence + skip-interview escape hatch — all shipped. | [CHANGELOG](CHANGELOG.md) · [`scripts/verify-plugin.sh`](scripts/verify-plugin.sh) · [`plugins/preview-forge/hooks/`](plugins/preview-forge/hooks/) |
+| **Impact** | 30% | Reframes how *every* software project starts. PreviewDD is a methodology, not a feature — it generalizes beyond this plugin. Maps to **"Build For What's Next"**: an interface that doesn't yet have a name. | [Full v8.0 spec](../preview-forge-proposal.html) (2,100+ lines) · [3-DD methodology](#the-3-dd-methodology) |
+| **Demo** | 25% | Single-screen artifact (gallery of 9–26 mockups) that a non-technical viewer understands in 5 seconds. H2 now auto-launches the local preview server after ship approval. | [Gallery hero](assets/lunchpull-gallery-hero.png) · final demo video URL in submission form |
+| **Opus 4.7 use** | 25% | 144 parallel Opus 4.7 personas, **all** Opus 4.7 (zero Sonnet, zero Haiku). Adaptive thinking + `xhigh` effort applied per Layer-0 irreversible-action policy. Self-critic + self-scorer + self-corrector loops are all Opus 4.7. | [Layer-0 rules](../plugins/preview-forge/methodology/global.md) · [Agent organization](#agent-organization) |
+| **Depth & Execution** | 20% | 14 semver releases (v1.6 → v1.14) inside the hackathon window. Current verify-plugin suite passes locally. 4-layer memory (Reflexion). Idea-drift detector + cost-regression sentinel + escalation precedence + skip-interview escape hatch — all shipped. | [CHANGELOG](../CHANGELOG.md) · [`scripts/verify-plugin.sh`](../scripts/verify-plugin.sh) · [`plugins/preview-forge/hooks/`](../plugins/preview-forge/hooks/) |
 
 ## Quick install
 
@@ -230,7 +192,7 @@ one, and the rest of the pipeline only runs on what you approved.
 /pf:bootstrap
 
 # 5. Run (profile defaults to `standard` as of v1.4.0)
-/pf:new "your one-line idea"
+/pf:new "한 줄 아이디어"
 
 # …or pick a profile explicitly:
 /pf:new "demo-class idea"     --profile=standard   # default — ~60k tok · 2×5 eng · 9 previews · SQLite · no Docker
@@ -250,7 +212,7 @@ one, and the rest of the pipeline only runs on what you approved.
 - `--no-cache` bypasses the PreviewDD-level cache (7 days for standard/pro, never cached for max).
 - Standard = local-first: `npm install && npm run db:push && npm run dev` — no Docker, no Postgres setup. DB lives at `~/.preview-forge/<project>/dev.db` (outside repo tree for security).
 - Upgrade path: standard → pro via `bash scripts/graduate.sh pro` (additive; keeps your code, adds Dockerfile/compose/Postgres datasource).
-- Full spec: [`plugins/preview-forge/profiles/`](plugins/preview-forge/profiles/).
+- Full spec: [`plugins/preview-forge/profiles/`](../plugins/preview-forge/profiles/).
 
 <details>
 <summary><strong>Profile escalation & cost-regression sentinel (v1.3+)</strong></summary>
@@ -270,11 +232,11 @@ Categorical scoring (not raw keyword count) means `"audit logging feature"` in a
 </details>
 
 <details>
-<summary><strong>What's new — v1.6 / v1.7 / v1.14 (shipped through semver v1.10.0+)</strong></summary>
+<summary><strong>What's new — v1.6 / v1.7 audit umbrellas (shipped through semver v1.10.0+)</strong></summary>
 
-> **Terminology**: "v1.6 audit" / "v1.7 audit" are *feature umbrella* names (issue #28 family / #29–#37). Each PR ships under its own [release-please](https://github.com/googleapis/release-please) semver tag — the v1.6 schema landed in semver **v1.6.0**, B-1/B-3/A-4 (Phase 9, PR #51) landed in **v1.10.0**, etc. See [CHANGELOG.md](CHANGELOG.md).
+> **Terminology**: "v1.6 audit" / "v1.7 audit" are *feature umbrella* names (issue #28 family / #29–#37). Each PR ships under its own [release-please](https://github.com/googleapis/release-please) semver tag — the v1.6 schema landed in semver **v1.6.0**, B-1/B-3/A-4 (Phase 9, PR #51) landed in **v1.10.0**, etc. See [CHANGELOG.md](../CHANGELOG.md).
 
-**v1.6 — Socratic interview as ground truth (LESSON 0.7 fix).** Before v1.6, 26 Advocates dispatched directly from the one-liner — and the failure mode in LESSON 0.7 played out: a one-liner could mean different products to different agents. v1.6 adds I1 Idea Clarifier between `/pf:new` and the 26 advocates. Three batched `AskUserQuestion` modals (10–12 fields total) produce `idea.spec.json` — structured ground truth (`target_persona`, `primary_surface`, `jobs_to_be_done`, `killer_feature`, `must_have_constraints`, `non_goals`, …) that every advocate receives. The PreviewDD cache key now includes `idea_spec_hash`, so the same one-liner with different Socratic answers gets a fresh advocate set.
+**v1.6 — Socratic interview as ground truth (LESSON 0.7 fix).** Before v1.6, 26 Advocates dispatched directly from the one-liner — and the failure mode in LESSON 0.7 played out: user wrote "회의록 자동 정리," panel-recommended composite #1 was a Slack bot, but the user actually wanted a legal deposition paralegal tool. v1.6 adds I1 Idea Clarifier between `/pf:new` and the 26 advocates. Three batched `AskUserQuestion` modals (10–12 fields total) produce `idea.spec.json` — structured ground truth (`target_persona`, `primary_surface`, `jobs_to_be_done`, `killer_feature`, `must_have_constraints`, `non_goals`, …) that every advocate receives. The PreviewDD cache key now includes `idea_spec_hash`, so the same one-liner with different Socratic answers gets a fresh advocate set.
 
 **v1.7 — 4 required questions, skip-interview, tiered fallback (Christensen + Kim-Mauborgne + Taleb).** Hackathon demo feedback: 12 questions before seeing any output is too many. v1.7 trims:
 
@@ -336,7 +298,7 @@ Preview Forge ships **15 slash commands** under the `/pf:*` namespace:
 | `/pf:status` | Current run state, agent progress, blackboard |
 | `/pf:retry <agent\|phase>` | Rerun a failed agent or stuck phase |
 | `/pf:freeze` | Force Judges + Auditors evaluation (TestDD Stage 7) |
-| `/pf:preview [run]` | Re-open, stop, or inspect the local preview server for a frozen run (auto-launched after H2) |
+| `/pf:preview [run]` | Re-open, stop, or inspect the local preview server for a frozen run |
 
 ### 🗳️ Decision gates
 | Command | Purpose |
@@ -388,21 +350,6 @@ All Opus 4.7, zero Sonnet/Haiku.
 - **Node.js 20** LTS + **pnpm 9** (for scaffolded apps' build/test)
 - **Docker 24+** (optional, for scaffolded apps' `docker compose up` verification)
 
-## What's inside the plugin
-
-| Area | Count | Summary |
-|---|---|---|
-| **Agents** | 144 | 10 departments, 6 tiers, all Opus 4.7 |
-| **Slash commands** | 15 | `/pf:*` namespace |
-| **Hooks** | 7 | `factory-policy`, `askuser-enforcement`, `auto-retro-trigger`, `idea-drift-detector`, `cost-regression`, `escalation-ledger`, `post-h1-signal` |
-| **Memory seed** | 3 | `CLAUDE.md` + `PROGRESS.md` + `LESSONS.md` (with 3 bootstrap lessons) |
-| **Methodology** | 1 | Layer-0 7 non-negotiable rules |
-| **Asset templates** | 12 | Docker Compose, Caddyfile, nestia.config.ts, install.sh + 8 standard-profile build templates |
-| **JSON schemas** | 6 | preview-card, panel-vote, score-report, pf-profile, idea-spec, spec-anchor-audit |
-| **Seed ideas** | 10 | Pre-verified demo scenarios |
-| **CLI** | 1 | `bin/pf` |
-| **Verification** | 1 | `scripts/verify-plugin.sh` |
-
 ## Zero third-party services
 
 Preview Forge's plugin runtime uses **only Anthropic-native** services:
@@ -430,11 +377,11 @@ M1 Run Supervisor reads all four before every new run and pre-loads relevant les
 
 ## Documentation
 
-- 📘 **[Full v8.0 Specification](preview-forge-proposal.html)** — canonical, 2,100+ lines
-- 📝 **[CHANGELOG](CHANGELOG.md)** — phase-by-phase build log
-- 🛡️ **[Security Policy](SECURITY.md)** — reporting and scope
-- 🤝 **[Contributing](CONTRIBUTING.md)** — LESSONS, new advocates, etc.
-- 🪶 **[Layer-0 Rules](plugins/preview-forge/methodology/global.md)** — gates, scope, drift, and output policy
+- 📘 **[Full v8.0 Specification](../preview-forge-proposal.html)** — canonical, 2,100+ lines
+- 📝 **[CHANGELOG](../CHANGELOG.md)** — phase-by-phase build log
+- 🛡️ **[Security Policy](../SECURITY.md)** — reporting and scope
+- 🤝 **[Contributing](../CONTRIBUTING.md)** — LESSONS, new advocates, etc.
+- 🪶 **[Layer-0 Rules](../plugins/preview-forge/methodology/global.md)** — gates, scope, drift, and output policy
 
 ## Verify install
 
@@ -446,7 +393,7 @@ bash scripts/verify-plugin.sh
 
 ## License
 
-[Apache-2.0](LICENSE). See [NOTICE](NOTICE) for attribution.
+[Apache-2.0](../LICENSE). See [NOTICE](../NOTICE) for attribution.
 
 ---
 
@@ -455,7 +402,5 @@ bash scripts/verify-plugin.sh
 <sub>Built with **Claude Opus 4.7** · Powered by **Claude Code Plugins** · **No third-party services in the plugin runtime** · Apache-2.0</sub>
 
 <sub>[Preview Forge](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode) · [Two-Weeks-Team](https://github.com/Two-Weeks-Team)</sub>
-
-<sub>**Preview is all you need.**</sub>
 
 </div>
