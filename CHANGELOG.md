@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.1](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.14.0...v1.14.1) (2026-04-26)
+
+
+### Bug Fixes
+
+* **profile:** default profile actually 'standard' (align stale 'pro' default refs) ([#110](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/issues/110)) ([358de64](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/commit/358de64857af353a90bd710442c033406494a787))
+
 ## [1.14.0](https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode/compare/v1.13.0...v1.14.0) (2026-04-26)
 
 
