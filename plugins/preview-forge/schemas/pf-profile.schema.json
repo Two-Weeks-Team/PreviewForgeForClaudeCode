@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://two-weeks-team.github.io/PreviewForgeForClaudeCode/schemas/pf-profile.schema.json",
   "title": "PF Profile",
-  "description": "Preview Forge run profile — controls cost, speed, and thoroughness of a 3-DD cycle. Three values ship: standard (cheapest), pro (default, balanced), max (all-in 143 agents).",
+  "description": "Preview Forge run profile — controls cost, speed, and thoroughness of a 3-DD cycle. Three values ship: standard (default since v1.4 — demo/prototype, fastest), pro (real project, balanced), max (production launch, all-in 143 agents).",
   "type": "object",
   "required": [
     "name",
