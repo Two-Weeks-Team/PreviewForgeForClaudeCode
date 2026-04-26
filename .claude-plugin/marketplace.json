@@ -7,14 +7,14 @@
   },
   "metadata": {
     "description": "Two-Weeks-Team marketplace hosting the Preview Forge plugin — a 144-agent engineering swarm implementing the 3-DD Methodology (PreviewDD → SpecDD → TestDD) for Claude Code.",
-    "version": "1.14.1",
+    "version": "1.14.2",
     "homepage": "https://github.com/Two-Weeks-Team/PreviewForgeForClaudeCode"
   },
   "plugins": [
     {
       "name": "pf",
       "description": "Preview Forge — PreviewDD → SpecDD → TestDD pipeline: 144 Opus 4.7 personas turn one-line ideas into frozen full-stack apps via 15 /pf:* slash commands; humans only touch the design and ship gates. Built with Opus 4.7 hackathon.",
-      "version": "1.14.1",
+      "version": "1.14.2",
       "author": {
         "name": "Two-Weeks-Team"
       },
