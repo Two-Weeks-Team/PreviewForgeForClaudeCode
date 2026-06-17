@@ -17,7 +17,7 @@ jobs:
       # Use manifest mode so .release-please-config.json's extra-files
       # (with jsonpath) actually rewrites plugin.json and marketplace.json
       # in lockstep with the tag.
-      - uses: googleapis/release-please-action@v4
+      - uses: googleapis/release-please-action@v5
         id: release
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
